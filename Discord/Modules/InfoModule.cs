@@ -18,7 +18,7 @@ namespace SysBot.ACNHOrders
     public class InfoModule : ModuleBase<SocketCommandContext>
     {
         private const string detail = "I am an open source Discord bot powered by SysBot.NET and other open source software.";
-        private const string repo = "https://github.com/kwsch/SysBot.AnimalCrossing";
+        private const string repo = "https://github.com/berichan/SysBot.ACNHOrders";
 
         [Command("info")]
         [Alias("about", "whoami", "owner")]

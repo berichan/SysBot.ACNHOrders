@@ -14,6 +14,8 @@ namespace SysBot.ACNHOrders
         public readonly ConcurrentQueue<OrderRequest<MultiItem>> Orders = new();
         public readonly LoopHelpers Loopers;
         public readonly DropBotState State;
+        public readonly AnchorHelper Anchors;
+
         public bool CleanRequested { private get; set; }
         public string DodoCode { get; set; } = "No code set yet.";
 
@@ -21,6 +23,7 @@ namespace SysBot.ACNHOrders
         {
             State = new DropBotState(cfg.DropConfig);
             Loopers = new LoopHelpers(this);
+            Anchors = new AnchorHelper(Config.AnchorFilename);
         }
 
         private const int pocket = Item.SIZE * 20;
@@ -37,7 +40,7 @@ namespace SysBot.ACNHOrders
             await Task.Delay(200, token).ConfigureAwait(false);
 
             // For viewing player vectors
-            await ViewPlayerVectors(token).ConfigureAwait(false);
+            // await ViewPlayerVectors(token).ConfigureAwait(false);
 
             // Validate inventory offset.
             LogUtil.LogInfo("Checking inventory offset for validity.", Config.IP);
@@ -57,6 +60,7 @@ namespace SysBot.ACNHOrders
                 await OrderLoop(token).ConfigureAwait(false);
         }
 
+
         private async Task OrderLoop(CancellationToken token)
         {
             if (!Config.AcceptingCommands)
@@ -65,10 +69,103 @@ namespace SysBot.ACNHOrders
                 return;
             }
 
+            await EnsureAnchorsAreInitialised(token);
+
             if (Orders.TryDequeue(out var item))
             {
 
             }
+        }
+
+        private async Task ExecuteOrder(OrderRequest<MultiItem> order, CancellationToken token)
+        {
+            // Method:
+            // 1) Restart the game, pointers cause everything to mess up after a few minutes/hours. This is the most reliable way to do this.
+            // 2) Wait for Isabelle's speech (if any), teleport player into their airport then in front of orville, open gate & dodo code
+            // 3) Notify player to come now, teleport outside into drop zone, wait the config time or until the user leaves
+            // 4) Once the timer runs out or the user leaves, start over.
+
+            await RestartGame(token).ConfigureAwait(false);
+
+            // Wait for the load time which feels like an age.
+            await Task.Delay(55_000, token).ConfigureAwait(false);
+
+            // Press A a few times on title screen
+            for (int i = 0; i < 5; ++i)
+                await Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);
+
+            // Wait for the game to teleport us from the "hell" position to our front door. Keep pressing A & B incase we're stuck at the day intro.
+
+            // Inject order
+        }
+
+        private async Task RestartGame(CancellationToken token)
+        {
+            // Close game
+            await Click(SwitchButton.HOME, 0_800, token).ConfigureAwait(false);
+            await Click(SwitchButton.X, 0_500, token).ConfigureAwait(false);
+            await Click(SwitchButton.A, 0_500, token).ConfigureAwait(false);
+
+            // Wait for "closing software" wheel
+            await Task.Delay(10_000, token).ConfigureAwait(false);
+
+            // Start game
+            for (int i = 0; i < 5; ++i)
+                await Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);
+        }
+
+        // Does the current RAM anchor match the one we've saved?
+        private async Task<bool> DoesAnchorMatch(int anchorIndex, CancellationToken token)
+        {
+            var anchorMemory = await ReadAnchor(token).ConfigureAwait(false);
+            return anchorMemory.AnchorBytes.SequenceEqual(Anchors.Anchors[anchorIndex].AnchorBytes);
+        }
+
+        private async Task EnsureAnchorsAreInitialised(CancellationToken token)
+        {
+            LogUtil.LogInfo("Begin anchor check loop. If nothing happens after this, your anchors haven't been set or you're forcing this loop in the config.", Config.IP);
+            while (Config.ForceUpdateAnchors || Anchors.IsOneEmpty(out _))
+                await Task.Delay(1_000).ConfigureAwait(false);
+            LogUtil.LogInfo("Anchors have values.", Config.IP);
+        }
+
+        public async Task<bool> UpdateAnchor(int index, CancellationToken token)
+        {
+            var anchors = Anchors.Anchors;
+            if (index < 0 || index > anchors.Length)
+                return false;
+
+            var anchor = await ReadAnchor(token).ConfigureAwait(false);
+            var bytesA = anchor.Anchor1;
+            var bytesB = anchor.Anchor2;
+
+            anchors[index].Anchor1 = bytesA;
+            anchors[index].Anchor2 = bytesB;
+            Anchors.Save();
+            LogUtil.LogInfo($"Updated anchor {index}.", Config.IP);
+            return true;
+        }
+
+        public async Task<bool> SendAnchorBytes(int index, CancellationToken token)
+        {
+            var anchors = Anchors.Anchors;
+            if (index < 0 || index > anchors.Length)
+                return false;
+
+            ulong offset = await Loopers.GetCoordinateAddress(Config.CoordinatePointer, token).ConfigureAwait(false);
+            await Connection.WriteBytesAbsoluteAsync(anchors[index].Anchor1, offset, token).ConfigureAwait(false);
+            await Connection.WriteBytesAbsoluteAsync(anchors[index].Anchor2, offset + 0x3A, token).ConfigureAwait(false);
+
+            return true;
+        }
+
+        private async Task<PosRotAnchor> ReadAnchor(CancellationToken token)
+        {
+            ulong offset = await Loopers.GetCoordinateAddress(Config.CoordinatePointer, token).ConfigureAwait(false);
+            var bytesA = await Connection.ReadBytesAbsoluteAsync(offset, 0xA, token).ConfigureAwait(false);
+            var bytesB = await Connection.ReadBytesAbsoluteAsync(offset + 0x3A, 0x4, token).ConfigureAwait(false);
+            var sequentinalAnchor = bytesA.Concat(bytesB).ToArray();
+            return new PosRotAnchor(sequentinalAnchor);
         }
 
         private async Task DropLoop(CancellationToken token)

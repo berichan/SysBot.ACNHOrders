@@ -55,6 +55,12 @@ namespace SysBot.ACNHOrders
         /// <summary> When enabled, users in Discord can request the bot to pick up items (spamming Y a <see cref="DropBotConfig.PickupCount"/> times). </summary>
         public bool AllowClean { get; set; }
 
+        /// <summary> The filename to use when saving position and rotation anchors </summary>
+        public string AnchorFilename { get; set; } = "Anchors.bin";
+
+        /// <summary> Whether to stop the main loop and allow the user to update their anchors </summary>
+        public bool ForceUpdateAnchors { get; set; } = false;
+
         #endregion
 
         public bool CanUseCommandUser(ulong authorId) => Users.Count == 0 || Users.Contains(authorId);
