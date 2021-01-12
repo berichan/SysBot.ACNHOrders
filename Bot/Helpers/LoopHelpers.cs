@@ -72,7 +72,7 @@ namespace SysBot.ACNHOrders
             return address;
         }
 
-        private async Task GetDodoCode(uint Offset, CancellationToken token)
+        public async Task GetDodoCode(uint Offset, CancellationToken token)
         {
             // Teleport player to airport entrance and set rotation to face doorway.	
             await Connection.WriteBytesAbsoluteAsync(new byte[] { 64, 68, 0, 0, 0, 0, 0, 0, 132, 68 }, CoordinateAddress, token).ConfigureAwait(false);

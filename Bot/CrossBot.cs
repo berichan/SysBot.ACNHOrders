@@ -12,11 +12,16 @@ namespace SysBot.ACNHOrders
     {
         public readonly ConcurrentQueue<ItemRequest> Injections = new();
         public readonly ConcurrentQueue<OrderRequest<MultiItem>> Orders = new();
+        public readonly LoopHelpers Loopers;
+        public readonly DropBotState State;
         public bool CleanRequested { private get; set; }
         public string DodoCode { get; set; } = "No code set yet.";
 
-        public CrossBot(CrossBotConfig cfg) : base(cfg) => State = new DropBotState(cfg.DropConfig);
-        public readonly DropBotState State;
+        public CrossBot(CrossBotConfig cfg) : base(cfg)
+        {
+            State = new DropBotState(cfg.DropConfig);
+            Loopers = new LoopHelpers(this);
+        }
 
         private const int pocket = Item.SIZE * 20;
         private const int size = (pocket + 0x18) * 2;
@@ -30,6 +35,9 @@ namespace SysBot.ACNHOrders
             LogUtil.LogInfo("Detaching controller on startup as first interaction.", Config.IP);
             await Connection.SendAsync(SwitchCommand.DetachController(), token).ConfigureAwait(false);
             await Task.Delay(200, token).ConfigureAwait(false);
+
+            // For viewing player vectors
+            await ViewPlayerVectors(token).ConfigureAwait(false);
 
             // Validate inventory offset.
             LogUtil.LogInfo("Checking inventory offset for validity.", Config.IP);
@@ -46,7 +54,21 @@ namespace SysBot.ACNHOrders
 
             LogUtil.LogInfo("Successfully connected to bot. Starting main loop!", Config.IP);
             while (!token.IsCancellationRequested)
-                await DropLoop(token).ConfigureAwait(false);
+                await OrderLoop(token).ConfigureAwait(false);
+        }
+
+        private async Task OrderLoop(CancellationToken token)
+        {
+            if (!Config.AcceptingCommands)
+            {
+                await Task.Delay(1_000, token).ConfigureAwait(false);
+                return;
+            }
+
+            if (Orders.TryDequeue(out var item))
+            {
+
+            }
         }
 
         private async Task DropLoop(CancellationToken token)
@@ -172,6 +194,44 @@ namespace SysBot.ACNHOrders
         public bool Validate(byte[] data)
         {
             return InventoryValidator.ValidateItemBinary(data);
+        }
+
+        private async Task ViewPlayerVectors(CancellationToken token)
+        {
+            ulong offset = await Loopers.GetCoordinateAddress(Config.CoordinatePointer, token).ConfigureAwait(false);
+            int index = 0;
+            byte[] a1 = new byte[2]; byte[] b1 = new byte[2];
+            while (!token.IsCancellationRequested)
+            {
+                var bytesPos = await Connection.ReadBytesAbsoluteAsync(offset, 0xA, token).ConfigureAwait(false);
+                var bytesRot = await Connection.ReadBytesAbsoluteAsync(offset + 0x3A, 0x4, token).ConfigureAwait(false);
+                Console.WriteLine("Byte array 1: ");
+                foreach (var b in bytesPos)
+                    Console.Write($"{b}, ");
+                Console.WriteLine();
+                Console.WriteLine("Byte array 2: ");
+                foreach (var b in bytesRot)
+                    Console.Write($"{b}, ");
+                Console.WriteLine();
+
+                var rot = BitConverter.ToSingle(bytesRot, 0);
+                Console.WriteLine($"Parsed second value: {rot}");
+
+                await Task.Delay(0_500, token).ConfigureAwait(false);
+
+                if (index == 0)
+                {
+                    a1 = bytesPos;
+                    b1 = bytesRot;
+                }
+                if (index == 10)
+                {
+                    index = 0;
+                    await Connection.WriteBytesAbsoluteAsync(a1, offset, token);
+                    await Connection.WriteBytesAbsoluteAsync(b1, offset + 0x3A, token);
+                }
+                index++;
+            }
         }
     }
 }
