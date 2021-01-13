@@ -73,14 +73,14 @@ namespace SysBot.ACNHOrders
 
             if (Orders.TryDequeue(out var item))
             {
-
+                await ExecuteOrder(item, token).ConfigureAwait(false);
             }
         }
 
-        private async Task ExecuteOrder(OrderRequest<MultiItem> order, CancellationToken token)
+        private async Task<OrderResult> ExecuteOrder(OrderRequest<MultiItem> order, CancellationToken token)
         {
             // Method:
-            // 1) Restart the game, pointers cause everything to mess up after a few minutes/hours. This is the most reliable way to do this.
+            // 1) Restart the game. This is the most reliable way to do this, and not much slower than closing the gate.
             // 2) Wait for Isabelle's speech (if any), teleport player into their airport then in front of orville, open gate & dodo code
             // 3) Notify player to come now, teleport outside into drop zone, wait the config time or until the user leaves
             // 4) Once the timer runs out or the user leaves, start over.
@@ -94,15 +94,92 @@ namespace SysBot.ACNHOrders
             for (int i = 0; i < 5; ++i)
                 await Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);
 
-            // Wait for the game to teleport us from the "hell" position to our front door. Keep pressing A & B incase we're stuck at the day intro.
+            // Inject order while waiting for load
 
-            // Inject order
+            // Wait for the game to teleport us from the "hell" position to our front door. Keep pressing A & B incase we're stuck at the day intro.
+            bool gameStarted = await EnsureAnchorMatches(0, 75_000, async () =>
+            {
+                await Click(SwitchButton.A, 0_500, token).ConfigureAwait(false);
+                await Click(SwitchButton.B, 0_500, token).ConfigureAwait(false);
+            }, token);
+
+            if (!gameStarted)
+            {
+                var error = "Failed to reach the overworld.";
+                LogUtil.LogError($"{error} Trying next request.", Config.IP);
+                order.OrderCancelled(this, $"{error} Sorry, your request has been removed.");
+                return OrderResult.Faulted;
+            }
+
+            order.OrderInitializing(this, string.Empty);
+
+            while (!await Loopers.IsOverworld(Config.CoordinatePointer, token).ConfigureAwait(false))
+                await Task.Delay(1_000, token).ConfigureAwait(false);
+
+            // Delay for animation
+            await Task.Delay(1_800, token).ConfigureAwait(false);
+
+            // Inject the airport entry anchor
+            await SendAnchorBytes(2, token).ConfigureAwait(false);
+
+            // Get out of any calls, events, etc
+            bool atAirport = await EnsureAnchorMatches(2, 20_000, async () =>
+            {
+                await Click(SwitchButton.A, 0_300, token).ConfigureAwait(false);
+                await Click(SwitchButton.B, 0_300, token).ConfigureAwait(false);
+                await SendAnchorBytes(2, token).ConfigureAwait(false);
+            }, token);
+
+            // Go into airport
+            await SetStick(SwitchStick.LEFT, short.MaxValue, short.MaxValue, 1_500, token).ConfigureAwait(false);
+            await SetStick(SwitchStick.LEFT, 0, 0, 1_500, token).ConfigureAwait(false);
+
+            while (!await Loopers.IsOverworld(Config.CoordinatePointer, token).ConfigureAwait(false))
+                await Task.Delay(1_000, token).ConfigureAwait(false);
+
+            // Delay for animation
+            await Task.Delay(1_200, token).ConfigureAwait(false);
+
+            // Teleport to Orville (twice, in case we get pulled back)
+            await SendAnchorBytes(3, token).ConfigureAwait(false);
+            await Task.Delay(0_500, token).ConfigureAwait(false);
+            await SendAnchorBytes(3, token).ConfigureAwait(false);
+
+            var coord = await Loopers.GetCoordinateAddress(Config.CoordinatePointer, token).ConfigureAwait(false);
+            await Loopers.GetDodoCode(coord, Config.DodoOffset, token).ConfigureAwait(false);
+
+            order.OrderReady(this, $"Your Dodo code is {Loopers.DodoCode}");
+
+            // Teleport to airport leave zone (twice, in case we get pulled back)
+            await SendAnchorBytes(4, token).ConfigureAwait(false);
+            await Task.Delay(0_500, token).ConfigureAwait(false);
+            await SendAnchorBytes(4, token).ConfigureAwait(false);
+
+            // Walk out
+            await SetStick(SwitchStick.LEFT, 0, -20_000, 1_500, token).ConfigureAwait(false);
+            await SetStick(SwitchStick.LEFT, 0, 0, 1_500, token).ConfigureAwait(false);
+
+            while (!await Loopers.IsOverworld(Config.CoordinatePointer, token).ConfigureAwait(false))
+                await Task.Delay(1_000, token).ConfigureAwait(false);
+
+            // Delay for animation
+            await Task.Delay(1_200, token).ConfigureAwait(false);
+
+            while (!await Loopers.IsOverworld(Config.CoordinatePointer, token).ConfigureAwait(false))
+                await Task.Delay(1_000, token).ConfigureAwait(false);
+
+            // Teleport to drop zone (twice, in case we get pulled back)
+            await SendAnchorBytes(1, token).ConfigureAwait(false);
+            await Task.Delay(0_500, token).ConfigureAwait(false);
+            await SendAnchorBytes(1, token).ConfigureAwait(false);
+
+            return OrderResult.Success;
         }
 
         private async Task RestartGame(CancellationToken token)
         {
             // Close game
-            await Click(SwitchButton.HOME, 0_800, token).ConfigureAwait(false);
+            await Click(SwitchButton.HOME, 1_800, token).ConfigureAwait(false);
             await Click(SwitchButton.X, 0_500, token).ConfigureAwait(false);
             await Click(SwitchButton.A, 0_500, token).ConfigureAwait(false);
 
@@ -114,6 +191,28 @@ namespace SysBot.ACNHOrders
                 await Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);
         }
 
+        private async Task<bool> EnsureAnchorMatches(int anchorIndex, int millisecondsTimeout, Func<Task> toDoPerLoop, CancellationToken token)
+        {
+            bool success = false;
+            var startTime = DateTime.Now;
+            while (!success)
+            {
+                if (toDoPerLoop != null)
+                    await toDoPerLoop().ConfigureAwait(false);
+
+                bool anchorMatches = await DoesAnchorMatch(anchorIndex, token).ConfigureAwait(false);
+                if (!anchorMatches)
+                    await Task.Delay(1_000, token).ConfigureAwait(false);
+                else
+                    success = true;
+
+                if (Math.Abs((DateTime.Now - startTime).TotalMilliseconds) > millisecondsTimeout)
+                    return false;
+            }
+
+            return true;
+        }
+
         // Does the current RAM anchor match the one we've saved?
         private async Task<bool> DoesAnchorMatch(int anchorIndex, CancellationToken token)
         {
@@ -123,10 +222,8 @@ namespace SysBot.ACNHOrders
 
         private async Task EnsureAnchorsAreInitialised(CancellationToken token)
         {
-            LogUtil.LogInfo("Begin anchor check loop. If nothing happens after this, your anchors haven't been set or you're forcing this loop in the config.", Config.IP);
             while (Config.ForceUpdateAnchors || Anchors.IsOneEmpty(out _))
                 await Task.Delay(1_000).ConfigureAwait(false);
-            LogUtil.LogInfo("Anchors have values.", Config.IP);
         }
 
         public async Task<bool> UpdateAnchor(int index, CancellationToken token)

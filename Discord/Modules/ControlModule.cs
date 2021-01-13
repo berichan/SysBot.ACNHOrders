@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Discord.Commands;
 using SysBot.Base;
@@ -25,6 +26,17 @@ namespace SysBot.ACNHOrders
         {
             bool value = (Globals.Bot.Config.AcceptingCommands ^= true);
             await ReplyAsync($"Accepting drop requests: {value}.").ConfigureAwait(false);
+        }
+
+        [Command("setStick")]
+        [Summary("Sets the left joystick a certain vector.")]
+        [RequireSudo]
+        public async Task SetStickValuesAsync([Remainder]string val)
+        {
+            var split = val.Split(new[] { " ", "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+            short a = short.Parse(split[0]);
+            short b = short.Parse(split[1]);
+            await Globals.Bot.SetStick(SwitchStick.LEFT, a, b, 0_400, CancellationToken.None).ConfigureAwait(false);
         }
     }
 }

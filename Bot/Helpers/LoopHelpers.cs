@@ -19,7 +19,6 @@ namespace SysBot.ACNHOrders
         private readonly CrossBotConfig Config;
 
         public string DodoCode { get; set; } = "No code set yet."; 
-        public ulong CoordinateAddress { get; set; } = 0x0;
         public byte[] InitialPlayerX { get; set; } = new byte[2];
         public byte[] InitialPlayerY { get; set; } = new byte[2];
 
@@ -72,20 +71,8 @@ namespace SysBot.ACNHOrders
             return address;
         }
 
-        public async Task GetDodoCode(uint Offset, CancellationToken token)
+        public async Task GetDodoCode(ulong CoordinateAddress, uint Offset, CancellationToken token)
         {
-            // Teleport player to airport entrance and set rotation to face doorway.	
-            await Connection.WriteBytesAbsoluteAsync(new byte[] { 64, 68, 0, 0, 0, 0, 0, 0, 132, 68 }, CoordinateAddress, token).ConfigureAwait(false);
-            await Connection.WriteBytesAbsoluteAsync(new byte[] { 0, 0, 0, 112 }, CoordinateAddress + 0x3A, token).ConfigureAwait(false);
-
-            // Walk through airport entrance.	
-            await BotRunner.SetStick(SwitchStick.LEFT, 20_000, 20_000, 1_000, token).ConfigureAwait(false);
-            await BotRunner.SetStick(SwitchStick.LEFT, 0, 0, 9_000, token).ConfigureAwait(false);
-
-            // Get player's coordinate address when inside airport and teleport player to Dodo.	
-            var AirportCoordinateAddress = await GetCoordinateAddress(Config.CoordinatePointer, token).ConfigureAwait(false);
-            await Connection.WriteBytesAbsoluteAsync(new byte[] { 58, 67, 0, 0, 0, 0, 0, 0, 38, 67 }, AirportCoordinateAddress, token).ConfigureAwait(false);
-
             // Navigate through dialog with Dodo to open gates and to get Dodo code.	
             var Hold = SwitchCommand.Hold(SwitchButton.L);
             await Connection.SendAsync(Hold, token).ConfigureAwait(false);
@@ -99,7 +86,7 @@ namespace SysBot.ACNHOrders
             await BotRunner.Click(SwitchButton.DDOWN, 0_300, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 2_000, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);
-            await BotRunner.Click(SwitchButton.A, 12_000, token).ConfigureAwait(false);
+            await BotRunner.Click(SwitchButton.A, 24_000, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 1_500, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.DDOWN, 0_300, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.DDOWN, 0_300, token).ConfigureAwait(false);
@@ -121,22 +108,25 @@ namespace SysBot.ACNHOrders
             DodoCode = System.Text.Encoding.UTF8.GetString(bytes, 0, 5);
             LogUtil.LogInfo($"Retrieved Dodo code: {DodoCode}.", Config.IP);
 
-            // Teleport into warp zone to leave airport	
-            await Connection.WriteBytesAbsoluteAsync(new byte[] { 32, 67, 0, 0, 0, 0, 0, 0, 120, 67 }, AirportCoordinateAddress, token).ConfigureAwait(false);
-
             // Wait for loading screen.	
-            while (!await IsOverworld(token))
+            while (!await IsOverworld(CoordinateAddress, token))
                 await Task.Delay(0_500).ConfigureAwait(false);
         }
 
-        private async Task ResetPosition(CancellationToken token)
+        private async Task ResetPosition(ulong CoordinateAddress, CancellationToken token)
         {
             // Sets player xy coordinates to their initial values when bot was started and set player rotation to 0.	
             await Connection.WriteBytesAbsoluteAsync(new byte[] { InitialPlayerX[0], InitialPlayerX[1], 0, 0, 0, 0, 0, 0, InitialPlayerY[0], InitialPlayerY[1] }, CoordinateAddress, token).ConfigureAwait(false);
             await Connection.WriteBytesAbsoluteAsync(new byte[] { 0, 0, 0, 0 }, CoordinateAddress + 0x3A, token).ConfigureAwait(false);
         }
 
-        private async Task<bool> IsOverworld(CancellationToken token)
+        public async Task<bool> IsOverworld(string pointer, CancellationToken token)
+        {
+            ulong coord = await GetCoordinateAddress(pointer, token).ConfigureAwait(false);
+            return await IsOverworld(coord, token).ConfigureAwait(false);
+        }
+
+        public async Task<bool> IsOverworld(ulong CoordinateAddress, CancellationToken token)
         {
             var x = BitConverter.ToUInt32(await Connection.ReadBytesAbsoluteAsync(CoordinateAddress + 0x1E, 0x4, token).ConfigureAwait(false), 0);
             return x == 0xC0066666;

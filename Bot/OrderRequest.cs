@@ -38,7 +38,7 @@ namespace SysBot.ACNHOrders
 
         public void OrderReady(CrossBot routine, string msg)
         {
-            throw new NotImplementedException();
+            Trader.SendMessageAsync($"I'm waiting for you {Trader.Username}! {msg}");
         }
 
         public void OrderFinished(CrossBot routine, string msg)
