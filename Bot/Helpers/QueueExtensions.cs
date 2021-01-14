@@ -6,6 +6,7 @@ using NHSE.Core;
 using System.Threading.Tasks;
 using System.Linq;
 using System;
+using System.Collections.Concurrent;
 
 namespace SysBot.ACNHOrders
 {
@@ -83,6 +84,12 @@ namespace SysBot.ACNHOrders
                 return string.Format("{0:D2}h:{1:D2}m:{2:D2}s", timeSpan.Hours, timeSpan.Minutes, timeSpan.Seconds);
             else
                 return string.Format("{0:D2}m:{1:D2}s", timeSpan.Minutes, timeSpan.Seconds);
+        }
+
+        public static void ClearQueue<T>(this ConcurrentQueue<T> queue)
+        {
+            T item;
+            while (queue.TryDequeue(out item)) { } // do nothing
         }
     }
 }

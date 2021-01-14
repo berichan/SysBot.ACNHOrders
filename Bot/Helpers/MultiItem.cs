@@ -34,7 +34,7 @@ namespace SysBot.ACNHOrders
                 for (int i = 0; i < items.Length; ++i)
                 {
                     var multipliedItems = DeepDuplicateItem(items[i], itemMultiplier);
-                    newItems.AddRange(newItems);
+                    newItems.AddRange(multipliedItems);
                 }
                 itemArray = newItems.ToArray();
             }

@@ -111,7 +111,7 @@ namespace SysBot.ACNHOrders
             // 4) Once the timer runs out or the user leaves, start over.
 
             // Clear any lingering injections from the last user
-            Injections.Clear();
+            Injections.ClearQueue();
 
             await RestartGame(token).ConfigureAwait(false);
 
@@ -226,7 +226,9 @@ namespace SysBot.ACNHOrders
             // Close game
             await Task.Delay(0_300, token).ConfigureAwait(false);
             await Click(SwitchButton.HOME, 0_800, token).ConfigureAwait(false);
-            await Task.Delay(0_300, token).ConfigureAwait(false);
+            await Task.Delay(0_400, token).ConfigureAwait(false);
+            await Click(SwitchButton.HOME, 0_800, token).ConfigureAwait(false);
+            await Task.Delay(0_500, token).ConfigureAwait(false);
             await Click(SwitchButton.HOME, 0_800, token).ConfigureAwait(false);
 
             await Click(SwitchButton.X, 0_500, token).ConfigureAwait(false);
