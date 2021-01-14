@@ -11,19 +11,19 @@ namespace SysBot.ACNHOrders
         public static readonly IReadOnlyDictionary<ushort, ushort> InvertedRecipeDictionary =
             RecipeList.Recipes.ToDictionary(z => z.Value, z => z.Key);
 
-        public static IReadOnlyCollection<Item> GetItemsFromUserInput(string request, IConfigItem cfg)
+        public static IReadOnlyCollection<Item> GetItemsFromUserInput(string request, IConfigItem cfg, bool placeFloor)
         {
             try
             {
                 var split = request.Split(new[] { " ", "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
-                return GetItems(split, cfg);
+                return GetItems(split, cfg, placeFloor);
             }
 #pragma warning disable CA1031 // Do not catch general exception types
             catch
 #pragma warning restore CA1031 // Do not catch general exception types
             {
                 var split = request.Split(new[] { ",", "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
-                return GetItems(split, cfg, GameLanguage.DefaultLanguage);
+                return GetItems(split, cfg, placeFloor, GameLanguage.DefaultLanguage);
             }
         }
 
@@ -83,7 +83,7 @@ namespace SysBot.ACNHOrders
             return result;
         }
 
-        public static IReadOnlyCollection<Item> GetItems(IReadOnlyList<string> split, IConfigItem config, string lang)
+        public static IReadOnlyCollection<Item> GetItems(IReadOnlyList<string> split, IConfigItem config, bool placeFloor, string lang)
         {
             if (split.Count > 1 && split[0].Length < 3)
             {
@@ -97,7 +97,7 @@ namespace SysBot.ACNHOrders
             for (int i = 0; i < result.Length; i++)
             {
                 var text = split[i].Trim();
-                var item = CreateItem(text, i, config, lang);
+                var item = CreateItem(text, i, config, placeFloor, lang);
 
                 if (item.ItemId >= strings.Length)
                     throw new Exception($"Item requested is out of expected range ({item.ItemId:X4} > {strings.Length:X4}).");
@@ -109,7 +109,7 @@ namespace SysBot.ACNHOrders
             return result;
         }
 
-        public static IReadOnlyCollection<Item> GetItems(IReadOnlyList<string> split, IConfigItem config)
+        public static IReadOnlyCollection<Item> GetItems(IReadOnlyList<string> split, IConfigItem config, bool placeFloor)
         {
             var strings = GameInfo.Strings.itemlistdisplay;
             var result = new Item[split.Count];
@@ -117,7 +117,7 @@ namespace SysBot.ACNHOrders
             {
                 var text = split[i].Trim();
                 var convert = GetBytesFromString(text);
-                var item = CreateItem(convert, i, config);
+                var item = CreateItem(convert, i, config, placeFloor);
 
                 if (item.ItemId >= strings.Length)
                     throw new Exception($"Item requested is out of expected range ({item.ItemId:X4} > {strings.Length:X4}).");
@@ -136,22 +136,23 @@ namespace SysBot.ACNHOrders
             return BitConverter.GetBytes(val);
         }
 
-        private static Item CreateItem(string name, int i, IConfigItem config, string lang = "en")
+        private static Item CreateItem(string name, int i, IConfigItem config, bool placeFloor, string lang = "en")
         {
             var item = ItemUtil.GetItem(name, lang);
             if (item.IsNone)
                 throw new Exception($"Failed to convert item {i}:{name} for Language {lang}.");
 
-            if (!IsSaneItemForDrop(item))
-                throw new Exception($"Unsupported item: {i}:{name}");
+            if (!placeFloor)
+                if (!IsSaneItemForDrop(item))
+                    throw new Exception($"Unsupported item: {i}:{name}");
 
-            if (config.WrapAllItems && item.ShouldWrapItem())
+            if (config.WrapAllItems && item.ShouldWrapItem() &&!placeFloor)
                 item.SetWrapping(ItemWrapping.WrappingPaper, config.WrappingPaper, true);
 
             return item;
         }
 
-        private static Item CreateItem(byte[] convert, int i, IConfigItem config)
+        private static Item CreateItem(byte[] convert, int i, IConfigItem config, bool placeFloor)
         {
             Item item;
             try
@@ -163,10 +164,11 @@ namespace SysBot.ACNHOrders
                 throw new Exception($"Failed to convert item {i}: {ex.Message}");
             }
 
-            if (!IsSaneItemForDrop(item) || convert.Length != Item.SIZE)
-                throw new Exception($"Unsupported item: {i}");
+            if (!placeFloor)
+                if (!IsSaneItemForDrop(item) || convert.Length != Item.SIZE)
+                    throw new Exception($"Unsupported item: {i}");
 
-            if (config.WrapAllItems && item.ShouldWrapItem())
+            if (config.WrapAllItems && item.ShouldWrapItem() && !placeFloor)
                 item.SetWrapping(ItemWrapping.WrappingPaper, config.WrappingPaper, true);
             return item;
         }

@@ -1,18 +1,21 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using NHSE.Core;
 using System;
+using System.Linq;
 
 namespace SysBot.ACNHOrders
 {
     public class OrderRequest<T> : IACNHOrderNotifier<T> where T : MultiItem, new()
     {
         public MultiItem ItemOrderData { get; }
-        public string UserGuid { get; }
+        public ulong UserGuid { get; }
         private SocketUser Trader { get; }
         private ISocketMessageChannel CommandSentChannel { get; }
         public Action<CrossBot>? OnFinish { private get; set; }
+        public Item[] Order { get => ItemOrderData.ItemArray.Items.ToArray(); } // stupid but I cba to work on this part anymore
 
-        public OrderRequest(T data, string user, SocketUser trader, ISocketMessageChannel commandSentChannel)
+        public OrderRequest(T data, ulong user, SocketUser trader, ISocketMessageChannel commandSentChannel)
         {
             ItemOrderData = data;
             UserGuid = user;
@@ -20,11 +23,12 @@ namespace SysBot.ACNHOrders
             CommandSentChannel = commandSentChannel;
         }
 
-        public void OrderCancelled(CrossBot routine, string msg)
+        public void OrderCancelled(CrossBot routine, string msg, bool faulted)
         {
             OnFinish?.Invoke(routine);
             Trader.SendMessageAsync($"Oops! Something has happened with your order: {msg}");
-            CommandSentChannel.SendMessageAsync($"{Trader.Mention} - Your order has been cancelled: {msg}");
+            if (!faulted)
+                CommandSentChannel.SendMessageAsync($"{Trader.Mention} - Your order has been cancelled: {msg}");
         }
 
         public void OrderInitializing(CrossBot routine, string msg)

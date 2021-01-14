@@ -22,6 +22,9 @@ namespace SysBot.ACNHOrders
         public MapTerrainLite Map { get; private set; } = new MapTerrainLite(new byte[MapGrid.MapTileCount32x32 * Item.SIZE]);
         public bool CleanRequested { private get; set; }
         public string DodoCode { get; set; } = "No code set yet.";
+        public string LastArrival { get; private set; } = string.Empty;
+        public string LastLeaver { get; private set; } = string.Empty;
+        public ulong CurrentUserId { get; set; } = default!;
 
         public CrossBot(CrossBotConfig cfg) : base(cfg)
         {
@@ -98,11 +101,18 @@ namespace SysBot.ACNHOrders
 
             if (Orders.TryDequeue(out var item))
             {
-                await ExecuteOrder(item, token).ConfigureAwait(false);
+                var result = await ExecuteOrder(item, token).ConfigureAwait(false);
+                
+                // Cleanup
+                LogUtil.LogInfo($"Exited order with result: {result}", Config.IP);
+                CurrentUserId = default!;
+
+                // End the session
+                await EndSession(token).ConfigureAwait(false);
             }
         }
 
-        private async Task<OrderResult> ExecuteOrder(OrderRequest<MultiItem> order, CancellationToken token)
+        private async Task<OrderResult> ExecuteOrder(IACNHOrderNotifier<MultiItem> order, CancellationToken token)
         {
             // Method:
             // 1) Restart the game. This is the most reliable way to do this, and not much slower than closing the gate.
@@ -119,9 +129,14 @@ namespace SysBot.ACNHOrders
             await SetStick(SwitchStick.LEFT, 0, 0, 0_500, token).ConfigureAwait(false);
 
             // Setup order locally, clear map
-            Map.Spawn(order.ItemOrderData.ItemArray.Items.ToArray());
+            Map.Spawn(order.Order);
             await Task.Delay(5_000, token).ConfigureAwait(false);
+            LogUtil.LogInfo("Map clear has started.", Config.IP);
             await Connection.WriteBytesLargeAsync(Map.StartupBytes, (uint)OffsetHelper.FieldItemStart, Config.MapPullChunkSize, token).ConfigureAwait(false);
+            LogUtil.LogInfo("Map clear has ended.", Config.IP);
+
+            // Press A on title screen
+            await Click(SwitchButton.A, 0_500, token).ConfigureAwait(false);
 
             // Wait for the load time which feels like an age.
             // Wait for the game to teleport us from the "hell" position to our front door. Keep pressing A & B incase we're stuck at the day intro.
@@ -135,7 +150,7 @@ namespace SysBot.ACNHOrders
             {
                 var error = "Failed to reach the overworld.";
                 LogUtil.LogError($"{error} Trying next request.", Config.IP);
-                order.OrderCancelled(this, $"{error} Sorry, your request has been removed.");
+                order.OrderCancelled(this, $"{error} Sorry, your request has been removed.", true);
                 return OrderResult.Faulted;
             }
 
@@ -187,8 +202,8 @@ namespace SysBot.ACNHOrders
             if (!Loopers.IsDodoValid(Loopers.DodoCode))
             {
                 var error = "Failed to connect to the internet and obtain a Dodo code.";
-                LogUtil.LogError($"{error} or Dodo offset is invalid. Trying next request.", Config.IP);
-                order.OrderCancelled(this, $"{error} Sorry, your request has been removed.");
+                LogUtil.LogError($"{error} Dodo offset may be invalid. Trying next request.", Config.IP);
+                order.OrderCancelled(this, $"A connection error occured: {error} Sorry, your request has been removed.", true);
                 return OrderResult.Faulted;
             }
 
@@ -218,16 +233,66 @@ namespace SysBot.ACNHOrders
             await Task.Delay(0_500, token).ConfigureAwait(false);
             await SendAnchorBytes(1, token).ConfigureAwait(false);
 
+            var startTime = DateTime.Now;
+            // Wait for arrival
+            while (!await IsArriverNew(token).ConfigureAwait(false))
+            {
+                await Task.Delay(1_000, token).ConfigureAwait(false);
+                if (Math.Abs((DateTime.Now - startTime).TotalSeconds) > Config.OrderConfig.WaitForArriverTime)
+                {
+                    var error = "Visitor failed to arrive.";
+                    LogUtil.LogError($"{error}. Removed from queue, moving to next order.", Config.IP);
+                    order.OrderCancelled(this, $"{error} Your request has been removed.", false);
+                    return OrderResult.NoArrival;
+                }
+            }
+
+            order.SendNotification(this, $"Visitor arriving: {LastArrival}.");
+
+            // Wait for arrival animation (flight board, arrival through gate, terrible dodo seaplane joke, etc)
+            await Task.Delay(Config.OrderConfig.ArrivalTime * 1_000, token).ConfigureAwait(false);
+
+            // Ensure we're on overworld before starting timer/drop loop
+            while (!await Loopers.IsOverworld(Config.CoordinatePointer, token).ConfigureAwait(false))
+                await Task.Delay(1_000, token).ConfigureAwait(false);
+
+            // Update current user Id such that they may use drop commands
+            CurrentUserId = order.UserGuid;
+
+            startTime = DateTime.Now;
+            bool warned = false;
+            while (!await IsLeaverNew(token).ConfigureAwait(false))
+            {
+                await DropLoop(token).ConfigureAwait(false);
+                await Task.Delay(1_000, token).ConfigureAwait(false);
+                if (Math.Abs((DateTime.Now - startTime).TotalSeconds) > (Config.OrderConfig.UserTimeAllowed - 60) && !warned)
+                {
+                    order.SendNotification(this, "You have 60 seconds remaining before I start the next order. Please ensure you can collect your items and leave within that time.");
+                    warned = true;
+                }
+
+                if (Math.Abs((DateTime.Now - startTime).TotalSeconds) > Config.OrderConfig.UserTimeAllowed)
+                {
+                    var error = "Visitor failed to leave.";
+                    LogUtil.LogError($"{error}. Removed from queue, moving to next order.", Config.IP);
+                    order.OrderCancelled(this, $"{error} Your request has been removed.", false);
+                    return OrderResult.NoLeave;
+                }
+            }
+
+            order.OrderFinished(this, Config.OrderConfig.CompleteOrderMessage);
+
+            // Ensure we're on overworld before exiting
+            while (!await Loopers.IsOverworld(Config.CoordinatePointer, token).ConfigureAwait(false))
+                await Task.Delay(1_000, token).ConfigureAwait(false);
+
             return OrderResult.Success;
         }
 
         private async Task RestartGame(CancellationToken token)
         {
             // Close game
-            await Task.Delay(0_300, token).ConfigureAwait(false);
-            await Click(SwitchButton.HOME, 0_800, token).ConfigureAwait(false);
-            await Task.Delay(0_400, token).ConfigureAwait(false);
-            await Click(SwitchButton.HOME, 0_800, token).ConfigureAwait(false);
+            await Click(SwitchButton.B, 0_500, token).ConfigureAwait(false);
             await Task.Delay(0_500, token).ConfigureAwait(false);
             await Click(SwitchButton.HOME, 0_800, token).ConfigureAwait(false);
 
@@ -239,6 +304,19 @@ namespace SysBot.ACNHOrders
 
             // Start game
             for (int i = 0; i < 15; ++i)
+                await Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);
+        }
+
+        private async Task EndSession(CancellationToken token)
+        {
+            for (int i = 0; i < 5; ++i)
+                await Click(SwitchButton.B, 0_300, token).ConfigureAwait(false);
+
+            await Task.Delay(0_500, token).ConfigureAwait(false);
+            await Click(SwitchButton.MINUS, 0_500, token).ConfigureAwait(false);
+
+            // End session or close gate or close game
+            for (int i = 0; i < 5; ++i)
                 await Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);
         }
 
@@ -314,6 +392,32 @@ namespace SysBot.ACNHOrders
             var bytesB = await Connection.ReadBytesAbsoluteAsync(offset + 0x3A, 0x4, token).ConfigureAwait(false);
             var sequentinalAnchor = bytesA.Concat(bytesB).ToArray();
             return new PosRotAnchor(sequentinalAnchor);
+        }
+
+        private async Task<bool> IsArriverNew(CancellationToken token)
+        {
+            var data = await Connection.ReadBytesAsync((uint)OffsetHelper.ArriverNameLocAddress, 0xC, token).ConfigureAwait(false);
+            var arriverName = System.Text.Encoding.Unicode.GetString(data).TrimEnd('\0'); // only remove null values off end
+            if (arriverName != string.Empty && arriverName != LastArrival)
+            {
+                LogUtil.LogInfo($"{LastArrival} is arriving!", Config.IP);
+                LastArrival = arriverName;
+                return true;
+            }
+            return false;
+        }
+
+        private async Task<bool> IsLeaverNew(CancellationToken token)
+        {
+            var data = await Connection.ReadBytesAsync((uint)OffsetHelper.LeaverNameLocAddress, 0xC, token).ConfigureAwait(false);
+            var leaverName = System.Text.Encoding.Unicode.GetString(data).TrimEnd('\0'); // only remove null values off end
+            if (leaverName != string.Empty && leaverName != LastLeaver)
+            {
+                LogUtil.LogInfo($"{LastArrival} is arriving!", Config.IP);
+                LastLeaver = leaverName;
+                return true;
+            }
+            return false;
         }
 
         private async Task DropLoop(CancellationToken token)
@@ -426,11 +530,13 @@ namespace SysBot.ACNHOrders
             for (int i = 0; i < 3; i++)
                 await Click(SwitchButton.B, 0_400, token).ConfigureAwait(false);
 
+            var poke = SwitchCommand.Poke(InventoryOffset, Item.NONE.ToBytes());
+            await Connection.SendAsync(poke, token).ConfigureAwait(false);
+
             // Pick up and delete.
             for (int i = 0; i < count; i++)
             {
                 await Click(SwitchButton.Y, 2_000, token).ConfigureAwait(false);
-                var poke = SwitchCommand.Poke(InventoryOffset, Item.NONE.ToBytes());
                 await Connection.SendAsync(poke, token).ConfigureAwait(false);
                 await Task.Delay(1_000, token).ConfigureAwait(false);
             }

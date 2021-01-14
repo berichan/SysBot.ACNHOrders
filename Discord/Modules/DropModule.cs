@@ -13,10 +13,10 @@ namespace SysBot.ACNHOrders
 
         [Command("clean")]
         [Summary("Picks up items around the bot.")]
-        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
-        [RequireSudo]
         public async Task RequestCleanAsync()
         {
+            if (Globals.Bot.CurrentUserId != Context.User.Id)
+                return;
             if (!Globals.Bot.Config.AllowClean)
             {
                 await ReplyAsync("Clean functionality is currently disabled.").ConfigureAwait(false);
@@ -29,7 +29,6 @@ namespace SysBot.ACNHOrders
         [Command("code")]
         [Alias("dodo")]
         [Summary("Prints the Dodo Code for the island.")]
-        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         [RequireSudo]
         public async Task RequestDodoCodeAsync()
         {
@@ -44,12 +43,12 @@ namespace SysBot.ACNHOrders
         [Command("dropItemFloor")]
         [Alias("dropFloor")]
         [Summary("Drops a custom item (or items).")]
-        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
-        [RequireSudo]
         public async Task RequestDropAsync([Summary(DropItemSummary)][Remainder]string request)
         {
+            if (Globals.Bot.CurrentUserId != Context.User.Id)
+                return;
             var cfg = Globals.Bot.Config;
-            var items = DropUtil.GetItemsFromUserInput(request, cfg.DropConfig);
+            var items = DropUtil.GetItemsFromUserInput(request, cfg.DropConfig, false);
             await DropItems(items).ConfigureAwait(false);
         }
 
@@ -61,10 +60,10 @@ namespace SysBot.ACNHOrders
         [Command("dropDIY")]
         [Alias("diy")]
         [Summary("Drops a DIY recipe with the requested recipe ID(s).")]
-        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
-        [RequireSudo]
         public async Task RequestDropDIYAsync([Summary(DropDIYSummary)][Remainder]string recipeIDs)
         {
+            if (Globals.Bot.CurrentUserId != Context.User.Id)
+                return;
             var items = DropUtil.GetDIYsFromUserInput(recipeIDs);
             await DropItems(items).ConfigureAwait(false);
         }

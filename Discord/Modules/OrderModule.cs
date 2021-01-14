@@ -25,7 +25,7 @@ namespace SysBot.ACNHOrders
         public async Task RequestDropAsync([Summary(OrderItemSummary)][Remainder] string request)
         {
             var cfg = Globals.Bot.Config;
-            var items = DropUtil.GetItemsFromUserInput(request, cfg.DropConfig);
+            var items = DropUtil.GetItemsFromUserInput(request, cfg.DropConfig, true);
             await AttemptToQueueRequest(items, Context.User, Context.Channel).ConfigureAwait(false);
         }
 
@@ -38,7 +38,7 @@ namespace SysBot.ACNHOrders
                 items = items.Take(40).ToArray();
             }
 
-            var requestInfo = new OrderRequest<MultiItem>(new MultiItem(items.ToArray(), true), orderer.Id.ToString(), orderer, msgChannel);
+            var requestInfo = new OrderRequest<MultiItem>(new MultiItem(items.ToArray(), true), orderer.Id, orderer, msgChannel);
             await Context.AddToQueueAsync(requestInfo, orderer.Username, orderer);
         }
     }

@@ -39,10 +39,13 @@ namespace ACNHMobileSpawner
         // Remove all tile checking code
         public void Spawn(Item[] newItems, int itemsPerLine = 10, bool forceFlag32 = true)
         {
+            int totalXTiles = itemsPerLine * 2;
+            int x = SpawnX;
+            int y = SpawnY;
             for (int i = 0; i < newItems.Length; ++i)
             {
-                int x = SpawnX + (i % itemsPerLine);
-                int y = SpawnY + (i / itemsPerLine);
+                x = SpawnX + ((i * 2) % totalXTiles);
+                y = SpawnY + ((i / itemsPerLine) * 2);
                 var tile = ItemLayer.GetTile(x, y);
                 tile.CopyFrom(newItems[i]);
                 if (forceFlag32)
