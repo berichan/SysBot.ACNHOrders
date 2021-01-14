@@ -1,5 +1,4 @@
-﻿
-namespace SysBot.ACNHOrders
+﻿namespace SysBot.ACNHOrders
 {
     public enum OrderResult
     {

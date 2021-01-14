@@ -14,9 +14,12 @@ namespace SysBot.ACNHOrders
     /// </summary>
     public class LoopHelpers
     {
+        private const string DodoPattern = @"^[A-Z0-9]*$";
+
         private readonly SwitchConnectionAsync Connection;
         private readonly CrossBot BotRunner;
         private readonly CrossBotConfig Config;
+        private readonly Regex DodoRegex = new Regex(DodoPattern);
 
         public string DodoCode { get; set; } = "No code set yet."; 
         public byte[] InitialPlayerX { get; set; } = new byte[2];
@@ -73,26 +76,27 @@ namespace SysBot.ACNHOrders
 
         public async Task GetDodoCode(ulong CoordinateAddress, uint Offset, CancellationToken token)
         {
-            // Navigate through dialog with Dodo to open gates and to get Dodo code.	
+            // Navigate through dialog with Dodo to open gates and to get Dodo code.
+            await Task.Delay(0_500, token).ConfigureAwait(false);
             var Hold = SwitchCommand.Hold(SwitchButton.L);
             await Connection.SendAsync(Hold, token).ConfigureAwait(false);
-            await Task.Delay(0_500).ConfigureAwait(false);
+            await Task.Delay(0_500, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 3_500, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 1_500, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 1_500, token).ConfigureAwait(false);
-            await BotRunner.Click(SwitchButton.DDOWN, 0_300, token).ConfigureAwait(false);
+            await BotRunner.Click(SwitchButton.DDOWN, 0_500, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 2_500, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);
-            await BotRunner.Click(SwitchButton.DDOWN, 0_300, token).ConfigureAwait(false);
+            await BotRunner.Click(SwitchButton.DDOWN, 0_500, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 2_000, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 24_000, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 1_500, token).ConfigureAwait(false);
-            await BotRunner.Click(SwitchButton.DDOWN, 0_300, token).ConfigureAwait(false);
-            await BotRunner.Click(SwitchButton.DDOWN, 0_300, token).ConfigureAwait(false);
+            await BotRunner.Click(SwitchButton.DUP, 0_500, token).ConfigureAwait(false);
+            await BotRunner.Click(SwitchButton.DUP, 0_500, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 1_500, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);
-            await BotRunner.Click(SwitchButton.DUP, 0_300, token).ConfigureAwait(false);
+            await BotRunner.Click(SwitchButton.DUP, 0_500, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 2_500, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 1_500, token).ConfigureAwait(false);
@@ -103,14 +107,18 @@ namespace SysBot.ACNHOrders
             var Release = SwitchCommand.Release(SwitchButton.L);
             await Connection.SendAsync(Release, token).ConfigureAwait(false);
 
+            // Clear incase opening the gate took too long
+            for (int i = 0; i < 5; ++i)
+                await BotRunner.Click(SwitchButton.B, 1_000, token).ConfigureAwait(false);
+
             // Obtain Dodo code from offset and store it.	
             byte[] bytes = await Connection.ReadBytesAsync(Offset, 0x5, token).ConfigureAwait(false);
-            DodoCode = System.Text.Encoding.UTF8.GetString(bytes, 0, 5);
+            DodoCode = Encoding.UTF8.GetString(bytes, 0, 5);
             LogUtil.LogInfo($"Retrieved Dodo code: {DodoCode}.", Config.IP);
 
             // Wait for loading screen.	
-            while (!await IsOverworld(CoordinateAddress, token))
-                await Task.Delay(0_500).ConfigureAwait(false);
+            while (!await IsOverworld(CoordinateAddress, token).ConfigureAwait(false))
+                await Task.Delay(0_500, token).ConfigureAwait(false);
         }
 
         private async Task ResetPosition(ulong CoordinateAddress, CancellationToken token)
@@ -131,5 +139,7 @@ namespace SysBot.ACNHOrders
             var x = BitConverter.ToUInt32(await Connection.ReadBytesAbsoluteAsync(CoordinateAddress + 0x1E, 0x4, token).ConfigureAwait(false), 0);
             return x == 0xC0066666;
         }
+
+        public bool IsDodoValid(string dodoCode) => DodoRegex.IsMatch(dodoCode);
     }
 }

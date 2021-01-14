@@ -4,18 +4,22 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NHSE.Core;
+using ACNHMobileSpawner;
 using SysBot.Base;
 
 namespace SysBot.ACNHOrders
 {
     public sealed class CrossBot : SwitchRoutineExecutor<CrossBotConfig>
     {
+        private const uint InventoryOffset = (uint)OffsetHelper.InventoryOffset;
+
         public readonly ConcurrentQueue<ItemRequest> Injections = new();
         public readonly ConcurrentQueue<OrderRequest<MultiItem>> Orders = new();
         public readonly LoopHelpers Loopers;
         public readonly DropBotState State;
         public readonly AnchorHelper Anchors;
 
+        public MapTerrainLite Map { get; private set; } = new MapTerrainLite(new byte[MapGrid.MapTileCount32x32 * Item.SIZE]);
         public bool CleanRequested { private get; set; }
         public string DodoCode { get; set; } = "No code set yet.";
 
@@ -34,6 +38,19 @@ namespace SysBot.ACNHOrders
 
         protected override async Task MainLoop(CancellationToken token)
         {
+            // Validate map spawn vector
+            if (Config.MapPlaceX < 0 || Config.MapPlaceX >= (MapGrid.AcreWidth * 32))
+            {
+                LogUtil.LogInfo($"{Config.MapPlaceX} is not a valid value for {nameof(Config.MapPlaceX)}. Exiting!", Config.IP);
+                return;
+            }
+
+            if (Config.MapPlaceY < 0 || Config.MapPlaceY >= (MapGrid.AcreHeight * 32))
+            {
+                LogUtil.LogInfo($"{Config.MapPlaceY} is not a valid value for {nameof(Config.MapPlaceY)}. Exiting!", Config.IP);
+                return;
+            }
+
             // Disconnect our virtual controller; will reconnect once we send a button command after a request.
             LogUtil.LogInfo("Detaching controller on startup as first interaction.", Config.IP);
             await Connection.SendAsync(SwitchCommand.DetachController(), token).ConfigureAwait(false);
@@ -44,16 +61,24 @@ namespace SysBot.ACNHOrders
 
             // Validate inventory offset.
             LogUtil.LogInfo("Checking inventory offset for validity.", Config.IP);
-            var valid = await GetIsPlayerInventoryValid(Config.Offset, token).ConfigureAwait(false);
+            var valid = await GetIsPlayerInventoryValid(InventoryOffset, token).ConfigureAwait(false);
             if (!valid)
             {
-                LogUtil.LogInfo($"Inventory read from {Config.Offset} (0x{Config.Offset:X8}) does not appear to be valid.", Config.IP);
+                LogUtil.LogInfo($"Inventory read from {InventoryOffset} (0x{InventoryOffset:X8}) does not appear to be valid.", Config.IP);
                 if (Config.RequireValidInventoryMetadata)
                 {
                     LogUtil.LogInfo("Exiting!", Config.IP);
                     return;
                 }
             }
+
+            // Pull original map items and store them
+            var bytes = await Connection.ReadBytesLargeAsync((uint)OffsetHelper.FieldItemStart, MapGrid.MapTileCount32x32 * Item.SIZE, Config.MapPullChunkSize, token).ConfigureAwait(false);
+            Map = new MapTerrainLite(bytes)
+            {
+                SpawnX = Config.MapPlaceX,
+                SpawnY = Config.MapPlaceY
+            };
 
             LogUtil.LogInfo("Successfully connected to bot. Starting main loop!", Config.IP);
             while (!token.IsCancellationRequested)
@@ -85,19 +110,22 @@ namespace SysBot.ACNHOrders
             // 3) Notify player to come now, teleport outside into drop zone, wait the config time or until the user leaves
             // 4) Once the timer runs out or the user leaves, start over.
 
+            // Clear any lingering injections from the last user
+            Injections.Clear();
+
             await RestartGame(token).ConfigureAwait(false);
 
+            // Reset any sticks
+            await SetStick(SwitchStick.LEFT, 0, 0, 0_500, token).ConfigureAwait(false);
+
+            // Setup order locally, clear map
+            Map.Spawn(order.ItemOrderData.ItemArray.Items.ToArray());
+            await Task.Delay(5_000, token).ConfigureAwait(false);
+            await Connection.WriteBytesLargeAsync(Map.StartupBytes, (uint)OffsetHelper.FieldItemStart, Config.MapPullChunkSize, token).ConfigureAwait(false);
+
             // Wait for the load time which feels like an age.
-            await Task.Delay(55_000, token).ConfigureAwait(false);
-
-            // Press A a few times on title screen
-            for (int i = 0; i < 5; ++i)
-                await Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);
-
-            // Inject order while waiting for load
-
             // Wait for the game to teleport us from the "hell" position to our front door. Keep pressing A & B incase we're stuck at the day intro.
-            bool gameStarted = await EnsureAnchorMatches(0, 75_000, async () =>
+            bool gameStarted = await EnsureAnchorMatches(0, 130_000, async () =>
             {
                 await Click(SwitchButton.A, 0_500, token).ConfigureAwait(false);
                 await Click(SwitchButton.B, 0_500, token).ConfigureAwait(false);
@@ -130,9 +158,17 @@ namespace SysBot.ACNHOrders
                 await SendAnchorBytes(2, token).ConfigureAwait(false);
             }, token);
 
+            await Task.Delay(0_500, token).ConfigureAwait(false);
+
             // Go into airport
-            await SetStick(SwitchStick.LEFT, short.MaxValue, short.MaxValue, 1_500, token).ConfigureAwait(false);
+            await SetStick(SwitchStick.LEFT, 20_000, 20_000, 0_400, token).ConfigureAwait(false);
+            await Task.Delay(0_500, token).ConfigureAwait(false);
             await SetStick(SwitchStick.LEFT, 0, 0, 1_500, token).ConfigureAwait(false);
+
+            // Inject order onto map
+            var mapChunks = Map.GenerateReturnBytes(Config.MapPullChunkSize, (uint)OffsetHelper.FieldItemStart);
+            for (int i = 0; i < mapChunks.Length; ++i)
+                await Connection.WriteBytesAsync(mapChunks[i].ToSend, mapChunks[i].Offset, token).ConfigureAwait(false);
 
             while (!await Loopers.IsOverworld(Config.CoordinatePointer, token).ConfigureAwait(false))
                 await Task.Delay(1_000, token).ConfigureAwait(false);
@@ -146,7 +182,15 @@ namespace SysBot.ACNHOrders
             await SendAnchorBytes(3, token).ConfigureAwait(false);
 
             var coord = await Loopers.GetCoordinateAddress(Config.CoordinatePointer, token).ConfigureAwait(false);
-            await Loopers.GetDodoCode(coord, Config.DodoOffset, token).ConfigureAwait(false);
+            await Loopers.GetDodoCode(coord, (uint)OffsetHelper.DodoAddress, token).ConfigureAwait(false);
+
+            if (!Loopers.IsDodoValid(Loopers.DodoCode))
+            {
+                var error = "Failed to connect to the internet and obtain a Dodo code.";
+                LogUtil.LogError($"{error} or Dodo offset is invalid. Trying next request.", Config.IP);
+                order.OrderCancelled(this, $"{error} Sorry, your request has been removed.");
+                return OrderResult.Faulted;
+            }
 
             order.OrderReady(this, $"Your Dodo code is {Loopers.DodoCode}");
 
@@ -156,6 +200,7 @@ namespace SysBot.ACNHOrders
             await SendAnchorBytes(4, token).ConfigureAwait(false);
 
             // Walk out
+            await Task.Delay(0_500, token).ConfigureAwait(false);
             await SetStick(SwitchStick.LEFT, 0, -20_000, 1_500, token).ConfigureAwait(false);
             await SetStick(SwitchStick.LEFT, 0, 0, 1_500, token).ConfigureAwait(false);
 
@@ -179,15 +224,19 @@ namespace SysBot.ACNHOrders
         private async Task RestartGame(CancellationToken token)
         {
             // Close game
-            await Click(SwitchButton.HOME, 1_800, token).ConfigureAwait(false);
+            await Task.Delay(0_300, token).ConfigureAwait(false);
+            await Click(SwitchButton.HOME, 0_800, token).ConfigureAwait(false);
+            await Task.Delay(0_300, token).ConfigureAwait(false);
+            await Click(SwitchButton.HOME, 0_800, token).ConfigureAwait(false);
+
             await Click(SwitchButton.X, 0_500, token).ConfigureAwait(false);
             await Click(SwitchButton.A, 0_500, token).ConfigureAwait(false);
 
             // Wait for "closing software" wheel
-            await Task.Delay(10_000, token).ConfigureAwait(false);
+            await Task.Delay(1_000, token).ConfigureAwait(false);
 
             // Start game
-            for (int i = 0; i < 5; ++i)
+            for (int i = 0; i < 15; ++i)
                 await Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);
         }
 
@@ -202,7 +251,7 @@ namespace SysBot.ACNHOrders
 
                 bool anchorMatches = await DoesAnchorMatch(anchorIndex, token).ConfigureAwait(false);
                 if (!anchorMatches)
-                    await Task.Delay(1_000, token).ConfigureAwait(false);
+                    await Task.Delay(0_500, token).ConfigureAwait(false);
                 else
                     success = true;
 
@@ -314,7 +363,7 @@ namespace SysBot.ACNHOrders
 
         private async Task<(bool success, byte[] data)> ReadValidate(CancellationToken token)
         {
-            var data = await Connection.ReadBytesAsync((uint)(Config.Offset + shift), size, token).ConfigureAwait(false);
+            var data = await Connection.ReadBytesAsync((uint)(InventoryOffset + shift), size, token).ConfigureAwait(false);
             return (Validate(data), data);
         }
 
@@ -345,7 +394,7 @@ namespace SysBot.ACNHOrders
             p1.CopyTo(data, 0);
             p2.CopyTo(data, pocket + 0x18);
 
-            var poke = SwitchCommand.Poke((uint)(Config.Offset + shift), data);
+            var poke = SwitchCommand.Poke((uint)(InventoryOffset + shift), data);
             await Connection.SendAsync(poke, token).ConfigureAwait(false);
             await Task.Delay(0_300, token).ConfigureAwait(false);
 
@@ -379,7 +428,7 @@ namespace SysBot.ACNHOrders
             for (int i = 0; i < count; i++)
             {
                 await Click(SwitchButton.Y, 2_000, token).ConfigureAwait(false);
-                var poke = SwitchCommand.Poke(Config.Offset, Item.NONE.ToBytes());
+                var poke = SwitchCommand.Poke(InventoryOffset, Item.NONE.ToBytes());
                 await Connection.SendAsync(poke, token).ConfigureAwait(false);
                 await Task.Delay(1_000, token).ConfigureAwait(false);
             }

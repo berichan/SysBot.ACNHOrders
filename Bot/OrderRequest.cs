@@ -1,16 +1,12 @@
 ﻿using Discord;
-using Discord.Commands;
 using Discord.WebSocket;
-using NHSE.Core;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace SysBot.ACNHOrders
 {
     public class OrderRequest<T> : IACNHOrderNotifier<T> where T : MultiItem, new()
     {
-        private MultiItem ItemOrderData { get; }
+        public MultiItem ItemOrderData { get; }
         public string UserGuid { get; }
         private SocketUser Trader { get; }
         private ISocketMessageChannel CommandSentChannel { get; }

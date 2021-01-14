@@ -37,12 +37,7 @@ namespace SysBot.ACNHOrders
         /// <summary> Skips creating bots when the program is started; helpful for testing integrations. </summary>
         public bool SkipConsoleBotCreation { get; set; }
 
-        /// <summary> Offset the items are injected at. This should be the player inventory slot you have currently selected in-game. </summary>
-        public uint Offset { get; set; } = 0xABC25840;
-
         public string CoordinatePointer { get; set; } = "[[[[main+38FB4A0]+18]+178]+D0]+DA";
-
-        public uint DodoOffset { get; set; } = 0xA97D0F4;
 
         /// <summary> When enabled, the Bot will not allow RAM edits if the player's item metadata is invalid. </summary>
         /// <remarks> Only disable this as a last resort, and you have corrupted your item metadata through other means. </remarks>
@@ -60,6 +55,12 @@ namespace SysBot.ACNHOrders
 
         /// <summary> Whether to stop the main loop and allow the user to update their anchors </summary>
         public bool ForceUpdateAnchors { get; set; } = false;
+
+        public int MapPlaceX { get; set; } = -1;
+        public int MapPlaceY { get; set; } = -1;
+
+        /// <summary> How many bytes to pull at a time. Lower = slower but less likely to crash </summary>
+        public int MapPullChunkSize { get; set; } = 4096;
 
         #endregion
 
