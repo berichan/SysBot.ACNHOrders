@@ -272,6 +272,7 @@ namespace SysBot.ACNHOrders
             while (await Loopers.IsOverworld(Config.CoordinatePointer, token).ConfigureAwait(false))
             {
                 await DropLoop(token).ConfigureAwait(false);
+                await Click(SwitchButton.B, 0_300, token).ConfigureAwait(false);
                 await Task.Delay(1_000, token).ConfigureAwait(false);
                 if (Math.Abs((DateTime.Now - startTime).TotalSeconds) > (Config.OrderConfig.UserTimeAllowed - 60) && !warned)
                 {

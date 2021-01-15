@@ -18,7 +18,7 @@ namespace SysBot.ACNHOrders
         }
 
         [Command("loadAnchor")]
-        [Summary("Loads one of the anchors required for the queue loop. Should only be used for testing, ensure you're in the correct scene.")]
+        [Summary("Loads one of the anchors required for the queue loop. Should only be used for testing, ensure you're in the correct scene, otherwise the game may crash.")]
         [RequireSudo]
         public async Task SendAnchorBytesAsync(int anchorId)
         {

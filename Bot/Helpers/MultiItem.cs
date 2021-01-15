@@ -1,6 +1,7 @@
 ﻿using NHSE.Core;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SysBot.ACNHOrders
 {
@@ -18,14 +19,7 @@ namespace SysBot.ACNHOrders
         {
             var itemArray = items;
             if (stackMax)
-            {
-                foreach (var it in itemArray)
-                {
-                    if (ItemInfo.TryGetMaxStackCount(it, out var max))
-                        if (max != 1)
-                            it.Count = (ushort)(max - 1);
-                }
-            }
+                StackToMax(itemArray);
 
             if (items.Length < MaxOrder && fillToMax)
             {
@@ -46,6 +40,16 @@ namespace SysBot.ACNHOrders
         {
             ItemArray = new ItemArrayEditor<Item>(System.Array.Empty<Item>());
         }
+
+        public static void StackToMax(Item[] itemSet)
+        {
+            foreach (var it in itemSet)
+                if (ItemInfo.TryGetMaxStackCount(it, out var max))
+                    if (max != 1)
+                        it.Count = (ushort)(max - 1);
+        }
+
+        public static void StackToMax(IReadOnlyCollection<Item> itemSet) => StackToMax(itemSet.ToArray());
 
         public static Item[] DeepDuplicateItem(Item it, int count)
         {

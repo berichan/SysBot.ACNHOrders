@@ -49,6 +49,7 @@ namespace SysBot.ACNHOrders
                 return;
             var cfg = Globals.Bot.Config;
             var items = DropUtil.GetItemsFromUserInput(request, cfg.DropConfig, false);
+            MultiItem.StackToMax(items);
             await DropItems(items).ConfigureAwait(false);
         }
 

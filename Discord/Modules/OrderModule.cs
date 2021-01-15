@@ -21,7 +21,7 @@ namespace SysBot.ACNHOrders
         [Command("order")]
         [Summary("Order an inventory of items")]
         [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
-        public async Task RequestDropAsync([Summary(OrderItemSummary)][Remainder] string request)
+        public async Task RequestOrderAsync([Summary(OrderItemSummary)][Remainder] string request)
         {
             var cfg = Globals.Bot.Config;
             var items = DropUtil.GetItemsFromUserInput(request, cfg.DropConfig, true);
@@ -30,6 +30,14 @@ namespace SysBot.ACNHOrders
 
         private async Task AttemptToQueueRequest(IReadOnlyCollection<Item> items, SocketUser orderer, ISocketMessageChannel msgChannel)
         {
+            var currentOrderCount = Globals.Bot.Orders.Count;
+            if (currentOrderCount >= Globals.Bot.Config.OrderConfig.MaxQueueCount)
+            {
+                var requestLimit = $"The queue limit has been reached, there are currently {currentOrderCount} players in the queue. Please try again later.";
+                await ReplyAsync(requestLimit).ConfigureAwait(false);
+                return;
+            }
+
             if (items.Count > MultiItem.MaxOrder)
             {
                 var clamped = $"Users are limited to {MultiItem.MaxOrder} items per command, You've asked for {items.Count}. All items above the limit have been removed.";
