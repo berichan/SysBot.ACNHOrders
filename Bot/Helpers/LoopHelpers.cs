@@ -90,7 +90,7 @@ namespace SysBot.ACNHOrders
             await BotRunner.Click(SwitchButton.DDOWN, 0_500, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 2_000, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);
-            await BotRunner.Click(SwitchButton.A, 24_000, token).ConfigureAwait(false);
+            await BotRunner.Click(SwitchButton.A, 20_000, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 1_500, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.DUP, 0_500, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.DUP, 0_500, token).ConfigureAwait(false);
@@ -104,6 +104,7 @@ namespace SysBot.ACNHOrders
             await BotRunner.Click(SwitchButton.A, 3_000, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 2_000, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 2_000, token).ConfigureAwait(false);
+            await Task.Delay(0_500, token).ConfigureAwait(false);
             var Release = SwitchCommand.Release(SwitchButton.L);
             await Connection.SendAsync(Release, token).ConfigureAwait(false);
 

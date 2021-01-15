@@ -19,7 +19,6 @@ namespace SysBot.ACNHOrders
             "Text Mode: Item names; request multiple by putting commas between items. To parse for another language, include the language code first and a comma, followed by the items.";
 
         [Command("order")]
-        [Alias("drop", "dropItem")]
         [Summary("Order an inventory of items")]
         [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task RequestDropAsync([Summary(OrderItemSummary)][Remainder] string request)

@@ -23,7 +23,7 @@ namespace SysBot.ACNHOrders
         public bool CleanRequested { private get; set; }
         public string DodoCode { get; set; } = "No code set yet.";
         public string LastArrival { get; private set; } = string.Empty;
-        public string LastLeaver { get; private set; } = string.Empty;
+        public bool LostOverworldForLastArrival { get; private set; } = false;
         public ulong CurrentUserId { get; set; } = default!;
 
         public CrossBot(CrossBotConfig cfg) : base(cfg)
@@ -76,6 +76,7 @@ namespace SysBot.ACNHOrders
             }
 
             // Pull original map items and store them
+            LogUtil.LogInfo("Reading original map status. Please wait...", Config.IP);
             var bytes = await Connection.ReadBytesLargeAsync((uint)OffsetHelper.FieldItemStart, MapGrid.MapTileCount32x32 * Item.SIZE, Config.MapPullChunkSize, token).ConfigureAwait(false);
             Map = new MapTerrainLite(bytes)
             {
@@ -120,6 +121,8 @@ namespace SysBot.ACNHOrders
             // 3) Notify player to come now, teleport outside into drop zone, wait the config time or until the user leaves
             // 4) Once the timer runs out or the user leaves, start over.
 
+            LogUtil.LogInfo($"Starting next order for: {order.UserGuid}", Config.IP);
+
             // Clear any lingering injections from the last user
             Injections.ClearQueue();
 
@@ -162,6 +165,8 @@ namespace SysBot.ACNHOrders
             // Delay for animation
             await Task.Delay(1_800, token).ConfigureAwait(false);
 
+            LogUtil.LogInfo($"Reached overworld, entering the airport.", Config.IP);
+
             // Inject the airport entry anchor
             await SendAnchorBytes(2, token).ConfigureAwait(false);
 
@@ -196,6 +201,7 @@ namespace SysBot.ACNHOrders
             await Task.Delay(0_500, token).ConfigureAwait(false);
             await SendAnchorBytes(3, token).ConfigureAwait(false);
 
+            LogUtil.LogInfo($"Talking to Orville. Attempting to get Dodo code.", Config.IP);
             var coord = await Loopers.GetCoordinateAddress(Config.CoordinatePointer, token).ConfigureAwait(false);
             await Loopers.GetDodoCode(coord, (uint)OffsetHelper.DodoAddress, token).ConfigureAwait(false);
 
@@ -207,7 +213,7 @@ namespace SysBot.ACNHOrders
                 return OrderResult.Faulted;
             }
 
-            order.OrderReady(this, $"Your Dodo code is {Loopers.DodoCode}");
+            order.OrderReady(this, $"Your Dodo code is **{Loopers.DodoCode}**");
 
             // Teleport to airport leave zone (twice, in case we get pulled back)
             await SendAnchorBytes(4, token).ConfigureAwait(false);
@@ -233,6 +239,7 @@ namespace SysBot.ACNHOrders
             await Task.Delay(0_500, token).ConfigureAwait(false);
             await SendAnchorBytes(1, token).ConfigureAwait(false);
 
+            LogUtil.LogInfo($"Waiting for arrival.", Config.IP);
             var startTime = DateTime.Now;
             // Wait for arrival
             while (!await IsArriverNew(token).ConfigureAwait(false))
@@ -247,7 +254,7 @@ namespace SysBot.ACNHOrders
                 }
             }
 
-            order.SendNotification(this, $"Visitor arriving: {LastArrival}.");
+            order.SendNotification(this, $"Visitor arriving: {LastArrival}. Your items will be in front of you once you land.");
 
             // Wait for arrival animation (flight board, arrival through gate, terrible dodo seaplane joke, etc)
             await Task.Delay(Config.OrderConfig.ArrivalTime * 1_000, token).ConfigureAwait(false);
@@ -259,9 +266,10 @@ namespace SysBot.ACNHOrders
             // Update current user Id such that they may use drop commands
             CurrentUserId = order.UserGuid;
 
+            // We check if the user has left by checking whether or not we are on the overworld for now
             startTime = DateTime.Now;
             bool warned = false;
-            while (!await IsLeaverNew(token).ConfigureAwait(false))
+            while (await Loopers.IsOverworld(Config.CoordinatePointer, token).ConfigureAwait(false))
             {
                 await DropLoop(token).ConfigureAwait(false);
                 await Task.Delay(1_000, token).ConfigureAwait(false);
@@ -280,6 +288,7 @@ namespace SysBot.ACNHOrders
                 }
             }
 
+            LogUtil.LogInfo($"Order completed. Notifying visitor of completion.", Config.IP);
             order.OrderFinished(this, Config.OrderConfig.CompleteOrderMessage);
 
             // Ensure we're on overworld before exiting
@@ -400,21 +409,8 @@ namespace SysBot.ACNHOrders
             var arriverName = System.Text.Encoding.Unicode.GetString(data).TrimEnd('\0'); // only remove null values off end
             if (arriverName != string.Empty && arriverName != LastArrival)
             {
-                LogUtil.LogInfo($"{LastArrival} is arriving!", Config.IP);
+                LogUtil.LogInfo($"{arriverName} is arriving!", Config.IP);
                 LastArrival = arriverName;
-                return true;
-            }
-            return false;
-        }
-
-        private async Task<bool> IsLeaverNew(CancellationToken token)
-        {
-            var data = await Connection.ReadBytesAsync((uint)OffsetHelper.LeaverNameLocAddress, 0xC, token).ConfigureAwait(false);
-            var leaverName = System.Text.Encoding.Unicode.GetString(data).TrimEnd('\0'); // only remove null values off end
-            if (leaverName != string.Empty && leaverName != LastLeaver)
-            {
-                LogUtil.LogInfo($"{LastArrival} is arriving!", Config.IP);
-                LastLeaver = leaverName;
                 return true;
             }
             return false;

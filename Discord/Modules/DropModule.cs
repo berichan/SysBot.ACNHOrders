@@ -40,8 +40,8 @@ namespace SysBot.ACNHOrders
             "Hex Mode: Item IDs (in hex); request multiple by putting spaces between items. " +
             "Text Mode: Item names; request multiple by putting commas between items. To parse for another language, include the language code first and a comma, followed by the items.";
 
-        [Command("dropItemFloor")]
-        [Alias("dropFloor")]
+        [Command("drop")]
+        [Alias("dropItem")]
         [Summary("Drops a custom item (or items).")]
         public async Task RequestDropAsync([Summary(DropItemSummary)][Remainder]string request)
         {
