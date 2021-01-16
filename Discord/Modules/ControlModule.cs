@@ -29,7 +29,7 @@ namespace SysBot.ACNHOrders
         }
 
         [Command("setStick")]
-        [Summary("Sets the left joystick a certain vector.")]
+        [Summary("Sets the left joystick a certain vector. Requires two numbers in the range -32768 to 32767.")]
         [RequireSudo]
         public async Task SetStickValuesAsync([Remainder]string val)
         {

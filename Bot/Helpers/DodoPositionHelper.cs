@@ -9,10 +9,8 @@ using System.Threading.Tasks;
 
 namespace SysBot.ACNHOrders
 {
-    /// <summary>
-    /// Red's dodo retrieval and movement code
-    /// </summary>
-    public class LoopHelpers
+    // Red's dodo retrieval and movement code. All credit to Red in the PKHeX support discord for the original version of the dodo-get function
+    public class DodoPositionHelper
     {
         private const string DodoPattern = @"^[A-Z0-9]*$";
 
@@ -25,7 +23,7 @@ namespace SysBot.ACNHOrders
         public byte[] InitialPlayerX { get; set; } = new byte[2];
         public byte[] InitialPlayerY { get; set; } = new byte[2];
 
-        public LoopHelpers(CrossBot bot)
+        public DodoPositionHelper(CrossBot bot)
         {
             BotRunner = bot;
             Connection = BotRunner.Connection;
@@ -109,7 +107,7 @@ namespace SysBot.ACNHOrders
             await Connection.SendAsync(Release, token).ConfigureAwait(false);
 
             // Clear incase opening the gate took too long
-            for (int i = 0; i < 5; ++i)
+            for (int i = 0; i < 6; ++i)
                 await BotRunner.Click(SwitchButton.B, 1_000, token).ConfigureAwait(false);
 
             // Obtain Dodo code from offset and store it.	

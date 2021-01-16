@@ -17,7 +17,7 @@ namespace ACNHMobileSpawner
     // Written in C# 6 due to Unity limitations. A (much) lighter version of UI_Map.cs and UI_MapTerrain.cs
     public class MapTerrainLite
     {
-        private const int ByteSize = MapGrid.MapTileCount32x32 * Item.SIZE;
+        public const int ByteSize = MapGrid.MapTileCount32x32 * Item.SIZE;
 
         public readonly byte[] StartupBytes;
         public readonly Item[] StartupItems;
@@ -76,6 +76,26 @@ namespace ACNHMobileSpawner
             {
                 if (chunksLayer[i].IsDifferent(chunksTemplate[i]))
                     dataSendList.Add(new OffsetData((uint)(mapOffset + (i * chunkSize)), chunksLayer[i].SetArray(Item.SIZE)));
+            }
+
+            return dataSendList.ToArray();
+        }
+
+        public OffsetData[] GetDifferencePrioritizeStartup(byte[] newMapBytes, int chunkSize = 4096, uint mapOffset = (uint)OffsetHelper.FieldItemStart)
+        {
+            if (newMapBytes.Length != ByteSize)
+                throw new Exception("Field items are of the incorrect size.");
+            var listStartData = new List<byte>(StartupBytes);
+            var listNewData = new List<byte>(newMapBytes);
+            var chunkSD = listStartData.ChunkBy(chunkSize);
+            var chunkND = listNewData.ChunkBy(chunkSize);
+
+            var dataSendList = new List<OffsetData>();
+
+            for (int i = 0; i < chunkSD.Count; ++i)
+            {
+                if (!chunkSD[i].SequenceEqual(chunkND[i]))
+                    dataSendList.Add(new OffsetData((uint)(mapOffset + (i * chunkSize)), chunkSD[i].ToArray()));
             }
 
             return dataSendList.ToArray();
