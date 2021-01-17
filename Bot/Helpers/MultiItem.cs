@@ -27,8 +27,34 @@ namespace SysBot.ACNHOrders
                 var newItems = new List<Item>();
                 for (int i = 0; i < items.Length; ++i)
                 {
-                    var multipliedItems = DeepDuplicateItem(items[i], itemMultiplier);
-                    newItems.AddRange(multipliedItems);
+                    // duplicate those without variations
+                    // attempt get body variations
+                    var currentItem = items[i];
+                    var remake = ItemRemakeUtil.GetRemakeIndex(currentItem.ItemId);
+                    if (remake > 0 && currentItem.Count == 0) // only do this if they've asked for the base count of an item!
+                    {
+                        var info = ItemRemakeInfoData.List[remake];
+                        var body = info.GetBodySummary(GameInfo.Strings);
+                        var bodyVariations = body.Split(new string[2] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+                        int varCount = bodyVariations.Length;
+                        if (!bodyVariations[0].StartsWith("0"))
+                            varCount++;
+                        var multipliedItems = DeepDuplicateItem(currentItem, varCount);
+                        for (ushort j = 0; j < varCount; ++j)
+                        {
+                            var itemToAdd = multipliedItems[j];
+                            itemToAdd.Count = j;
+                            newItems.Add(itemToAdd);
+                        }
+                    }
+                    else
+                    {
+                        var multipliedItems = DeepDuplicateItem(currentItem, itemMultiplier);
+                        newItems.AddRange(multipliedItems);
+                    }
+
+                    if (newItems.Count >= MaxOrder) // not the best way to do this, but at worst you'll need an extra line on your map
+                        break;
                 }
                 itemArray = newItems.ToArray();
             }
