@@ -29,7 +29,7 @@ namespace SysBot.ACNHOrders
         }
 
         [Command("ordercat")]
-        [Summary("orders a catalogue of items created by an order tool such as ACNHMobileSpawner, does not duplicate any items.")]
+        [Summary("Orders a catalogue of items created by an order tool such as ACNHMobileSpawner, does not duplicate any items.")]
         [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task RequestCatalogueOrderAsync([Summary(OrderItemSummary)][Remainder] string request)
         {
@@ -38,8 +38,30 @@ namespace SysBot.ACNHOrders
             await AttemptToQueueRequest(items, Context.User, Context.Channel, true).ConfigureAwait(false);
         }
 
+        [Command("order")]
+        [Summary("Requests the bot an order of items in the NHI format.")]
+        public async Task RequestNHIOrderAsync()
+        {
+            var attachment = Context.Message.Attachments.FirstOrDefault();
+            if (attachment == default)
+            {
+                await ReplyAsync("No attachment provided!").ConfigureAwait(false);
+                return;
+            }
+
+            var att = await NetUtil.DownloadNHIAsync(attachment).ConfigureAwait(false);
+            if (!att.Success || !(att.Data is Item[] items))
+            {
+                await ReplyAsync("No NHI attachment provided!").ConfigureAwait(false);
+                return;
+            }
+
+            await AttemptToQueueRequest(items, Context.User, Context.Channel, true).ConfigureAwait(false);
+        }
+
         [Command("queue")]
         [Alias("qc", "qp", "position")]
+        [Summary("View your position in the queue.")]
         public async Task ViewQueuePositionAsync()
         {
             var position = QueueExtensions.GetPosition(Context.User.Id);

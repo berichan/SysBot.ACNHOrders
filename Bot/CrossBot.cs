@@ -234,7 +234,7 @@ namespace SysBot.ACNHOrders
             if (!DodoPosition.IsDodoValid(DodoPosition.DodoCode))
             {
                 var error = "Failed to connect to the internet and obtain a Dodo code.";
-                LogUtil.LogError($"{error} Dodo offset may be invalid. Trying next request.", Config.IP);
+                LogUtil.LogError($"{error} Trying next request.", Config.IP);
                 order.OrderCancelled(this, $"A connection error occured: {error} Sorry, your request has been removed.", true);
                 return OrderResult.Faulted;
             }
