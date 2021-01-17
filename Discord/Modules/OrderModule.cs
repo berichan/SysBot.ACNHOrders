@@ -19,13 +19,23 @@ namespace SysBot.ACNHOrders
             "Text Mode: Item names; request multiple by putting commas between items. To parse for another language, include the language code first and a comma, followed by the items.";
 
         [Command("order")]
-        [Summary("Order an inventory of items")]
+        [Summary(OrderItemSummary)]
         [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task RequestOrderAsync([Summary(OrderItemSummary)][Remainder] string request)
         {
             var cfg = Globals.Bot.Config;
             var items = DropUtil.GetItemsFromUserInput(request, cfg.DropConfig, true);
             await AttemptToQueueRequest(items, Context.User, Context.Channel).ConfigureAwait(false);
+        }
+
+        [Command("ordercat")]
+        [Summary("orders a catalogue of items created by an order tool such as ACNHMobileSpawner, does not duplicate any items.")]
+        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
+        public async Task RequestCatalogueOrderAsync([Summary(OrderItemSummary)][Remainder] string request)
+        {
+            var cfg = Globals.Bot.Config;
+            var items = DropUtil.GetItemsFromUserInput(request, cfg.DropConfig, true);
+            await AttemptToQueueRequest(items, Context.User, Context.Channel, true).ConfigureAwait(false);
         }
 
         [Command("queue")]
@@ -46,7 +56,7 @@ namespace SysBot.ACNHOrders
             await ReplyAsync(message).ConfigureAwait(false);
         }
 
-        private async Task AttemptToQueueRequest(IReadOnlyCollection<Item> items, SocketUser orderer, ISocketMessageChannel msgChannel)
+        private async Task AttemptToQueueRequest(IReadOnlyCollection<Item> items, SocketUser orderer, ISocketMessageChannel msgChannel, bool catalogue = false)
         {
             var currentOrderCount = Globals.Bot.Orders.Count;
             if (currentOrderCount >= Globals.Bot.Config.OrderConfig.MaxQueueCount)
@@ -63,7 +73,7 @@ namespace SysBot.ACNHOrders
                 items = items.Take(40).ToArray();
             }
 
-            var multiOrder = new MultiItem(items.ToArray(), true);
+            var multiOrder = new MultiItem(items.ToArray(), catalogue, true, true);
             var requestInfo = new OrderRequest<Item>(multiOrder, multiOrder.ItemArray.Items.ToArray(), orderer.Id, orderer, msgChannel);
             await Context.AddToQueueAsync(requestInfo, orderer.Username, orderer);
         }

@@ -15,13 +15,13 @@ namespace SysBot.ACNHOrders
         /// </summary>
         /// <param name="items">Items to inject to floor of island</param>
         /// <param name="fillToMax">Whether to fill the array to the full <see cref="MaxOrder"/> amount</param>
-        public MultiItem(Item[] items, bool fillToMax = true, bool stackMax = true)
+        public MultiItem(Item[] items, bool catalogue = false, bool fillToMax = true, bool stackMax = true)
         {
             var itemArray = items;
             if (stackMax)
                 StackToMax(itemArray);
 
-            if (items.Length < MaxOrder && fillToMax)
+            if (items.Length < MaxOrder && fillToMax && !catalogue)
             {
                 int itemMultiplier = (int)(1f / ((1f / MaxOrder) * items.Length));
                 var newItems = new List<Item>();
@@ -47,7 +47,7 @@ namespace SysBot.ACNHOrders
                             newItems.Add(itemToAdd);
                         }
                     }
-                    else
+                    else if (remake < 0)
                     {
                         var multipliedItems = DeepDuplicateItem(currentItem, itemMultiplier);
                         newItems.AddRange(multipliedItems);

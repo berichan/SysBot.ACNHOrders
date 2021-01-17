@@ -101,7 +101,7 @@ namespace SysBot.ACNHOrders
 
             if (Orders.TryDequeue(out var item))
             {
-                int timeOut = (Config.OrderConfig.UserTimeAllowed + 480) * 1_000; // 480 seconds = 8 minutes
+                int timeOut = (Config.OrderConfig.UserTimeAllowed + 420) * 1_000; // 480 seconds = 7 minutes
                 var cts = new CancellationTokenSource(timeOut);
                 var cToken = cts.Token;
                 OrderResult result = OrderResult.Faulted;
@@ -112,7 +112,8 @@ namespace SysBot.ACNHOrders
                 }
                 catch (OperationCanceledException e)
                 {
-                    LogUtil.LogInfo($"{item.UserGuid} had their order timeout: {e.Message}.", Config.IP);
+                    LogUtil.LogInfo($"{item.VillagerName} ({item.UserGuid}) had their order timeout: {e.Message}.", Config.IP);
+                    item.OrderCancelled(this, "Unfortunately a game crash occured while your order was in progress. Sorry, your request has been removed.", true);
                 }
                 //var result = await ExecuteOrder(item, token).ConfigureAwait(false);
                 
@@ -133,7 +134,7 @@ namespace SysBot.ACNHOrders
             // 3) Notify player to come now, teleport outside into drop zone, wait for drop command in their DMs, the config time or until the player leaves
             // 4) Once the timer runs out or the user leaves, start over with next user.
 
-            LogUtil.LogInfo($"Starting next order for: {order.UserGuid}", Config.IP);
+            LogUtil.LogInfo($"Starting next order for: {order.VillagerName} ({order.UserGuid})", Config.IP);
 
             // Clear any lingering injections from the last user
             Injections.ClearQueue();
@@ -222,6 +223,14 @@ namespace SysBot.ACNHOrders
             var coord = await DodoPosition.GetCoordinateAddress(Config.CoordinatePointer, token).ConfigureAwait(false);
             await DodoPosition.GetDodoCode(coord, (uint)OffsetHelper.DodoAddress, token).ConfigureAwait(false);
 
+            // try again if we failed to get a dodo
+            if (Config.OrderConfig.RetryFetchDodoOnFail && !DodoPosition.IsDodoValid(DodoPosition.DodoCode))
+            {
+                for (int i = 0; i < 10; ++i)
+                    await Click(SwitchButton.B, 1_000, token).ConfigureAwait(false);
+                await DodoPosition.GetDodoCode(coord, (uint)OffsetHelper.DodoAddress, token).ConfigureAwait(false);
+            }
+
             if (!DodoPosition.IsDodoValid(DodoPosition.DodoCode))
             {
                 var error = "Failed to connect to the internet and obtain a Dodo code.";
@@ -230,6 +239,7 @@ namespace SysBot.ACNHOrders
                 return OrderResult.Faulted;
             }
 
+            DodoCode = DodoPosition.DodoCode;
             order.OrderReady(this, $"Your Dodo code is **{DodoPosition.DodoCode}**");
 
             // Teleport to airport leave zone (twice, in case we get pulled back)
