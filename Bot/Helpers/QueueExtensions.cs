@@ -15,7 +15,7 @@ namespace SysBot.ACNHOrders
         const int ArriveTime = 90;
         const int SetupTime = 95;
 
-        public static async Task AddToQueueAsync(this SocketCommandContext Context, OrderRequest<MultiItem> itemReq, string player, SocketUser trader)
+        public static async Task AddToQueueAsync(this SocketCommandContext Context, OrderRequest<Item> itemReq, string player, SocketUser trader)
         {
             IUserMessage test;
             try
@@ -54,7 +54,7 @@ namespace SysBot.ACNHOrders
         }
 
         // this sucks
-        private static bool AttemptAddToQueue(this SocketCommandContext Context, OrderRequest<MultiItem> itemReq, out string msg)
+        private static bool AttemptAddToQueue(this SocketCommandContext Context, OrderRequest<Item> itemReq, out string msg)
         {
             var orders = Globals.Bot.Orders;
             var orderArray = orders.ToArray();
@@ -66,7 +66,7 @@ namespace SysBot.ACNHOrders
 
             var position = orderArray.Length + 1;
 
-            msg = $"Added you to the order queue. Your position is: {position}";
+            msg = $"Added you to the order queue. Your position is: **{position}**";
 
             if (position > 1)
                 msg += $" Your predicted ETA is {GetETA(position)}";
@@ -76,9 +76,22 @@ namespace SysBot.ACNHOrders
             return true;
         }
 
-        private static string GetETA(int pos)
+        public static int GetPosition(ulong id)
         {
-            int minSeconds = ArriveTime + SetupTime + Globals.Bot.Config.OrderConfig.UserTimeAllowed;
+            var orders = Globals.Bot.Orders;
+            var orderArray = orders.ToArray();
+            var orderFound = Array.Find(orderArray, x => x.UserGuid == id);
+            if (orderFound != null)
+            {
+                return Array.IndexOf(orderArray, orderFound) + 1;
+            }
+
+            return -1;
+        }
+
+        public static string GetETA(int pos)
+        {
+            int minSeconds = ArriveTime + SetupTime + Globals.Bot.Config.OrderConfig.UserTimeAllowed + Globals.Bot.Config.OrderConfig.WaitForArriverTime;
             var timeSpan = TimeSpan.FromSeconds(minSeconds * pos);
             if (minSeconds > 3600)
                 return string.Format("{0:D2}h:{1:D2}m:{2:D2}s", timeSpan.Hours, timeSpan.Minutes, timeSpan.Seconds);
@@ -88,7 +101,7 @@ namespace SysBot.ACNHOrders
 
         public static void ClearQueue<T>(this ConcurrentQueue<T> queue)
         {
-            T item;
+            T item; // weird runtime error
             while (queue.TryDequeue(out item)) { } // do nothing
         }
     }

@@ -6,21 +6,24 @@ using System.Linq;
 
 namespace SysBot.ACNHOrders
 {
-    public class OrderRequest<T> : IACNHOrderNotifier<T> where T : MultiItem, new()
+    public class OrderRequest<T> : IACNHOrderNotifier<T> where T : Item, new()
     {
         public MultiItem ItemOrderData { get; }
         public ulong UserGuid { get; }
+        public string VillagerName { get; }
         private SocketUser Trader { get; }
         private ISocketMessageChannel CommandSentChannel { get; }
         public Action<CrossBot>? OnFinish { private get; set; }
-        public Item[] Order { get => ItemOrderData.ItemArray.Items.ToArray(); } // stupid but I cba to work on this part anymore
+        public T[] Order { get; } // stupid but I cba to work on this part anymore
 
-        public OrderRequest(T data, ulong user, SocketUser trader, ISocketMessageChannel commandSentChannel)
+        public OrderRequest(MultiItem data, T[] order, ulong user, SocketUser trader, ISocketMessageChannel commandSentChannel)
         {
             ItemOrderData = data;
             UserGuid = user;
             Trader = trader;
             CommandSentChannel = commandSentChannel;
+            Order = order;
+            VillagerName = trader.Username;
         }
 
         public void OrderCancelled(CrossBot routine, string msg, bool faulted)
@@ -33,7 +36,7 @@ namespace SysBot.ACNHOrders
 
         public void OrderInitializing(CrossBot routine, string msg)
         {
-            Trader.SendMessageAsync($"Your order is starting, please go to your airport. I will send you the Dodo code shortly. {msg}");
+            Trader.SendMessageAsync($"Your order is starting, please go and talk to Orville and stay on the Dodo code entry screen. I will send you the Dodo code shortly. {msg}");
         }
 
         public void OrderReady(CrossBot routine, string msg)

@@ -28,6 +28,24 @@ namespace SysBot.ACNHOrders
             await AttemptToQueueRequest(items, Context.User, Context.Channel).ConfigureAwait(false);
         }
 
+        [Command("queue")]
+        [Alias("qc", "qp", "position")]
+        public async Task ViewQueuePositionAsync()
+        {
+            var position = QueueExtensions.GetPosition(Context.User.Id);
+            if (position < 0)
+            {
+                await ReplyAsync("Sorry, you are not in the queue").ConfigureAwait(false);
+                return;
+            }
+
+            var message = $"{Context.User.Mention} - You are in the order queue. Position: {position}.";
+            if (position > 1)
+                message += $" Your predicted ETA is {QueueExtensions.GetETA(position)}.";
+
+            await ReplyAsync(message).ConfigureAwait(false);
+        }
+
         private async Task AttemptToQueueRequest(IReadOnlyCollection<Item> items, SocketUser orderer, ISocketMessageChannel msgChannel)
         {
             var currentOrderCount = Globals.Bot.Orders.Count;
@@ -45,7 +63,8 @@ namespace SysBot.ACNHOrders
                 items = items.Take(40).ToArray();
             }
 
-            var requestInfo = new OrderRequest<MultiItem>(new MultiItem(items.ToArray(), true), orderer.Id, orderer, msgChannel);
+            var multiOrder = new MultiItem(items.ToArray(), true);
+            var requestInfo = new OrderRequest<Item>(multiOrder, multiOrder.ItemArray.Items.ToArray(), orderer.Id, orderer, msgChannel);
             await Context.AddToQueueAsync(requestInfo, orderer.Username, orderer);
         }
     }

@@ -14,7 +14,7 @@ namespace SysBot.ACNHOrders
         private const uint InventoryOffset = (uint)OffsetHelper.InventoryOffset;
 
         public readonly ConcurrentQueue<ItemRequest> Injections = new();
-        public readonly ConcurrentQueue<OrderRequest<MultiItem>> Orders = new();
+        public readonly ConcurrentQueue<OrderRequest<Item>> Orders = new();
         public readonly DodoPositionHelper DodoPosition;
         public readonly DropBotState State;
         public readonly AnchorHelper Anchors;
@@ -125,7 +125,7 @@ namespace SysBot.ACNHOrders
             }
         }
 
-        private async Task<OrderResult> ExecuteOrder(IACNHOrderNotifier<MultiItem> order, CancellationToken token)
+        private async Task<OrderResult> ExecuteOrder(IACNHOrderNotifier<Item> order, CancellationToken token)
         {
             // Method:
             // 1) Restart the game. This is the most reliable way to do this if running endlessly atm. Dodo code offset shifts are bizarre and don't have good pointers.
@@ -348,7 +348,7 @@ namespace SysBot.ACNHOrders
             for (int i = 0; i < 5; ++i)
                 await Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);
 
-            await Task.Delay(5_000, token).ConfigureAwait(false);
+            await Task.Delay(14_000, token).ConfigureAwait(false);
         }
 
         private async Task<bool> EnsureAnchorMatches(int anchorIndex, int millisecondsTimeout, Func<Task> toDoPerLoop, CancellationToken token)
