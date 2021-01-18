@@ -72,16 +72,40 @@ namespace SysBot.ACNHOrders
             return address;
         }
 
-        public async Task GetDodoCode(ulong CoordinateAddress, uint Offset, CancellationToken token)
+        public async Task CloseGate(uint Offset, CancellationToken token)
+        {
+            // Navigate through dialog with Dodo to close the gate, then inject empty dodo bytes
+            await Task.Delay(0_500, token).ConfigureAwait(false);
+            var Hold = SwitchCommand.Hold(SwitchButton.L);
+            await Connection.SendAsync(Hold, token).ConfigureAwait(false);
+            await Task.Delay(0_700, token).ConfigureAwait(false);
+
+            await BotRunner.Click(SwitchButton.A, 3_000, token).ConfigureAwait(false);
+            await BotRunner.Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);
+            await BotRunner.Click(SwitchButton.A, 2_000, token).ConfigureAwait(false);
+            await BotRunner.Click(SwitchButton.A, 3_000, token).ConfigureAwait(false);
+            for (int i = 0; i < 5; ++i)
+                await BotRunner.Click(SwitchButton.B, 1_000, token).ConfigureAwait(false);
+
+            await Task.Delay(0_500, token).ConfigureAwait(false);
+            var Release = SwitchCommand.Release(SwitchButton.L);
+            await Connection.SendAsync(Release, token).ConfigureAwait(false);
+
+            await Connection.WriteBytesAsync(new byte[5], Offset, token).ConfigureAwait(false);
+            DodoCode = string.Empty;
+        }
+
+        public async Task GetDodoCode(ulong CoordinateAddress, uint Offset, bool isRetry, CancellationToken token)
         {
             // Navigate through dialog with Dodo to open gates and to get Dodo code.
             await Task.Delay(0_500, token).ConfigureAwait(false);
             var Hold = SwitchCommand.Hold(SwitchButton.L);
             await Connection.SendAsync(Hold, token).ConfigureAwait(false);
-            await Task.Delay(0_500, token).ConfigureAwait(false);
-            await BotRunner.Click(SwitchButton.A, 3_500, token).ConfigureAwait(false);
-            await BotRunner.Click(SwitchButton.A, 1_500, token).ConfigureAwait(false);
-            await BotRunner.Click(SwitchButton.A, 1_500, token).ConfigureAwait(false);
+            await Task.Delay(0_700, token).ConfigureAwait(false);
+            await BotRunner.Click(SwitchButton.A, 4_000, token).ConfigureAwait(false);
+            await BotRunner.Click(SwitchButton.A, 2_000, token).ConfigureAwait(false);
+            if (!isRetry)
+                await BotRunner.Click(SwitchButton.A, 2_100, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.DDOWN, 0_500, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 2_500, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);

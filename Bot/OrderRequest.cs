@@ -36,7 +36,7 @@ namespace SysBot.ACNHOrders
 
         public void OrderInitializing(CrossBot routine, string msg)
         {
-            Trader.SendMessageAsync($"Your order is starting, please go and talk to Orville and stay on the Dodo code entry screen. I will send you the Dodo code shortly. {msg}");
+            Trader.SendMessageAsync($"Your order is starting, please **ensure your inventory is __empty__**, then go talk to Orville and stay on the Dodo code entry screen. I will send you the Dodo code shortly. {msg}");
         }
 
         public void OrderReady(CrossBot routine, string msg)

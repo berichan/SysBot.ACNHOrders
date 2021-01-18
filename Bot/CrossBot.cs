@@ -24,6 +24,8 @@ namespace SysBot.ACNHOrders
         public string DodoCode { get; set; } = "No code set yet.";
         public string LastArrival { get; private set; } = string.Empty;
         public ulong CurrentUserId { get; set; } = default!;
+        public string CurrentUserName { get; set; } = string.Empty;
+        public bool GameIsDirty { get; set; } = true; // Dirty if crashed or last user didn't arrive/leave correctly
 
         public CrossBot(CrossBotConfig cfg) : base(cfg)
         {
@@ -101,32 +103,80 @@ namespace SysBot.ACNHOrders
 
             if (Orders.TryDequeue(out var item))
             {
-                int timeOut = (Config.OrderConfig.UserTimeAllowed + 420) * 1_000; // 480 seconds = 7 minutes
-                var cts = new CancellationTokenSource(timeOut);
-                var cToken = cts.Token;
-                OrderResult result = OrderResult.Faulted;
-                var orderTask = ExecuteOrder(item, cToken);
-                try
-                {
-                    result = await orderTask.ConfigureAwait(false);
-                }
-                catch (OperationCanceledException e)
-                {
-                    LogUtil.LogInfo($"{item.VillagerName} ({item.UserGuid}) had their order timeout: {e.Message}.", Config.IP);
-                    item.OrderCancelled(this, "Unfortunately a game crash occured while your order was in progress. Sorry, your request has been removed.", true);
-                }
-                //var result = await ExecuteOrder(item, token).ConfigureAwait(false);
+                var result = await ExecuteOrder(item, token).ConfigureAwait(false);
                 
                 // Cleanup
                 LogUtil.LogInfo($"Exited order with result: {result}", Config.IP);
                 CurrentUserId = default!;
-
-                // End the session
-                await EndSession(token).ConfigureAwait(false);
+                LastArrival = string.Empty;
+                CurrentUserName = string.Empty;
             }
         }
 
         private async Task<OrderResult> ExecuteOrder(IACNHOrderNotifier<Item> order, CancellationToken token)
+        {
+            LogUtil.LogInfo($"Starting next order for: {order.VillagerName} ({order.UserGuid})", Config.IP);
+            CurrentUserName = order.VillagerName;
+
+            // Clear any lingering injections from the last user
+            Injections.ClearQueue();
+
+            int timeOut = (Config.OrderConfig.UserTimeAllowed + 420) * 1_000; // 480 seconds = 7 minutes
+            var cts = new CancellationTokenSource(timeOut);
+            var cToken = cts.Token; // tokens need combining, somehow & eventually
+            OrderResult result = OrderResult.Faulted;
+            var orderTask = GameIsDirty ? ExecuteOrderStart(order, cToken) : ExecuteOrderMidway(order, cToken);
+            try
+            {
+                result = await orderTask.ConfigureAwait(false);
+            }
+            catch (OperationCanceledException e)
+            {
+                LogUtil.LogInfo($"{order.VillagerName} ({order.UserGuid}) had their order timeout: {e.Message}.", Config.IP);
+                order.OrderCancelled(this, "Unfortunately a game crash occured while your order was in progress. Sorry, your request has been removed.", true);
+            }
+
+            if (result == OrderResult.Success)
+            {
+                await CloseGate(token).ConfigureAwait(false);
+                GameIsDirty = false;
+            }
+            else
+            {
+                await EndSession(token).ConfigureAwait(false);
+                GameIsDirty = true;
+            }
+
+            // Clear username of last arrival
+            await Connection.WriteBytesAsync(new byte[0xC], (uint)OffsetHelper.ArriverNameLocAddress, token).ConfigureAwait(false);
+
+            return result;
+        }
+
+        // execute order directly after someone else's order
+        private async Task<OrderResult> ExecuteOrderMidway(IACNHOrderNotifier<Item> order, CancellationToken token)
+        {
+            while (!await DodoPosition.IsOverworld(Config.CoordinatePointer, token).ConfigureAwait(false))
+                await Task.Delay(1_000, token).ConfigureAwait(false);
+
+            order.OrderInitializing(this, string.Empty);
+
+            // Setup order locally, clear map by puliing all and checking difference. Read is much faster than write
+            await ClearMapAndSpawnInternally(order.Order, Map, token).ConfigureAwait(false);
+
+            // inject order
+            await InjectOrder(Map, token).ConfigureAwait(false);
+
+            // Teleport to Orville, we should already be there but disconnects cause player to turn around (twice, in case we get pulled back)
+            await SendAnchorBytes(3, token).ConfigureAwait(false);
+            await Task.Delay(0_500, token).ConfigureAwait(false);
+            await SendAnchorBytes(3, token).ConfigureAwait(false);
+
+            return await FetchDodoAndAwaitOrder(order, token).ConfigureAwait(false);
+        }
+
+        // execute order from scratch (press home, shutdown game, start over, usually due to "a connection error has occured")
+        private async Task<OrderResult> ExecuteOrderStart(IACNHOrderNotifier<Item> order, CancellationToken token)
         {
             // Method:
             // 1) Restart the game. This is the most reliable way to do this if running endlessly atm. Dodo code offset shifts are bizarre and don't have good pointers.
@@ -134,25 +184,13 @@ namespace SysBot.ACNHOrders
             // 3) Notify player to come now, teleport outside into drop zone, wait for drop command in their DMs, the config time or until the player leaves
             // 4) Once the timer runs out or the user leaves, start over with next user.
 
-            LogUtil.LogInfo($"Starting next order for: {order.VillagerName} ({order.UserGuid})", Config.IP);
-
-            // Clear any lingering injections from the last user
-            Injections.ClearQueue();
-
             await RestartGame(token).ConfigureAwait(false);
 
             // Reset any sticks
             await SetStick(SwitchStick.LEFT, 0, 0, 0_500, token).ConfigureAwait(false);
 
             // Setup order locally, clear map by puliing all and checking difference. Read is much faster than write
-            Map.Spawn(order.Order);
-            await Task.Delay(5_000, token).ConfigureAwait(false);
-            LogUtil.LogInfo("Map clear has started.", Config.IP);
-            var mapData = await Connection.ReadBytesLargeAsync((uint)OffsetHelper.FieldItemStart, MapTerrainLite.ByteSize, Config.MapPullChunkSize, token).ConfigureAwait(false);
-            var offData = Map.GetDifferencePrioritizeStartup(mapData, Config.MapPullChunkSize, (uint)OffsetHelper.FieldItemStart);
-            for (int i = 0; i < offData.Length; ++i)
-                await Connection.WriteBytesAsync(offData[i].ToSend, offData[i].Offset, token).ConfigureAwait(false);
-            LogUtil.LogInfo("Map clear has ended.", Config.IP);
+            await ClearMapAndSpawnInternally(order.Order, Map, token).ConfigureAwait(false);
 
             // Press A on title screen
             await Click(SwitchButton.A, 0_500, token).ConfigureAwait(false);
@@ -173,6 +211,9 @@ namespace SysBot.ACNHOrders
                 return OrderResult.Faulted;
             }
 
+            // inject order
+            await InjectOrder(Map, token).ConfigureAwait(false);
+
             order.OrderInitializing(this, string.Empty);
 
             while (!await DodoPosition.IsOverworld(Config.CoordinatePointer, token).ConfigureAwait(false))
@@ -180,7 +221,7 @@ namespace SysBot.ACNHOrders
 
             // Delay for animation
             await Task.Delay(1_800, token).ConfigureAwait(false);
-            // Unhold and held items
+            // Unhold any held items
             await Click(SwitchButton.DDOWN, 0_300, token).ConfigureAwait(false);
 
             LogUtil.LogInfo($"Reached overworld, entering the airport.", Config.IP);
@@ -198,37 +239,41 @@ namespace SysBot.ACNHOrders
 
             await Task.Delay(0_500, token).ConfigureAwait(false);
 
-            // Go into airport
-            await SetStick(SwitchStick.LEFT, 20_000, 20_000, 0_400, token).ConfigureAwait(false);
-            await Task.Delay(0_500, token).ConfigureAwait(false);
-            await SetStick(SwitchStick.LEFT, 0, 0, 1_500, token).ConfigureAwait(false);
-
-            // Inject order onto map
-            var mapChunks = Map.GenerateReturnBytes(Config.MapPullChunkSize, (uint)OffsetHelper.FieldItemStart);
-            for (int i = 0; i < mapChunks.Length; ++i)
-                await Connection.WriteBytesAsync(mapChunks[i].ToSend, mapChunks[i].Offset, token).ConfigureAwait(false);
-
-            while (!await DodoPosition.IsOverworld(Config.CoordinatePointer, token).ConfigureAwait(false))
-                await Task.Delay(1_000, token).ConfigureAwait(false);
-
-            // Delay for animation
-            await Task.Delay(1_200, token).ConfigureAwait(false);
+            await EnterAirport(token).ConfigureAwait(false);
 
             // Teleport to Orville (twice, in case we get pulled back)
             await SendAnchorBytes(3, token).ConfigureAwait(false);
             await Task.Delay(0_500, token).ConfigureAwait(false);
             await SendAnchorBytes(3, token).ConfigureAwait(false);
 
+            return await FetchDodoAndAwaitOrder(order, token).ConfigureAwait(false);
+        }
+
+        private async Task ClearMapAndSpawnInternally(Item[] order, MapTerrainLite clearMap, CancellationToken token)
+        {
+            clearMap.Spawn(order);
+            await Task.Delay(5_000, token).ConfigureAwait(false);
+            LogUtil.LogInfo("Map clear has started.", Config.IP);
+            var mapData = await Connection.ReadBytesLargeAsync((uint)OffsetHelper.FieldItemStart, MapTerrainLite.ByteSize, Config.MapPullChunkSize, token).ConfigureAwait(false);
+            var offData = clearMap.GetDifferencePrioritizeStartup(mapData, Config.MapPullChunkSize, (uint)OffsetHelper.FieldItemStart);
+            for (int i = 0; i < offData.Length; ++i)
+                await Connection.WriteBytesAsync(offData[i].ToSend, offData[i].Offset, token).ConfigureAwait(false);
+            LogUtil.LogInfo("Map clear has ended.", Config.IP);
+        }
+
+        private async Task<OrderResult> FetchDodoAndAwaitOrder(IACNHOrderNotifier<Item> order, CancellationToken token)
+        {
             LogUtil.LogInfo($"Talking to Orville. Attempting to get Dodo code.", Config.IP);
             var coord = await DodoPosition.GetCoordinateAddress(Config.CoordinatePointer, token).ConfigureAwait(false);
-            await DodoPosition.GetDodoCode(coord, (uint)OffsetHelper.DodoAddress, token).ConfigureAwait(false);
+            await DodoPosition.GetDodoCode(coord, (uint)OffsetHelper.DodoAddress, false, token).ConfigureAwait(false);
 
             // try again if we failed to get a dodo
             if (Config.OrderConfig.RetryFetchDodoOnFail && !DodoPosition.IsDodoValid(DodoPosition.DodoCode))
             {
-                for (int i = 0; i < 10; ++i)
+                LogUtil.LogInfo("Failed to get a valid Dodo code. Trying again...", Config.IP);
+                for (int i = 0; i < 8; ++i)
                     await Click(SwitchButton.B, 1_000, token).ConfigureAwait(false);
-                await DodoPosition.GetDodoCode(coord, (uint)OffsetHelper.DodoAddress, token).ConfigureAwait(false);
+                await DodoPosition.GetDodoCode(coord, (uint)OffsetHelper.DodoAddress, true, token).ConfigureAwait(false);
             }
 
             if (!DodoPosition.IsDodoValid(DodoPosition.DodoCode))
@@ -240,7 +285,7 @@ namespace SysBot.ACNHOrders
             }
 
             DodoCode = DodoPosition.DodoCode;
-            order.OrderReady(this, $"Your Dodo code is **{DodoPosition.DodoCode}**");
+            order.OrderReady(this, $"You have {(int)(Config.OrderConfig.WaitForArriverTime * 0.9f)} seconds to arrive. Your Dodo code is **{DodoCode}**");
 
             // Teleport to airport leave zone (twice, in case we get pulled back)
             await SendAnchorBytes(4, token).ConfigureAwait(false);
@@ -272,8 +317,6 @@ namespace SysBot.ACNHOrders
             while (!await IsArriverNew(token).ConfigureAwait(false))
             {
                 await Task.Delay(1_000, token).ConfigureAwait(false);
-                // Press Y to clean just incase?
-                await Click(SwitchButton.Y, 0_300, token).ConfigureAwait(false);
                 if (Math.Abs((DateTime.Now - startTime).TotalSeconds) > Config.OrderConfig.WaitForArriverTime)
                 {
                     var error = "Visitor failed to arrive.";
@@ -359,6 +402,47 @@ namespace SysBot.ACNHOrders
                 await Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);
 
             await Task.Delay(14_000, token).ConfigureAwait(false);
+        }
+
+        private async Task EnterAirport(CancellationToken token)
+        {
+            // Go into airport
+            await SetStick(SwitchStick.LEFT, 20_000, 20_000, 0_400, token).ConfigureAwait(false);
+            await Task.Delay(0_500, token).ConfigureAwait(false);
+            await SetStick(SwitchStick.LEFT, 0, 0, 1_500, token).ConfigureAwait(false);
+
+            while (!await DodoPosition.IsOverworld(Config.CoordinatePointer, token).ConfigureAwait(false))
+                await Task.Delay(1_000, token).ConfigureAwait(false);
+
+            // Delay for animation
+            await Task.Delay(1_200, token).ConfigureAwait(false);
+        }
+
+        private async Task InjectOrder(MapTerrainLite updatedMap, CancellationToken token)
+        {
+            // Inject order onto map
+            var mapChunks = updatedMap.GenerateReturnBytes(Config.MapPullChunkSize, (uint)OffsetHelper.FieldItemStart);
+            for (int i = 0; i < mapChunks.Length; ++i)
+                await Connection.WriteBytesAsync(mapChunks[i].ToSend, mapChunks[i].Offset, token).ConfigureAwait(false);
+        }
+
+        private async Task CloseGate(CancellationToken token)
+        {
+            // Teleport to airport entry anchor  (twice, in case we get pulled back)
+            await SendAnchorBytes(2, token).ConfigureAwait(false);
+            await Task.Delay(0_500, token).ConfigureAwait(false);
+            await SendAnchorBytes(2, token).ConfigureAwait(false);
+
+            // Enter airport
+            await EnterAirport(token).ConfigureAwait(false);
+
+            // Teleport to Orville (twice, in case we get pulled back)
+            await SendAnchorBytes(3, token).ConfigureAwait(false);
+            await Task.Delay(0_500, token).ConfigureAwait(false);
+            await SendAnchorBytes(3, token).ConfigureAwait(false);
+
+            // Close gate (fail-safe without checking if open)
+            await DodoPosition.CloseGate((uint)OffsetHelper.DodoAddress, token).ConfigureAwait(false);
         }
 
         private async Task<bool> EnsureAnchorMatches(int anchorIndex, int millisecondsTimeout, Func<Task> toDoPerLoop, CancellationToken token)

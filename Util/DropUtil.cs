@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using SysBot.Base;
 using NHSE.Core;
 
 namespace SysBot.ACNHOrders
@@ -19,9 +20,10 @@ namespace SysBot.ACNHOrders
                 return GetItems(split, cfg, placeFloor);
             }
 #pragma warning disable CA1031 // Do not catch general exception types
-            catch
+            catch (Exception e)
 #pragma warning restore CA1031 // Do not catch general exception types
             {
+                LogUtil.LogInfo($"Could not split by spaces: {e.Message} {(e.InnerException != null ? e.InnerException : "No inner ex")}", Globals.Bot.Config.IP);
                 var split = request.Split(new[] { ",", "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
                 return GetItems(split, cfg, placeFloor, GameLanguage.DefaultLanguage);
             }
@@ -140,7 +142,7 @@ namespace SysBot.ACNHOrders
         {
             var item = ItemUtil.GetItem(name, lang);
             if (item.IsNone)
-                throw new Exception($"Failed to convert item {i}:{name} for Language {lang}.");
+                throw new Exception($"Failed to convert item {i}:{name} for Language {lang}. Ensure all your items are valid.");
 
             if (!placeFloor)
                 if (!IsSaneItemForDrop(item))

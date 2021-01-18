@@ -40,6 +40,7 @@ namespace SysBot.ACNHOrders
 
         [Command("order")]
         [Summary("Requests the bot an order of items in the NHI format.")]
+        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task RequestNHIOrderAsync()
         {
             var attachment = Context.Message.Attachments.FirstOrDefault();
@@ -60,14 +61,14 @@ namespace SysBot.ACNHOrders
         }
 
         [Command("queue")]
-        [Alias("qc", "qp", "position")]
+        [Alias("qs", "qp", "position")]
         [Summary("View your position in the queue.")]
         public async Task ViewQueuePositionAsync()
         {
             var position = QueueExtensions.GetPosition(Context.User.Id);
             if (position < 0)
             {
-                await ReplyAsync("Sorry, you are not in the queue").ConfigureAwait(false);
+                await ReplyAsync("Sorry, you are not in the queue, or your order is happening now.").ConfigureAwait(false);
                 return;
             }
 

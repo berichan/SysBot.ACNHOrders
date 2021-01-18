@@ -22,21 +22,21 @@ namespace SysBot.ACNHOrders
         public int UserTimeAllowed 
         { 
             get => _timeAllowed; 
-            set => Math.Max(120, value); 
+            set => _timeAllowed = Math.Max(120, value); 
         }
 
         /// <summary> Maximum amount of time to wait until they're a no-show and the bot restarts in seconds. </summary>
         public int WaitForArriverTime
         {
             get => _waitForArriverTime;
-            set => Math.Max(45, value);
+            set => _waitForArriverTime = Math.Max(45, value);
         }
 
         /// <summary> Guesstimation amount of time in seconds it takes for someone to player the arrival animation from inability to move to start. Minimum is 60 seconds, depends on both of your connections. </summary>
         public int ArrivalTime
         {
             get => _arrivalTime;
-            set => Math.Max(60, value);
+            set => _arrivalTime = Math.Max(60, value);
         }
 
         /// <summary> Message to send at the end of the order completion string </summary>

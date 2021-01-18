@@ -24,7 +24,7 @@ namespace SysBot.ACNHOrders
             if (items.Length < MaxOrder && fillToMax && !catalogue)
             {
                 int itemMultiplier = (int)(1f / ((1f / MaxOrder) * items.Length));
-                var newItems = new List<Item>();
+                var newItems = new List<Item>(items);
                 for (int i = 0; i < items.Length; ++i)
                 {
                     // duplicate those without variations
@@ -40,7 +40,7 @@ namespace SysBot.ACNHOrders
                         if (!bodyVariations[0].StartsWith("0"))
                             varCount++;
                         var multipliedItems = DeepDuplicateItem(currentItem, varCount);
-                        for (ushort j = 0; j < varCount; ++j)
+                        for (ushort j = 1; j < varCount; ++j)
                         {
                             var itemToAdd = multipliedItems[j];
                             itemToAdd.Count = j;
@@ -56,7 +56,11 @@ namespace SysBot.ACNHOrders
                     if (newItems.Count >= MaxOrder) // not the best way to do this, but at worst you'll need an extra line on your map
                         break;
                 }
-                itemArray = newItems.ToArray();
+
+                if (newItems.Count > MaxOrder)
+                    itemArray = newItems.Take(MaxOrder).ToArray();
+                else
+                    itemArray = newItems.ToArray();
             }
             var itemsToAdd = (Item[])itemArray.Clone();
             ItemArray = new ItemArrayEditor<Item>(itemsToAdd);
