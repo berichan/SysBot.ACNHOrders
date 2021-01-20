@@ -15,6 +15,7 @@ namespace SysBot.ACNHOrders
         private ISocketMessageChannel CommandSentChannel { get; }
         public Action<CrossBot>? OnFinish { private get; set; }
         public T[] Order { get; } // stupid but I cba to work on this part anymore
+        public bool SkipRequested { get; set; } = false;
 
         public OrderRequest(MultiItem data, T[] order, ulong user, SocketUser trader, ISocketMessageChannel commandSentChannel)
         {

@@ -63,9 +63,10 @@ namespace SysBot.ACNHOrders
         [Command("queue")]
         [Alias("qs", "qp", "position")]
         [Summary("View your position in the queue.")]
+        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task ViewQueuePositionAsync()
         {
-            var position = QueueExtensions.GetPosition(Context.User.Id);
+            var position = QueueExtensions.GetPosition(Context.User.Id, out _);
             if (position < 0)
             {
                 await ReplyAsync("Sorry, you are not in the queue, or your order is happening now.").ConfigureAwait(false);
@@ -77,6 +78,22 @@ namespace SysBot.ACNHOrders
                 message += $" Your predicted ETA is {QueueExtensions.GetETA(position)}.";
 
             await ReplyAsync(message).ConfigureAwait(false);
+        }
+
+        [Command("remove")]
+        [Alias("qc", "delete", "removeMe")]
+        [Summary("Remove yourself from the queue.")]
+        public async Task RemoveFromQueueAsync()
+        {
+            QueueExtensions.GetPosition(Context.User.Id, out var order);
+            if (order == null)
+            {
+                await ReplyAsync("Sorry, you are not in the queue, or your order is happening now.").ConfigureAwait(false);
+                return;
+            }
+
+            order.SkipRequested = true;
+            await ReplyAsync($"{Context.User.Mention} - Your order has been removed. Please note that you will not be able to rejoin the queue again for a while.").ConfigureAwait(false);
         }
 
         private async Task AttemptToQueueRequest(IReadOnlyCollection<Item> items, SocketUser orderer, ISocketMessageChannel msgChannel, bool catalogue = false)

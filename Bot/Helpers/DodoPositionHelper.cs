@@ -9,6 +9,14 @@ using System.Threading.Tasks;
 
 namespace SysBot.ACNHOrders
 {
+    public enum OverworldState
+    {
+        Null,
+        Overworld,
+        Loading,
+        UserArriveLeaving,
+        Unknown
+    }
     // Red's dodo retrieval and movement code. All credit to Red in the PKHeX support discord for the original version of the dodo-get function
     public class DodoPositionHelper
     {
@@ -140,7 +148,7 @@ namespace SysBot.ACNHOrders
             LogUtil.LogInfo($"Retrieved Dodo code: {DodoCode}.", Config.IP);
 
             // Wait for loading screen.	
-            while (!await IsOverworld(CoordinateAddress, token).ConfigureAwait(false))
+            while (await GetOverworldState(CoordinateAddress, token).ConfigureAwait(false) != OverworldState.Overworld)
                 await Task.Delay(0_500, token).ConfigureAwait(false);
         }
 
@@ -151,16 +159,31 @@ namespace SysBot.ACNHOrders
             await Connection.WriteBytesAbsoluteAsync(new byte[] { 0, 0, 0, 0 }, CoordinateAddress + 0x3A, token).ConfigureAwait(false);
         }
 
-        public async Task<bool> IsOverworld(string pointer, CancellationToken token)
+        public async Task<OverworldState> GetOverworldState(string pointer, CancellationToken token)
         {
             ulong coord = await GetCoordinateAddress(pointer, token).ConfigureAwait(false);
-            return await IsOverworld(coord, token).ConfigureAwait(false);
+            return await GetOverworldState(coord, token).ConfigureAwait(false);
         }
 
-        public async Task<bool> IsOverworld(ulong CoordinateAddress, CancellationToken token)
+        public async Task<OverworldState> GetOverworldState(ulong CoordinateAddress, CancellationToken token)
         {
             var x = BitConverter.ToUInt32(await Connection.ReadBytesAbsoluteAsync(CoordinateAddress + 0x1E, 0x4, token).ConfigureAwait(false), 0);
-            return x == 0xC0066666;
+            //LogUtil.LogInfo($"CurrentVal: {x:X8}", Config.IP);
+            return GetOverworldState(x);
+        }
+
+        public static OverworldState GetOverworldState(uint val)
+        {
+            if ($"{val:X8}".EndsWith("C906"))
+                return OverworldState.Loading;
+            return val switch
+            {
+                0x00000000 => OverworldState.Null,
+                0xC0066666 => OverworldState.Overworld,
+                0xBE200000 => OverworldState.UserArriveLeaving,
+                0xE185C906 => OverworldState.Loading,
+                _          => OverworldState.Unknown
+            };
         }
 
         public bool IsDodoValid(string dodoCode) => DodoRegex.IsMatch(dodoCode);

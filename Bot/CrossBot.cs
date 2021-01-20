@@ -96,12 +96,13 @@ namespace SysBot.ACNHOrders
             if (!Config.AcceptingCommands)
             {
                 await Task.Delay(1_000, token).ConfigureAwait(false);
+                await DodoPosition.GetOverworldState(Config.CoordinatePointer, token).ConfigureAwait(false);
                 return;
             }
 
             await EnsureAnchorsAreInitialised(token);
 
-            if (Orders.TryDequeue(out var item))
+            if (Orders.TryDequeue(out var item) && !item.SkipRequested)
             {
                 var result = await ExecuteOrder(item, token).ConfigureAwait(false);
                 
@@ -121,7 +122,7 @@ namespace SysBot.ACNHOrders
             // Clear any lingering injections from the last user
             Injections.ClearQueue();
 
-            int timeOut = (Config.OrderConfig.UserTimeAllowed + 420) * 1_000; // 480 seconds = 7 minutes
+            int timeOut = (Config.OrderConfig.UserTimeAllowed + 360) * 1_000; // 360 seconds = 6 minutes
             var cts = new CancellationTokenSource(timeOut);
             var cToken = cts.Token; // tokens need combining, somehow & eventually
             OrderResult result = OrderResult.Faulted;
@@ -148,7 +149,7 @@ namespace SysBot.ACNHOrders
             }
 
             // Clear username of last arrival
-            await Connection.WriteBytesAsync(new byte[0xC], (uint)OffsetHelper.ArriverNameLocAddress, token).ConfigureAwait(false);
+            await Connection.WriteBytesAsync(new byte[0x14], (uint)OffsetHelper.ArriverNameLocAddress, token).ConfigureAwait(false);
 
             return result;
         }
@@ -156,7 +157,7 @@ namespace SysBot.ACNHOrders
         // execute order directly after someone else's order
         private async Task<OrderResult> ExecuteOrderMidway(IACNHOrderNotifier<Item> order, CancellationToken token)
         {
-            while (!await DodoPosition.IsOverworld(Config.CoordinatePointer, token).ConfigureAwait(false))
+            while (await DodoPosition.GetOverworldState(Config.CoordinatePointer, token).ConfigureAwait(false) != OverworldState.Overworld)
                 await Task.Delay(1_000, token).ConfigureAwait(false);
 
             order.OrderInitializing(this, string.Empty);
@@ -216,7 +217,7 @@ namespace SysBot.ACNHOrders
 
             order.OrderInitializing(this, string.Empty);
 
-            while (!await DodoPosition.IsOverworld(Config.CoordinatePointer, token).ConfigureAwait(false))
+            while (await DodoPosition.GetOverworldState(Config.CoordinatePointer, token).ConfigureAwait(false) != OverworldState.Overworld)
                 await Task.Delay(1_000, token).ConfigureAwait(false);
 
             // Delay for animation
@@ -297,13 +298,13 @@ namespace SysBot.ACNHOrders
             await SetStick(SwitchStick.LEFT, 0, -20_000, 1_500, token).ConfigureAwait(false);
             await SetStick(SwitchStick.LEFT, 0, 0, 1_500, token).ConfigureAwait(false);
 
-            while (!await DodoPosition.IsOverworld(Config.CoordinatePointer, token).ConfigureAwait(false))
+            while (await DodoPosition.GetOverworldState(Config.CoordinatePointer, token).ConfigureAwait(false) != OverworldState.Overworld)
                 await Task.Delay(1_000, token).ConfigureAwait(false);
 
             // Delay for animation
             await Task.Delay(1_200, token).ConfigureAwait(false);
 
-            while (!await DodoPosition.IsOverworld(Config.CoordinatePointer, token).ConfigureAwait(false))
+            while (await DodoPosition.GetOverworldState(Config.CoordinatePointer, token).ConfigureAwait(false) != OverworldState.Overworld)
                 await Task.Delay(1_000, token).ConfigureAwait(false);
 
             // Teleport to drop zone (twice, in case we get pulled back)
@@ -332,16 +333,16 @@ namespace SysBot.ACNHOrders
             await Task.Delay(Config.OrderConfig.ArrivalTime * 1_000, token).ConfigureAwait(false);
 
             // Ensure we're on overworld before starting timer/drop loop
-            while (!await DodoPosition.IsOverworld(Config.CoordinatePointer, token).ConfigureAwait(false))
+            while (await DodoPosition.GetOverworldState(Config.CoordinatePointer, token).ConfigureAwait(false) != OverworldState.Overworld)
                 await Task.Delay(1_000, token).ConfigureAwait(false);
 
             // Update current user Id such that they may use drop commands
             CurrentUserId = order.UserGuid;
 
-            // We check if the user has left by checking whether or not we are on the overworld for now
+            // We check if the user has left by checking whether or not someone hits the Arrive/Leaving state
             startTime = DateTime.Now;
             bool warned = false;
-            while (await DodoPosition.IsOverworld(Config.CoordinatePointer, token).ConfigureAwait(false))
+            while (await DodoPosition.GetOverworldState(Config.CoordinatePointer, token).ConfigureAwait(false) != OverworldState.UserArriveLeaving)
             {
                 await DropLoop(token).ConfigureAwait(false);
                 await Click(SwitchButton.B, 0_300, token).ConfigureAwait(false);
@@ -364,10 +365,14 @@ namespace SysBot.ACNHOrders
             LogUtil.LogInfo($"Order completed. Notifying visitor of completion.", Config.IP);
             order.OrderFinished(this, Config.OrderConfig.CompleteOrderMessage);
 
+            await Task.Delay(20_000, token).ConfigureAwait(false);
+
             // Ensure we're on overworld before exiting
-            while (!await DodoPosition.IsOverworld(Config.CoordinatePointer, token).ConfigureAwait(false))
+            while (await DodoPosition.GetOverworldState(Config.CoordinatePointer, token).ConfigureAwait(false) != OverworldState.Overworld)
                 await Task.Delay(1_000, token).ConfigureAwait(false);
 
+            // finish "circle in" animation
+            await Task.Delay(1_200, token).ConfigureAwait(false);
             return OrderResult.Success;
         }
 
@@ -411,7 +416,7 @@ namespace SysBot.ACNHOrders
             await Task.Delay(0_500, token).ConfigureAwait(false);
             await SetStick(SwitchStick.LEFT, 0, 0, 1_500, token).ConfigureAwait(false);
 
-            while (!await DodoPosition.IsOverworld(Config.CoordinatePointer, token).ConfigureAwait(false))
+            while (await DodoPosition.GetOverworldState(Config.CoordinatePointer, token).ConfigureAwait(false) != OverworldState.Overworld)
                 await Task.Delay(1_000, token).ConfigureAwait(false);
 
             // Delay for animation
@@ -521,7 +526,7 @@ namespace SysBot.ACNHOrders
 
         private async Task<bool> IsArriverNew(CancellationToken token)
         {
-            var data = await Connection.ReadBytesAsync((uint)OffsetHelper.ArriverNameLocAddress, 0xC, token).ConfigureAwait(false);
+            var data = await Connection.ReadBytesAsync((uint)OffsetHelper.ArriverNameLocAddress, 0x14, token).ConfigureAwait(false);
             var arriverName = System.Text.Encoding.Unicode.GetString(data).TrimEnd('\0'); // only remove null values off end
             if (arriverName != string.Empty && arriverName != LastArrival)
             {

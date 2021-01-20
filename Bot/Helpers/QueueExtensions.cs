@@ -58,9 +58,13 @@ namespace SysBot.ACNHOrders
         {
             var orders = Globals.Bot.Orders;
             var orderArray = orders.ToArray();
-            if (Array.Find(orderArray, x => x.UserGuid == itemReq.UserGuid) != null)
+            var order = Array.Find(orderArray, x => x.UserGuid == itemReq.UserGuid);
+            if (order != null)
             {
-                msg = $"{trader.Mention} - Sorry, you are already in the queue.";
+                if (!order.SkipRequested)
+                    msg = $"{trader.Mention} - Sorry, you are already in the queue.";
+                else
+                    msg = $"{trader.Mention} - You have been recently removed from the queue. Please wait a while before attempting to enter the queue again.";
                 return false;
             }
 
@@ -82,16 +86,18 @@ namespace SysBot.ACNHOrders
             return true;
         }
 
-        public static int GetPosition(ulong id)
+        public static int GetPosition(ulong id, out OrderRequest<Item>? order)
         {
             var orders = Globals.Bot.Orders;
-            var orderArray = orders.ToArray();
+            var orderArray = orders.ToArray().Where(x => !x.SkipRequested).ToArray();
             var orderFound = Array.Find(orderArray, x => x.UserGuid == id);
-            if (orderFound != null)
+            if (orderFound != null && !orderFound.SkipRequested)
             {
+                order = orderFound;
                 return Array.IndexOf(orderArray, orderFound) + 1;
             }
 
+            order = null;
             return -1;
         }
 
