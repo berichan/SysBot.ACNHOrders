@@ -181,7 +181,6 @@ namespace SysBot.ACNHOrders
                 0x00000000 => OverworldState.Null,
                 0xC0066666 => OverworldState.Overworld,
                 0xBE200000 => OverworldState.UserArriveLeaving,
-                0xE185C906 => OverworldState.Loading,
                 _          => OverworldState.Unknown
             };
         }
