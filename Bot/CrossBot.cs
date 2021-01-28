@@ -701,5 +701,13 @@ namespace SysBot.ACNHOrders
                 index++;
             }
         }
+
+        // Additional
+        private readonly byte[] MaxTextSpeed = new byte[4] { 0, 0, 0, 3 };
+        public async Task FinishConversation(int delay, CancellationToken token)
+        {
+            await Connection.WriteBytesAsync(MaxTextSpeed, (int)OffsetHelper.TextSpeedAddress, token).ConfigureAwait(false);
+            await Task.Delay(delay, token).ConfigureAwait(false);
+        }
     }
 }
