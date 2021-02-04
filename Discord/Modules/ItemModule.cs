@@ -14,7 +14,7 @@ namespace SysBot.ACNHOrders
         [Command("lookupLang")]
         [Alias("ll")]
         [Summary("Gets a list of items that contain the request string.")]
-        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
+        [RequireSudo]
         public async Task SearchItemsAsync([Summary("Language code to search with")] string language, [Summary("Item name / item substring")][Remainder]string itemName)
         {
             var strings = GameInfo.GetStrings(language).ItemDataSource;
@@ -24,7 +24,7 @@ namespace SysBot.ACNHOrders
         [Command("lookup")]
         [Alias("li", "search")]
         [Summary("Gets a list of items that contain the request string.")]
-        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
+        [RequireSudo]
         public async Task SearchItemsAsync([Summary("Item name / item substring")][Remainder]string itemName)
         {
             var strings = GameInfo.Strings.ItemDataSource;
@@ -70,7 +70,7 @@ namespace SysBot.ACNHOrders
 
         [Command("item")]
         [Summary("Gets the info for an item.")]
-        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
+        [RequireSudo]
         public async Task GetItemInfoAsync([Summary("Item ID (in hex)")]string itemHex)
         {
             ushort itemID = ItemUtil.GetID(itemHex);
@@ -90,7 +90,7 @@ namespace SysBot.ACNHOrders
 
         [Command("stack")]
         [Summary("Stacks an item and prints the hex code.")]
-        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
+        [RequireSudo]
         public async Task StackAsync([Summary("Item ID (in hex)")]string itemHex, [Summary("Count of items in the stack")]int count)
         {
             ushort itemID = ItemUtil.GetID(itemHex);
@@ -108,13 +108,13 @@ namespace SysBot.ACNHOrders
 
         [Command("customize")]
         [Summary("Customizes an item and prints the hex code.")]
-        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
+        [RequireSudo]
         public async Task CustomizeAsync([Summary("Item ID (in hex)")] string itemHex, [Summary("First customization value")] int cust1, [Summary("Second customization value")] int cust2)
             => await CustomizeAsync(itemHex, cust1 + cust2).ConfigureAwait(false);
 
         [Command("customize")]
         [Summary("Customizes an item and prints the hex code.")]
-        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
+        [RequireSudo]
         public async Task CustomizeAsync([Summary("Item ID (in hex)")]string itemHex, [Summary("Customization value sum")]int sum)
         {
             ushort itemID = ItemUtil.GetID(itemHex);

@@ -22,6 +22,7 @@ namespace SysBot.ACNHOrders
 
         [Command("info")]
         [Alias("about", "whoami", "owner")]
+        [RequireSudo]
         public async Task InfoAsync()
         {
             var app = await Context.Client.GetApplicationInfoAsync().ConfigureAwait(false);

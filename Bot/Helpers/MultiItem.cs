@@ -74,7 +74,7 @@ namespace SysBot.ACNHOrders
         public static void StackToMax(Item[] itemSet)
         {
             foreach (var it in itemSet)
-                if (ItemInfo.TryGetMaxStackCount(it, out var max))
+                if (getMaxStack(it, out int max))
                     if (max != 1)
                         it.Count = (ushort)(max - 1);
         }
@@ -91,5 +91,28 @@ namespace SysBot.ACNHOrders
             }
             return ret;
         }
+
+        static bool getMaxStack(Item id, out int max)
+        {
+            if (StackableFlowers.Contains(id.ItemId))
+            {
+                max = 10;
+                return true;
+            }
+
+            bool canStack = ItemInfo.TryGetMaxStackCount(id, out var maxStack);
+            max = maxStack;
+            return canStack;
+        }
+
+        public static readonly ushort[] StackableFlowers = { 2304, 2305,
+                                                             2867, 2871, 2875, 2979, 2883, 2887, 2891, 2895, 2899, 2903,
+                                                             2907, 2911, 2915, 2919, 2923, 2927, 2931, 2935, 2939, 2943,
+                                                             2947, 2951, 2955, 2959, 2963,
+                                                             2979, 2983, 2987, 2991, 2995, 2999, 
+                                                                               3709, 3713, 3717, 3720, 3723, 3727, 3730,
+                                                             3734, 3738, 3741, 3744, 3748, 3751, 3754, 3758, 3762, 3765,
+                                                             3768,
+                                                             5175};
     }
 }
