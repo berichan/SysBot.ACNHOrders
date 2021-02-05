@@ -4,8 +4,10 @@ Queue-based ACNH SysBot.
 
 ## See also
 
-[SysBot,AnimalCrossing](https://github.com/kwsch/SysBot.AnimalCrossing)
+[SysBot.AnimalCrossing](https://github.com/kwsch/SysBot.AnimalCrossing)
+
 [kwsch](https://github.com/kwsch) for the original project and everything that makes this work.
+
 [Red](https://github.com/hp3721) for the original Dodo-fetch code, pointer logic and a bunch of other things that make this possible.
 
 ## Support Discord:
