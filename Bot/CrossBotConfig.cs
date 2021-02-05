@@ -50,6 +50,9 @@ namespace SysBot.ACNHOrders
         /// <summary> When enabled, users in Discord can request the bot to pick up items (spamming Y a <see cref="DropBotConfig.PickupCount"/> times). </summary>
         public bool AllowClean { get; set; }
 
+        /// <summary> Allows for the use of people to use the $lookup command </summary>
+        public bool AllowLookup { get; set; }
+
         /// <summary> The filename to use when saving position and rotation anchors </summary>
         public string AnchorFilename { get; set; } = "Anchors.bin";
 

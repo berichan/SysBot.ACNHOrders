@@ -14,9 +14,11 @@ namespace SysBot.ACNHOrders
         [Command("lookupLang")]
         [Alias("ll")]
         [Summary("Gets a list of items that contain the request string.")]
-        [RequireSudo]
-        public async Task SearchItemsAsync([Summary("Language code to search with")] string language, [Summary("Item name / item substring")][Remainder]string itemName)
+        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
+        public async Task SearchItemsAsync([Summary("Language code to search with")] string language, [Summary("Item name / item substring")][Remainder] string itemName)
         {
+            if (!Globals.Bot.Config.AllowLookup)
+                return;
             var strings = GameInfo.GetStrings(language).ItemDataSource;
             await PrintItemsAsync(itemName, strings).ConfigureAwait(false);
         }
@@ -24,9 +26,11 @@ namespace SysBot.ACNHOrders
         [Command("lookup")]
         [Alias("li", "search")]
         [Summary("Gets a list of items that contain the request string.")]
-        [RequireSudo]
-        public async Task SearchItemsAsync([Summary("Item name / item substring")][Remainder]string itemName)
+        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
+        public async Task SearchItemsAsync([Summary("Item name / item substring")][Remainder] string itemName)
         {
+            if (!Globals.Bot.Config.AllowLookup)
+                return;
             var strings = GameInfo.Strings.ItemDataSource;
             await PrintItemsAsync(itemName, strings).ConfigureAwait(false);
         }
@@ -70,9 +74,11 @@ namespace SysBot.ACNHOrders
 
         [Command("item")]
         [Summary("Gets the info for an item.")]
-        [RequireSudo]
-        public async Task GetItemInfoAsync([Summary("Item ID (in hex)")]string itemHex)
+        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
+        public async Task GetItemInfoAsync([Summary("Item ID (in hex)")] string itemHex)
         {
+            if (!Globals.Bot.Config.AllowLookup)
+                return;
             ushort itemID = ItemUtil.GetID(itemHex);
             if (itemID == Item.NONE)
             {
@@ -90,9 +96,11 @@ namespace SysBot.ACNHOrders
 
         [Command("stack")]
         [Summary("Stacks an item and prints the hex code.")]
-        [RequireSudo]
-        public async Task StackAsync([Summary("Item ID (in hex)")]string itemHex, [Summary("Count of items in the stack")]int count)
+        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
+        public async Task StackAsync([Summary("Item ID (in hex)")] string itemHex, [Summary("Count of items in the stack")] int count)
         {
+            if (!Globals.Bot.Config.AllowLookup)
+                return;
             ushort itemID = ItemUtil.GetID(itemHex);
             if (itemID == Item.NONE || count < 1 || count > 99)
             {
@@ -101,22 +109,24 @@ namespace SysBot.ACNHOrders
             }
 
             var ct = count - 1; // value 0 => count of 1
-            var item = new Item(itemID) {Count = (ushort)ct};
+            var item = new Item(itemID) { Count = (ushort)ct };
             var msg = ItemUtil.GetItemText(item);
             await ReplyAsync(msg).ConfigureAwait(false);
         }
 
         [Command("customize")]
         [Summary("Customizes an item and prints the hex code.")]
-        [RequireSudo]
+        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task CustomizeAsync([Summary("Item ID (in hex)")] string itemHex, [Summary("First customization value")] int cust1, [Summary("Second customization value")] int cust2)
             => await CustomizeAsync(itemHex, cust1 + cust2).ConfigureAwait(false);
 
         [Command("customize")]
         [Summary("Customizes an item and prints the hex code.")]
-        [RequireSudo]
-        public async Task CustomizeAsync([Summary("Item ID (in hex)")]string itemHex, [Summary("Customization value sum")]int sum)
+        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
+        public async Task CustomizeAsync([Summary("Item ID (in hex)")] string itemHex, [Summary("Customization value sum")] int sum)
         {
+            if (!Globals.Bot.Config.AllowLookup)
+                return;
             ushort itemID = ItemUtil.GetID(itemHex);
             if (itemID == Item.NONE)
             {
@@ -152,7 +162,7 @@ namespace SysBot.ACNHOrders
             if (!hasBody || !hasFabric)
                 await ReplyAsync("Requested customization for item appears to be invalid.").ConfigureAwait(false);
 
-            var item = new Item(itemID) {BodyType = body, PatternChoice = fabric};
+            var item = new Item(itemID) { BodyType = body, PatternChoice = fabric };
             var msg = ItemUtil.GetItemText(item);
             await ReplyAsync(msg).ConfigureAwait(false);
         }
