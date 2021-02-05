@@ -1,5 +1,5 @@
 # SysBot.ACNHOrders
-Queue-based ACNH SysBot. 
+Designed as a fully automated queue-based order bot that injects item orders directly onto your island's map and lets the player that queued pick them up, then leave.
 
 ![License](https://img.shields.io/badge/License-AGPLv3-blue.svg)
 
