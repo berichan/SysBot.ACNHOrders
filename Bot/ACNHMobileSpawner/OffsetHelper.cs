@@ -37,5 +37,7 @@
         public const ulong TextSpeedAddress = 0xBA21BB8;
 
         public const ulong DodoAddress = 0xA97E15C;
+        public const ulong OnlineSessionAddress = 0x91FD740;
+
     }
 }
