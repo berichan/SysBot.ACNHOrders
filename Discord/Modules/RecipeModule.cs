@@ -63,7 +63,7 @@ namespace SysBot.ACNHOrders
                 if (!DropUtil.InvertedRecipeDictionary.TryGetValue((ushort) item.Value, out var recipeID))
                     continue;
 
-                var msg = $"{item.Value:X4} {item.Text}: Recipe {recipeID:X3}";
+                var msg = $"{item.Value:X4} {item.Text}: Recipe order code: 0{recipeID:X3}000016A2";
                 matches.Add(msg);
             }
 
