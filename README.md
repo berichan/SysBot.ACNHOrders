@@ -11,6 +11,8 @@ Queue-based ACNH SysBot.
 
 [Red](https://github.com/hp3721) for the original Dodo-fetch code, pointer logic and a bunch of other things that make this possible.
 
+[Read the wiki](https://github.com/berichan/SysBot.ACNHOrders/wiki) for setup instructions and faq.
+
 ## Support Discord:
 
 [<img src="https://canary.discordapp.com/api/guilds/771477382409879602/widget.png?style=banner2">](https://discord.gg/5bT8XK8dYe)
