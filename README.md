@@ -1,5 +1,5 @@
 # SysBot.ACNHOrders
-Designed as a fully automated queue-based order bot that injects item orders directly onto your island's map and lets the player that queued pick them up, then leave.
+Designed as a fully automated queue-based order bot that injects item orders directly onto your island's map and lets the player that queued pick them up, then leave. All dodo fetching, gate opening & closing, movement and dialoguing (including Tom Nook's or Isabelle's morning announcement progression) is automated.
 
 ![License](https://img.shields.io/badge/License-AGPLv3-blue.svg)
 
