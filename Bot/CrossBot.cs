@@ -130,8 +130,13 @@ namespace SysBot.ACNHOrders
                     }
                 }
 
+                if (Config.RestoreModeEchoDodoCode)
+                    await AttemptEchoHook($"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] Crash detected. Please wait while I get a new Dodo code.", token).ConfigureAwait(false);
                 LogUtil.LogInfo($"Crash detected, awaiting overworld to fetch new dodo.", Config.IP);
                 await Task.Delay(5_000, token).ConfigureAwait(false);
+
+                // Clear dodo code
+                await Connection.WriteBytesAsync(new byte[5], (uint)OffsetHelper.DodoAddress, token).ConfigureAwait(false);
 
                 var startTime = DateTime.Now;
                 // Wait for overworld
@@ -143,6 +148,7 @@ namespace SysBot.ACNHOrders
                     {
                         LogUtil.LogError($"Hard crash detected, restarting game.", Config.IP);
                         hardCrash = true;
+                        break;
                     }
                 }
             }
@@ -504,6 +510,7 @@ namespace SysBot.ACNHOrders
         {
             await Task.Delay(0_200, token).ConfigureAwait(false);
 
+            int tries = 0;
             while (await DodoPosition.GetOverworldState(Config.CoordinatePointer, token).ConfigureAwait(false) is OverworldState.Overworld or OverworldState.Null)
             {
                 // Go into airport
@@ -511,6 +518,10 @@ namespace SysBot.ACNHOrders
                 await Task.Delay(0_500, token).ConfigureAwait(false);
                 await SetStick(SwitchStick.LEFT, 0, 0, 1_500, token).ConfigureAwait(false);
                 await Task.Delay(1_000, token).ConfigureAwait(false);
+
+                tries++;
+                if (tries > 5)
+                    break;
             }
 
             while (await DodoPosition.GetOverworldState(Config.CoordinatePointer, token).ConfigureAwait(false) != OverworldState.Overworld)
