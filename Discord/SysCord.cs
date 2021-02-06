@@ -128,6 +128,15 @@ namespace SysBot.ACNHOrders
             _client.MessageReceived += HandleMessageAsync;
         }
 
+        public async Task SpeakMessage(ulong id, string message)
+        {
+            if (_client.ConnectionState != ConnectionState.Connected)
+                return;
+            var channel = _client.GetChannel(id);
+            if (channel is IMessageChannel textChannel)
+                await textChannel.SendMessageAsync(message).ConfigureAwait(false);
+        }
+
         private async Task HandleMessageAsync(SocketMessage arg)
         {
             // Bail out if it's a System Message.

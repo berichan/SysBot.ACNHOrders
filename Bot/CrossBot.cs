@@ -105,6 +105,9 @@ namespace SysBot.ACNHOrders
             byte[] bytes = await Connection.ReadBytesAsync((uint)OffsetHelper.DodoAddress, 0x5, token).ConfigureAwait(false);
             DodoCode = Encoding.UTF8.GetString(bytes, 0, 5);
 
+            foreach (var msgChannel in Config.Channels)
+                await Globals.Self.SpeakMessage(msgChannel, $"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] The Dodo code has updated, the new Dodo code is: {DodoCode}.");
+
             await SaveDodoCodeToFile(token).ConfigureAwait(false);
 
             while ((await Connection.ReadBytesAsync((uint)OffsetHelper.OnlineSessionAddress, 0x1, token).ConfigureAwait(false))[0] == 1)
