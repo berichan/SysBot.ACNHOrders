@@ -1,6 +1,8 @@
 # SysBot.ACNHOrders
 Designed as a fully automated queue-based order bot that injects item orders directly onto your island's map and lets the player that queued pick them up, then leave. All dodo fetching, gate opening & closing, movement and dialoguing (including Tom Nook's or Isabelle's morning announcement progression) is automated.
 
+Alternatively, you may use this as a fully automated connection bot that restores the online session after a network or online crash/disconnect. [Read here](https://github.com/berichan/SysBot.ACNHOrders/wiki/Automatic-dodo-online-session-restoring) for setup instructions.
+
 ![License](https://img.shields.io/badge/License-AGPLv3-blue.svg)
 
 ## See also
