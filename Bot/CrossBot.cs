@@ -345,6 +345,7 @@ namespace SysBot.ACNHOrders
 
         private async Task ClearMapAndSpawnInternally(Item[] order, MapTerrainLite clearMap, CancellationToken token)
         {
+            clearMap.Spawn(MultiItem.DeepDuplicateItem(Item.NO_ITEM, 40)); // clear area
             clearMap.Spawn(order);
             await Task.Delay(5_000, token).ConfigureAwait(false);
             LogUtil.LogInfo("Map clear has started.", Config.IP);
