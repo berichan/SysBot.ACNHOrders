@@ -93,48 +93,57 @@ namespace SysBot.ACNHOrders
             {
                 LogUtil.LogInfo("Orders not accepted in dodo restore mode! Please ensure all joy-cons and controllers are docked!", Config.IP);
                 while (!token.IsCancellationRequested)
-                    await DodoRestoreLoop(token).ConfigureAwait(false);
+                    await DodoRestoreLoop(false, token).ConfigureAwait(false);
             }
 
             while (!token.IsCancellationRequested)
                 await OrderLoop(token).ConfigureAwait(false);
         }
 
-        private async Task DodoRestoreLoop(CancellationToken token)
+        private async Task DodoRestoreLoop(bool immediateRestart, CancellationToken token)
         {
-            byte[] bytes = await Connection.ReadBytesAsync((uint)OffsetHelper.DodoAddress, 0x5, token).ConfigureAwait(false);
-            DodoCode = Encoding.UTF8.GetString(bytes, 0, 5);
-
-            try
+            bool hardCrash = immediateRestart;
+            if (!immediateRestart)
             {
-                foreach (var msgChannel in Config.Channels)
-                    await Globals.Self.SpeakMessage(msgChannel, $"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] The Dodo code has updated, the new Dodo code is: {DodoCode}.");
-            }
-            catch (Exception e)
-            {
-                LogUtil.LogError($"Unable to post into channels: {e.Message}", Config.IP);
-            }
+                byte[] bytes = await Connection.ReadBytesAsync((uint)OffsetHelper.DodoAddress, 0x5, token).ConfigureAwait(false);
+                DodoCode = Encoding.UTF8.GetString(bytes, 0, 5);
 
-            await SaveDodoCodeToFile(token).ConfigureAwait(false);
+                if (DodoPosition.IsDodoValid(DodoCode) && Config.RestoreModeEchoDodoCode)
+                    await AttemptEchoHook($"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] The Dodo code has updated, the new Dodo code is: {DodoCode}.", token).ConfigureAwait(false);
 
-            while ((await Connection.ReadBytesAsync((uint)OffsetHelper.OnlineSessionAddress, 0x1, token).ConfigureAwait(false))[0] == 1)
-                await Task.Delay(2_000, token).ConfigureAwait(false);
-            
+                await SaveDodoCodeToFile(token).ConfigureAwait(false);
 
-            LogUtil.LogInfo($"Crash detected, awaiting overworld to fetch new dodo.", Config.IP);
-            await Task.Delay(5_000, token).ConfigureAwait(false);
-
-            var startTime = DateTime.Now;
-            bool hardCrash = false;
-            // Wait for overworld
-            while (await DodoPosition.GetOverworldState(Config.CoordinatePointer, token).ConfigureAwait(false) != OverworldState.Overworld)
-            {
-                await Task.Delay(1_000, token).ConfigureAwait(false);
-                await Click(SwitchButton.B, 0_100, token).ConfigureAwait(false);
-                if (Math.Abs((DateTime.Now - startTime).TotalSeconds) > 45)
+                while ((await Connection.ReadBytesAsync((uint)OffsetHelper.OnlineSessionAddress, 0x1, token).ConfigureAwait(false))[0] == 1)
                 {
-                    LogUtil.LogError($"Hard crash detected, restarting game.", Config.IP);
-                    hardCrash = true;
+                    await Task.Delay(2_000, token).ConfigureAwait(false);
+
+                    // Check for new arrivals
+                    if (await IsArriverNew(token).ConfigureAwait(false))
+                    {
+                        if (Config.RestoreModeEchoNewArrivals)
+                            await AttemptEchoHook($"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] {LastArrival} is joining the island.{(Config.RestoreModeEchoDodoCode ? $" Dodo code is: {DodoCode}." : string.Empty)}", token).ConfigureAwait(false);
+
+                        await Task.Delay(60_000, token).ConfigureAwait(false);
+
+                        // Clear username of last arrival
+                        await Connection.WriteBytesAsync(new byte[0x14], (uint)OffsetHelper.ArriverNameLocAddress, token).ConfigureAwait(false);
+                    }
+                }
+
+                LogUtil.LogInfo($"Crash detected, awaiting overworld to fetch new dodo.", Config.IP);
+                await Task.Delay(5_000, token).ConfigureAwait(false);
+
+                var startTime = DateTime.Now;
+                // Wait for overworld
+                while (await DodoPosition.GetOverworldState(Config.CoordinatePointer, token).ConfigureAwait(false) != OverworldState.Overworld)
+                {
+                    await Task.Delay(1_000, token).ConfigureAwait(false);
+                    await Click(SwitchButton.B, 0_100, token).ConfigureAwait(false);
+                    if (Math.Abs((DateTime.Now - startTime).TotalSeconds) > 45)
+                    {
+                        LogUtil.LogError($"Hard crash detected, restarting game.", Config.IP);
+                        hardCrash = true;
+                    }
                 }
             }
 
@@ -142,12 +151,21 @@ namespace SysBot.ACNHOrders
 
             if (result != OrderResult.Success)
             {
-                LogUtil.LogError($"Dodo restore failed with error: {result}", Config.IP);
+                LogUtil.LogError($"Dodo restore failed with error: {result}. Restarting game...", Config.IP);
+                await DodoRestoreLoop(true, token).ConfigureAwait(false);
                 return;
             }
             await SaveDodoCodeToFile(token).ConfigureAwait(false);
 
             LogUtil.LogError($"Dodo restore successful. New dodo is {DodoCode} and saved to {Config.DodoRestoreFilename}.", Config.IP);
+        }
+
+        // hacked in discord forward, should really be a delegate or resusable forwarder
+        private async Task AttemptEchoHook(string message, CancellationToken token)
+        {
+            foreach (var msgChannel in Config.Channels)
+                if (!await Globals.Self.TrySpeakMessage(msgChannel, message))
+                    LogUtil.LogError($"Unable to post into channels: {msgChannel}.", Config.IP);
         }
 
         private async Task OrderLoop(CancellationToken token)
@@ -484,10 +502,16 @@ namespace SysBot.ACNHOrders
 
         private async Task EnterAirport(CancellationToken token)
         {
-            // Go into airport
-            await SetStick(SwitchStick.LEFT, 20_000, 20_000, 0_400, token).ConfigureAwait(false);
-            await Task.Delay(0_500, token).ConfigureAwait(false);
-            await SetStick(SwitchStick.LEFT, 0, 0, 1_500, token).ConfigureAwait(false);
+            await Task.Delay(0_200, token).ConfigureAwait(false);
+
+            while (await DodoPosition.GetOverworldState(Config.CoordinatePointer, token).ConfigureAwait(false) is OverworldState.Overworld or OverworldState.Null)
+            {
+                // Go into airport
+                await SetStick(SwitchStick.LEFT, 20_000, 20_000, 0_400, token).ConfigureAwait(false);
+                await Task.Delay(0_500, token).ConfigureAwait(false);
+                await SetStick(SwitchStick.LEFT, 0, 0, 1_500, token).ConfigureAwait(false);
+                await Task.Delay(1_000, token).ConfigureAwait(false);
+            }
 
             while (await DodoPosition.GetOverworldState(Config.CoordinatePointer, token).ConfigureAwait(false) != OverworldState.Overworld)
                 await Task.Delay(1_000, token).ConfigureAwait(false);
@@ -616,6 +640,7 @@ namespace SysBot.ACNHOrders
             }
             return false;
         }
+
         private async Task SaveDodoCodeToFile(CancellationToken token)
         {
             byte[] encodedText = Encoding.ASCII.GetBytes(DodoCode);
