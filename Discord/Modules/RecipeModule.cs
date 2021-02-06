@@ -51,7 +51,7 @@ namespace SysBot.ACNHOrders
                     return;
                 }
 
-                var msg = $"{item.Value:X4} {item.Text}: Recipe {recipeID:X3}";
+                var msg = $"{item.Value:X4} {item.Text}: Recipe order code: 0{recipeID:X3}000016A2";
                 await ReplyAsync(Format.Code(msg)).ConfigureAwait(false);
                 return;
             }
