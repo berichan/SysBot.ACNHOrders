@@ -364,12 +364,14 @@ namespace SysBot.ACNHOrders
                 clearMap.Spawn(order);
             }
             await Task.Delay(5_000, token).ConfigureAwait(false);
-            LogUtil.LogInfo("Map clear has started.", Config.IP);
+            if (order != null)
+                LogUtil.LogInfo("Map clear has started.", Config.IP);
             var mapData = await Connection.ReadBytesLargeAsync((uint)OffsetHelper.FieldItemStart, MapTerrainLite.ByteSize, Config.MapPullChunkSize, token).ConfigureAwait(false);
             var offData = clearMap.GetDifferencePrioritizeStartup(mapData, Config.MapPullChunkSize, (uint)OffsetHelper.FieldItemStart);
             for (int i = 0; i < offData.Length; ++i)
                 await Connection.WriteBytesAsync(offData[i].ToSend, offData[i].Offset, token).ConfigureAwait(false);
-            LogUtil.LogInfo("Map clear has ended.", Config.IP);
+            if (order != null)
+                LogUtil.LogInfo("Map clear has ended.", Config.IP);
         }
 
         private async Task<OrderResult> FetchDodoAndAwaitOrder(IACNHOrderNotifier<Item> order, bool ignoreInjection, CancellationToken token)
