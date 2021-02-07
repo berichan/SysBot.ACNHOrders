@@ -44,6 +44,16 @@ namespace SysBot.ACNHOrders
             }
         }
 
+        [Command("sendDodo")]
+        [Summary("Prints the Dodo Code for the island. Only works in dodo restore mode.")]
+        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
+        public async Task RequestRestoreLoopDodoAsync()
+        {
+            if (!Globals.Bot.Config.LimitedDodoRestoreOnlyMode)
+                return;
+            await RequestDodoCodeAsync().ConfigureAwait(false);
+        }
+
         private const string DropItemSummary =
             "Requests the bot drop an item with the user's provided input. " +
             "Hex Mode: Item IDs (in hex); request multiple by putting spaces between items. " +
