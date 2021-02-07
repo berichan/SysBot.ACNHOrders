@@ -117,6 +117,9 @@ namespace SysBot.ACNHOrders
                 {
                     await Task.Delay(2_000, token).ConfigureAwait(false);
 
+                    if (Config.RestoreModeRefreshMap)
+                        await ClearMapAndSpawnInternally(null, Map, token).ConfigureAwait(false);
+
                     // Check for new arrivals
                     if (await IsArriverNew(token).ConfigureAwait(false))
                     {
@@ -284,10 +287,20 @@ namespace SysBot.ACNHOrders
 
                 // Wait for the load time which feels like an age.
                 // Wait for the game to teleport us from the "hell" position to our front door. Keep pressing A & B incase we're stuck at the day intro.
+                int echoCount = 0;
                 bool gameStarted = await EnsureAnchorMatches(0, 130_000, async () =>
                 {
                     await Click(SwitchButton.A, 0_500, token).ConfigureAwait(false);
                     await Click(SwitchButton.B, 0_500, token).ConfigureAwait(false);
+                    if (echoCount < 5)
+                    {
+                        if (await DodoPosition.GetOverworldState(Config.CoordinatePointer, token).ConfigureAwait(false) == OverworldState.Overworld)
+                        {
+                            LogUtil.LogInfo("Reached overworld but Anchor 0 does not match.", Config.IP);
+                            echoCount++;
+                        }
+                    }
+
                 }, token);
 
                 if (!gameStarted)
@@ -343,10 +356,13 @@ namespace SysBot.ACNHOrders
             return await FetchDodoAndAwaitOrder(order, ignoreInjection, token).ConfigureAwait(false);
         }
 
-        private async Task ClearMapAndSpawnInternally(Item[] order, MapTerrainLite clearMap, CancellationToken token)
+        private async Task ClearMapAndSpawnInternally(Item[]? order, MapTerrainLite clearMap, CancellationToken token)
         {
-            clearMap.Spawn(MultiItem.DeepDuplicateItem(Item.NO_ITEM, 40)); // clear area
-            clearMap.Spawn(order);
+            if (order != null)
+            {
+                clearMap.Spawn(MultiItem.DeepDuplicateItem(Item.NO_ITEM, 40)); // clear area
+                clearMap.Spawn(order);
+            }
             await Task.Delay(5_000, token).ConfigureAwait(false);
             LogUtil.LogInfo("Map clear has started.", Config.IP);
             var mapData = await Connection.ReadBytesLargeAsync((uint)OffsetHelper.FieldItemStart, MapTerrainLite.ByteSize, Config.MapPullChunkSize, token).ConfigureAwait(false);

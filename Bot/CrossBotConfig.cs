@@ -59,6 +59,9 @@ namespace SysBot.ACNHOrders
         /// <summary> Where the newly fetched dodo code will be written to after restore.</summary>
         public string DodoRestoreFilename { get; set; } = "Dodo.txt";
 
+        /// <summary> When set to true, restore mode will also regen the map. </summary>
+        public bool RestoreModeRefreshMap { get; set; } = false;
+
         /// <summary> When set to true, dodo code will be posted in all channels in restore mode. </summary>
         public bool RestoreModeEchoDodoCode { get; set; } = true;
 
