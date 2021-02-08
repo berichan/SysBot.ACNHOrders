@@ -64,7 +64,7 @@ namespace SysBot.ACNHOrders
             await Task.Delay(200, token).ConfigureAwait(false);
 
             // For viewing player vectors
-            // await ViewPlayerVectors(token).ConfigureAwait(false);
+            //await ViewPlayerVectors(token).ConfigureAwait(false);
 
             // Validate inventory offset.
             LogUtil.LogInfo("Checking inventory offset for validity.", Config.IP);
@@ -102,6 +102,8 @@ namespace SysBot.ACNHOrders
 
         private async Task DodoRestoreLoop(bool immediateRestart, CancellationToken token)
         {
+            await EnsureAnchorsAreInitialised(token);
+
             bool hardCrash = immediateRestart;
             if (!immediateRestart)
             {
@@ -813,6 +815,7 @@ namespace SysBot.ACNHOrders
         private async Task ViewPlayerVectors(CancellationToken token)
         {
             ulong offset = await DodoPosition.GetCoordinateAddress(Config.CoordinatePointer, token).ConfigureAwait(false);
+            LogUtil.LogInfo($"Pointer solved: {offset}", Config.IP);
             int index = 0;
             byte[] a1 = new byte[2]; byte[] b1 = new byte[2];
             while (!token.IsCancellationRequested)
