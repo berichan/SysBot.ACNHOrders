@@ -38,5 +38,14 @@ namespace SysBot.ACNHOrders
             short b = short.Parse(split[1]);
             await Globals.Bot.SetStick(SwitchStick.LEFT, a, b, 0_400, CancellationToken.None).ConfigureAwait(false);
         }
+
+        [Command("toggleMashB")]
+        [Summary("Toggle whether or not the bot should mash the B button to ensure all dialogue is processed. Only works in dodo restore mode.")]
+        [RequireSudo]
+        public async Task ToggleMashB()
+        {
+            Globals.Bot.Config.DodoModeConfig.MashB = !Globals.Bot.Config.DodoModeConfig.MashB;
+            await ReplyAsync($"Mash B set to: {Globals.Bot.Config.DodoModeConfig.MashB}.").ConfigureAwait(false);
+        }
     }
 }

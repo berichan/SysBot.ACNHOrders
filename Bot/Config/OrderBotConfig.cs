@@ -4,7 +4,7 @@ using NHSE.Core;
 namespace SysBot.ACNHOrders
 {
     [Serializable]
-    public class OrderBotConfig : IConfigItem
+    public class OrderBotConfig
     {
         private int _maxQueueCount = 50;
         private int _timeAllowed = 180;

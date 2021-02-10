@@ -49,7 +49,7 @@ namespace SysBot.ACNHOrders
         [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task RequestRestoreLoopDodoAsync()
         {
-            if (!Globals.Bot.Config.LimitedDodoRestoreOnlyMode)
+            if (!Globals.Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
                 return;
             await RequestDodoCodeAsync().ConfigureAwait(false);
         }

@@ -231,6 +231,10 @@ namespace SysBot.ACNHOrders
                         state = idle;
                         await _client.SetStatusAsync(state).ConfigureAwait(false);
                     }
+
+                    if (Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode && Bot.Config.DodoModeConfig.SetStatusAsDodoCode)
+                        await _client.SetGameAsync($"Dodo code: {Bot.DodoCode}").ConfigureAwait(false);
+
                     await Task.Delay(2_000, token).ConfigureAwait(false);
                     continue;
                 }

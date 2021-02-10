@@ -47,26 +47,13 @@ namespace SysBot.ACNHOrders
 
         public OrderBotConfig OrderConfig { get; set; } = new();
 
+        public DodoRestoreConfig DodoModeConfig { get; set; } = new();
+
         /// <summary> When enabled, users in Discord can request the bot to pick up items (spamming Y a <see cref="DropBotConfig.PickupCount"/> times). </summary>
         public bool AllowClean { get; set; }
 
         /// <summary> Allows for the use of people to use the $lookup command </summary>
         public bool AllowLookup { get; set; }
-
-        /// <summary> Will not allow orders, but will try to fetch a new dodo code if the online session crashes</summary>
-        public bool LimitedDodoRestoreOnlyMode { get; set; }
-
-        /// <summary> Where the newly fetched dodo code will be written to after restore.</summary>
-        public string DodoRestoreFilename { get; set; } = "Dodo.txt";
-
-        /// <summary> When set to true, restore mode will also regen the map. </summary>
-        public bool RestoreModeRefreshMap { get; set; } = false;
-
-        /// <summary> When set to true, dodo code will be posted in all channels in restore mode. </summary>
-        public bool RestoreModeEchoDodoCode { get; set; } = true;
-
-        /// <summary> When set to true, new arrivals will be posted in all channels in restore mode. </summary>
-        public bool RestoreModeEchoNewArrivals { get; set; } = true;
 
         /// <summary> The filename to use when saving position and rotation anchors </summary>
         public string AnchorFilename { get; set; } = "Anchors.bin";

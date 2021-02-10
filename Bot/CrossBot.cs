@@ -8,6 +8,7 @@ using ACNHMobileSpawner;
 using SysBot.Base;
 using System.Text;
 using System.IO;
+using System.Collections.Generic;
 
 namespace SysBot.ACNHOrders
 {
@@ -88,8 +89,11 @@ namespace SysBot.ACNHOrders
                 SpawnY = Config.MapPlaceY
             };
 
+            if (Config.ForceUpdateAnchors)
+                LogUtil.LogInfo("Force update anchors set to true, not functionality will be activate", Config.IP);
+
             LogUtil.LogInfo("Successfully connected to bot. Starting main loop!", Config.IP);
-            if (Config.LimitedDodoRestoreOnlyMode)
+            if (Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
             {
                 LogUtil.LogInfo("Orders not accepted in dodo restore mode! Please ensure all joy-cons and controllers are docked!", Config.IP);
                 while (!token.IsCancellationRequested)
@@ -110,8 +114,8 @@ namespace SysBot.ACNHOrders
                 byte[] bytes = await Connection.ReadBytesAsync((uint)OffsetHelper.DodoAddress, 0x5, token).ConfigureAwait(false);
                 DodoCode = Encoding.UTF8.GetString(bytes, 0, 5);
 
-                if (DodoPosition.IsDodoValid(DodoCode) && Config.RestoreModeEchoDodoCode)
-                    await AttemptEchoHook($"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] The Dodo code has updated, the new Dodo code is: {DodoCode}.", token).ConfigureAwait(false);
+                if (DodoPosition.IsDodoValid(DodoCode) && Config.DodoModeConfig.EchoDodoChannels.Count > 0)
+                    await AttemptEchoHook($"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] The Dodo code has updated, the new Dodo code is: {DodoCode}.", Config.DodoModeConfig.EchoDodoChannels, token).ConfigureAwait(false);
 
                 await SaveDodoCodeToFile(token).ConfigureAwait(false);
 
@@ -119,14 +123,18 @@ namespace SysBot.ACNHOrders
                 {
                     await Task.Delay(2_000, token).ConfigureAwait(false);
 
-                    if (Config.RestoreModeRefreshMap)
+                    if (Config.DodoModeConfig.RefreshMap)
                         await ClearMapAndSpawnInternally(null, Map, token).ConfigureAwait(false);
+
+                    if (Config.DodoModeConfig.MashB)
+                        for (int i = 0; i < 5; ++i)
+                            await Click(SwitchButton.B, 0_200, token).ConfigureAwait(false);
 
                     // Check for new arrivals
                     if (await IsArriverNew(token).ConfigureAwait(false))
                     {
-                        if (Config.RestoreModeEchoNewArrivals)
-                            await AttemptEchoHook($"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] {LastArrival} is joining the island.{(Config.RestoreModeEchoDodoCode ? $" Dodo code is: {DodoCode}." : string.Empty)}", token).ConfigureAwait(false);
+                        if (Config.DodoModeConfig.EchoArrivalChannels.Count > 0)
+                            await AttemptEchoHook($"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] {LastArrival} is joining the island.{(Config.DodoModeConfig.PostDodoCodeWithNewArrivals ? $" Dodo code is: {DodoCode}." : string.Empty)}", Config.DodoModeConfig.EchoArrivalChannels, token).ConfigureAwait(false);
 
                         await Task.Delay(60_000, token).ConfigureAwait(false);
 
@@ -135,8 +143,8 @@ namespace SysBot.ACNHOrders
                     }
                 }
 
-                if (Config.RestoreModeEchoDodoCode)
-                    await AttemptEchoHook($"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] Crash detected. Please wait while I get a new Dodo code.", token).ConfigureAwait(false);
+                if (Config.DodoModeConfig.EchoDodoChannels.Count > 0)
+                    await AttemptEchoHook($"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] Crash detected. Please wait while I get a new Dodo code.", Config.DodoModeConfig.EchoDodoChannels, token).ConfigureAwait(false);
                 LogUtil.LogInfo($"Crash detected, awaiting overworld to fetch new dodo.", Config.IP);
                 await Task.Delay(5_000, token).ConfigureAwait(false);
 
@@ -168,14 +176,14 @@ namespace SysBot.ACNHOrders
             }
             await SaveDodoCodeToFile(token).ConfigureAwait(false);
 
-            LogUtil.LogError($"Dodo restore successful. New dodo is {DodoCode} and saved to {Config.DodoRestoreFilename}.", Config.IP);
+            LogUtil.LogError($"Dodo restore successful. New dodo is {DodoCode} and saved to {Config.DodoModeConfig.DodoRestoreFilename}.", Config.IP);
         }
 
         // hacked in discord forward, should really be a delegate or resusable forwarder
-        private async Task AttemptEchoHook(string message, CancellationToken token)
+        private async Task AttemptEchoHook(string message, IReadOnlyCollection<ulong> channels, CancellationToken token)
         {
-            foreach (var msgChannel in Config.Channels)
-                if (!await Globals.Self.TrySpeakMessage(msgChannel, message))
+            foreach (var msgChannel in channels)
+                if (!await Globals.Self.TrySpeakMessage(msgChannel, message).ConfigureAwait(false))
                     LogUtil.LogError($"Unable to post into channels: {msgChannel}.", Config.IP);
         }
 
@@ -677,7 +685,7 @@ namespace SysBot.ACNHOrders
         {
             byte[] encodedText = Encoding.ASCII.GetBytes(DodoCode);
 
-            using (FileStream sourceStream = new FileStream(Config.DodoRestoreFilename,
+            using (FileStream sourceStream = new FileStream(Config.DodoModeConfig.DodoRestoreFilename,
                 FileMode.Create, FileAccess.Write, FileShare.None,
                 bufferSize: 4096, useAsync: true))
             {
@@ -814,14 +822,16 @@ namespace SysBot.ACNHOrders
 
         private async Task ViewPlayerVectors(CancellationToken token)
         {
-            ulong offset = await DodoPosition.GetCoordinateAddress(Config.CoordinatePointer, token).ConfigureAwait(false);
-            LogUtil.LogInfo($"Pointer solved: {offset}", Config.IP);
-            int index = 0;
+            //int index = 0;
             byte[] a1 = new byte[2]; byte[] b1 = new byte[2];
             while (!token.IsCancellationRequested)
             {
+                ulong offset = await DodoPosition.GetCoordinateAddress(Config.CoordinatePointer, token).ConfigureAwait(false);
+                LogUtil.LogInfo($"Pointer solved: {offset}", Config.IP);
                 var bytesPos = await Connection.ReadBytesAbsoluteAsync(offset, 0xA, token).ConfigureAwait(false);
                 var bytesRot = await Connection.ReadBytesAbsoluteAsync(offset + 0x3A, 0x4, token).ConfigureAwait(false);
+                var state = await DodoPosition.GetOverworldState(offset, token).ConfigureAwait(false);
+                LogUtil.LogInfo($"State: {state}", Config.IP);
                 Console.WriteLine("Byte array 1: ");
                 foreach (var b in bytesPos)
                     Console.Write($"{b}, ");
@@ -836,7 +846,7 @@ namespace SysBot.ACNHOrders
 
                 await Task.Delay(0_500, token).ConfigureAwait(false);
 
-                if (index == 0)
+                /*if (index == 0)
                 {
                     a1 = bytesPos;
                     b1 = bytesRot;
@@ -847,7 +857,7 @@ namespace SysBot.ACNHOrders
                     await Connection.WriteBytesAbsoluteAsync(a1, offset, token);
                     await Connection.WriteBytesAbsoluteAsync(b1, offset + 0x3A, token);
                 }
-                index++;
+                index++;*/
             }
         }
 
