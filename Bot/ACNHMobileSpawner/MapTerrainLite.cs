@@ -44,13 +44,22 @@ namespace ACNHMobileSpawner
             int y = SpawnY;
             for (int i = 0; i < newItems.Length; ++i)
             {
+                var currItem = newItems[i];
                 x = SpawnX + ((i * 2) % totalXTiles);
                 y = SpawnY + ((i / itemsPerLine) * 2);
                 var tile = ItemLayer.GetTile(x, y);
-                tile.CopyFrom(newItems[i]);
-                if (forceFlag32)
-                    tile.SystemParam = 0x20;
-                ItemLayer.SetExtensionTiles(tile, x, y);
+                if (!currItem.IsNone)
+                {
+                    tile.CopyFrom(currItem);
+                    if (forceFlag32)
+                        tile.SystemParam = 0x20;
+                    ItemLayer.SetExtensionTiles(tile, x, y);
+                }
+                else
+                {
+                    tile.Delete();
+                    ItemLayer.DeleteExtensionTiles(tile, x, y);
+                }
             }
         }
 
