@@ -140,6 +140,7 @@ namespace SysBot.ACNHOrders
 
                         // Clear username of last arrival
                         await Connection.WriteBytesAsync(new byte[0x14], (uint)OffsetHelper.ArriverNameLocAddress, token).ConfigureAwait(false);
+                        LastArrival = string.Empty;
                     }
                 }
 
