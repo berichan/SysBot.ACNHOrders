@@ -153,6 +153,7 @@ namespace SysBot.ACNHOrders
 
                 var startTime = DateTime.Now;
                 // Wait for overworld
+                LogUtil.LogInfo($"Begin overworld wait loop.", Config.IP);
                 while (await DodoPosition.GetOverworldState(Config.CoordinatePointer, token).ConfigureAwait(false) != OverworldState.Overworld)
                 {
                     await Task.Delay(1_000, token).ConfigureAwait(false);
@@ -164,6 +165,7 @@ namespace SysBot.ACNHOrders
                         break;
                     }
                 }
+                LogUtil.LogInfo($"End overworld wait loop.", Config.IP);
             }
 
             var result = await ExecuteOrderStart(DummyRequest, true, hardCrash, token).ConfigureAwait(false);
@@ -338,13 +340,24 @@ namespace SysBot.ACNHOrders
             // Unhold any held items
             await Click(SwitchButton.DDOWN, 0_300, token).ConfigureAwait(false);
 
-            LogUtil.LogInfo($"Reached overworld, entering the airport.", Config.IP);
+            LogUtil.LogInfo($"Reached overworld, teleporting to the airport.", Config.IP);
 
             // Inject the airport entry anchor
             await SendAnchorBytes(2, token).ConfigureAwait(false);
 
             if (ignoreInjection)
+            {
                 await SendAnchorBytes(1, token).ConfigureAwait(false);
+                LogUtil.LogInfo($"Checking for morning announcement", Config.IP);
+                // We need to check for Isabelle's morning announcement
+                for (int i = 0; i < 3; ++i)
+                    await Click(SwitchButton.B, 0_400, token).ConfigureAwait(false);
+                while (await DodoPosition.GetOverworldState(Config.CoordinatePointer, token).ConfigureAwait(false) != OverworldState.Overworld)
+                {
+                    await Click(SwitchButton.B, 0_300, token).ConfigureAwait(false);
+                    await Task.Delay(1_000, token).ConfigureAwait(false);
+                }
+            }
 
             // Get out of any calls, events, etc
             bool atAirport = await EnsureAnchorMatches(2, 10_000, async () =>
@@ -355,6 +368,8 @@ namespace SysBot.ACNHOrders
             }, token);
 
             await Task.Delay(0_500, token).ConfigureAwait(false);
+
+            LogUtil.LogInfo($"Entering airport.", Config.IP);
 
             await EnterAirport(token).ConfigureAwait(false);
 
