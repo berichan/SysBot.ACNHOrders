@@ -25,6 +25,7 @@ namespace SysBot.ACNHOrders
 
         public MapTerrainLite Map { get; private set; } = new MapTerrainLite(new byte[MapGrid.MapTileCount32x32 * Item.SIZE]);
         public bool CleanRequested { private get; set; }
+        public bool RestoreRestartRequested { private get; set; }
         public string DodoCode { get; set; } = "No code set yet.";
         public string LastArrival { get; private set; } = string.Empty;
         public ulong CurrentUserId { get; set; } = default!;
@@ -122,6 +123,13 @@ namespace SysBot.ACNHOrders
                 while ((await Connection.ReadBytesAsync((uint)OffsetHelper.OnlineSessionAddress, 0x1, token).ConfigureAwait(false))[0] == 1)
                 {
                     await Task.Delay(2_000, token).ConfigureAwait(false);
+
+                    if (RestoreRestartRequested)
+                    {
+                        RestoreRestartRequested = false;
+                        await DodoRestoreLoop(true, token).ConfigureAwait(false);
+                        return;
+                    }
 
                     if (Config.DodoModeConfig.RefreshMap)
                         await ClearMapAndSpawnInternally(null, Map, token).ConfigureAwait(false);

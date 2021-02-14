@@ -47,5 +47,15 @@ namespace SysBot.ACNHOrders
             Globals.Bot.Config.DodoModeConfig.MashB = !Globals.Bot.Config.DodoModeConfig.MashB;
             await ReplyAsync($"Mash B set to: {Globals.Bot.Config.DodoModeConfig.MashB}.").ConfigureAwait(false);
         }
+
+        [Command("newDodo")]
+        [Alias("restartGame", "restart")]
+        [Summary("Tells the bot to restart the game and fetch a new dodo code. Only works in dodo restore mode.")]
+        [RequireSudo]
+        public async Task FetchNewDodo()
+        {
+            Globals.Bot.RestoreRestartRequested = true;
+            await ReplyAsync($"Sending request to fetch a new dodo code.").ConfigureAwait(false);
+        }
     }
 }
