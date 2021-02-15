@@ -13,7 +13,7 @@ namespace SysBot.ACNHOrders
 
         public ulong UserGuid => ulong.MaxValue;
 
-        public string VillagerName => "Dummy";
+        public string VillagerName => string.Empty;
 
         public Action<CrossBot>? OnFinish { private get; set; }
 

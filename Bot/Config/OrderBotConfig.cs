@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using NHSE.Core;
 
 namespace SysBot.ACNHOrders
@@ -44,5 +45,8 @@ namespace SysBot.ACNHOrders
 
         /// <summary> If some of the inputs get eaten while talking to orville, should we try talking to him one more time? </summary>
         public bool RetryFetchDodoOnFail { get; set; } = true;
+
+        /// <summary> Send messages of orders starting/arriving in the echo channels </summary>
+        public List<ulong> EchoArrivingLeavingChannels { get; set; } = new();
     }
 }

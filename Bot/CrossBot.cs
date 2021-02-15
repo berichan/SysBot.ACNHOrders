@@ -223,7 +223,10 @@ namespace SysBot.ACNHOrders
 
         private async Task<OrderResult> ExecuteOrder(IACNHOrderNotifier<Item> order, CancellationToken token)
         {
-            LogUtil.LogInfo($"Starting next order for: {order.VillagerName} ({order.UserGuid})", Config.IP);
+            string startMsg = $"Starting order for: {order.VillagerName}. Queue size is {Orders.ToArray().Length + 1}.";
+            LogUtil.LogInfo($"{startMsg} ({order.UserGuid})", Config.IP);
+            if (order.VillagerName != string.Empty && Config.OrderConfig.EchoArrivingLeavingChannels.Count > 0)
+                await AttemptEchoHook($"> {startMsg}", Config.OrderConfig.EchoArrivingLeavingChannels, token).ConfigureAwait(false);
             CurrentUserName = order.VillagerName;
 
             // Clear any lingering injections from the last user
@@ -478,6 +481,8 @@ namespace SysBot.ACNHOrders
             }
 
             order.SendNotification(this, $"Visitor arriving: {LastArrival}. Your items will be in front of you once you land.");
+            if (order.VillagerName != string.Empty && Config.OrderConfig.EchoArrivingLeavingChannels.Count > 0)
+                await AttemptEchoHook($"> Visitor arriving: {order.VillagerName}", Config.OrderConfig.EchoArrivingLeavingChannels, token).ConfigureAwait(false);
 
             // Wait for arrival animation (flight board, arrival through gate, terrible dodo seaplane joke, etc)
             await Task.Delay(Config.OrderConfig.ArrivalTime * 1_000, token).ConfigureAwait(false);
@@ -514,6 +519,8 @@ namespace SysBot.ACNHOrders
 
             LogUtil.LogInfo($"Order completed. Notifying visitor of completion.", Config.IP);
             order.OrderFinished(this, Config.OrderConfig.CompleteOrderMessage);
+            if (order.VillagerName != string.Empty && Config.OrderConfig.EchoArrivingLeavingChannels.Count > 0)
+                await AttemptEchoHook($"> Visitor completed order, and is now leaving: {order.VillagerName}", Config.OrderConfig.EchoArrivingLeavingChannels, token).ConfigureAwait(false);
 
             await Task.Delay(20_000, token).ConfigureAwait(false);
 
