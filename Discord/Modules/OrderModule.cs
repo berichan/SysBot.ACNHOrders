@@ -83,6 +83,7 @@ namespace SysBot.ACNHOrders
         [Command("remove")]
         [Alias("qc", "delete", "removeMe")]
         [Summary("Remove yourself from the queue.")]
+        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task RemoveFromQueueAsync()
         {
             QueueExtensions.GetPosition(Context.User.Id, out var order);
@@ -94,6 +95,15 @@ namespace SysBot.ACNHOrders
 
             order.SkipRequested = true;
             await ReplyAsync($"{Context.User.Mention} - Your order has been removed. Please note that you will not be able to rejoin the queue again for a while.").ConfigureAwait(false);
+        }
+
+        [Command("visitorList")]
+        [Alias("visitors")]
+        [Summary("Print the list of visitors on the island (dodo restore mode only).")]
+        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
+        public async Task ShowVisitorList()
+        {
+            await ReplyAsync(Globals.Bot.VisitorList.VisitorFormattedString);
         }
 
         private async Task AttemptToQueueRequest(IReadOnlyCollection<Item> items, SocketUser orderer, ISocketMessageChannel msgChannel, bool catalogue = false)

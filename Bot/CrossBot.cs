@@ -21,6 +21,7 @@ namespace SysBot.ACNHOrders
         public readonly DodoPositionHelper DodoPosition;
         public readonly DropBotState State;
         public readonly AnchorHelper Anchors;
+        public readonly VisitorListHelper VisitorList;
         public readonly DummyOrder<Item> DummyRequest = new();
         public readonly ISwitchConnectionAsync SwitchConnection;
 
@@ -47,6 +48,7 @@ namespace SysBot.ACNHOrders
                 ssa.MaximumTransferSize = cfg.MapPullChunkSize;
 
             DodoPosition = new DodoPositionHelper(this);
+            VisitorList = new VisitorListHelper(this);
         }
 
         private const int pocket = Item.SIZE * 20;
@@ -77,12 +79,11 @@ namespace SysBot.ACNHOrders
 
             // For viewing player vectors
             //await ViewPlayerVectors(token).ConfigureAwait(false);
+
             // get version
             await Task.Delay(100, token).ConfigureAwait(false);
             LogUtil.LogInfo("Attempting get version. Please wait...", Config.IP);
             var gvbytes = Encoding.ASCII.GetBytes("getVersion\r\n");
-            //await Connection.SendAsync(gvbytes, token).ConfigureAwait(false);
-            //await Task.Delay(0_008, token).ConfigureAwait(false); // 1/4 frame
             byte[] socketReturn = await SwitchConnection.ReadRaw(gvbytes, 9, token).ConfigureAwait(false);
             string version = Encoding.UTF8.GetString(socketReturn).TrimEnd('\0').TrimEnd('\n');
             LogUtil.LogInfo($"sys-botbase version identified as: {version}", Config.IP);
@@ -128,6 +129,7 @@ namespace SysBot.ACNHOrders
         private async Task DodoRestoreLoop(bool immediateRestart, CancellationToken token)
         {
             await EnsureAnchorsAreInitialised(token);
+            await VisitorList.UpdateNames(token).ConfigureAwait(false);
 
             bool hardCrash = immediateRestart;
             if (!immediateRestart)
@@ -157,6 +159,8 @@ namespace SysBot.ACNHOrders
                     if (Config.DodoModeConfig.MashB)
                         for (int i = 0; i < 5; ++i)
                             await Click(SwitchButton.B, 0_200, token).ConfigureAwait(false);
+
+                    await VisitorList.UpdateNames(token).ConfigureAwait(false);
 
                     // Check for new arrivals
                     if (await IsArriverNew(token).ConfigureAwait(false))

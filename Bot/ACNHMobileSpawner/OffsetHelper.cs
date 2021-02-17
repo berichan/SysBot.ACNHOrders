@@ -38,6 +38,9 @@
 
         public const ulong DodoAddress = 0xA97E15C;
         public const ulong OnlineSessionAddress = 0x91FD740;
+        public const ulong OnlineSessionVisitorAddress = 0x9D2CFB0;
+        public const ulong OnlineSessionVisitorSize = 0x448; // reverse order
+
         // pointers
         public static readonly long[] PlayerCoordJumps = new long[5] { 0x396F5A0L, 0x18L, 0x178L, 0xD0L, 0xD8L };
     }
