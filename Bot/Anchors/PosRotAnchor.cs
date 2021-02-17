@@ -6,7 +6,7 @@ namespace SysBot.ACNHOrders
     [Serializable]
     public class PosRotAnchor
     {
-        public const int SIZE = 14;
+        public const int SIZE = 16;
         public byte[] AnchorBytes { get; private set; } = new byte[SIZE];
 
         public byte[] AssignableBytes
@@ -21,14 +21,14 @@ namespace SysBot.ACNHOrders
 
         public byte[] Anchor1
         { 
-            get { return AnchorBytes.Take(10).ToArray(); }
-            set { Array.Copy(value, AnchorBytes, 10); }
+            get { return AnchorBytes.Take(12).ToArray(); }
+            set { Array.Copy(value, AnchorBytes, 12); }
         }
 
         public byte[] Anchor2
         {
-            get { return AnchorBytes.Skip(10).ToArray(); }
-            set { Array.Copy(value, 0, AnchorBytes, 10, 4); }
+            get { return AnchorBytes.Skip(12).ToArray(); }
+            set { Array.Copy(value, 0, AnchorBytes, 12, 4); }
         }
 
         public PosRotAnchor() { }

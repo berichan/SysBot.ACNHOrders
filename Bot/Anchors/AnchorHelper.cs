@@ -69,7 +69,11 @@ namespace SysBot.ACNHOrders
         {
             var anchors = GatherAnchors();
             if (toLoad.Length != (anchors.Length * PosRotAnchor.SIZE))
-                throw new Exception("Attempting to load anchors of the incorrect size. Please re-create anchors");
+            {
+                var msg = "Attempting to load anchors of the incorrect size. Please re-create anchors";
+                Base.LogUtil.LogError(msg, "AnchorModule");
+                throw new Exception(msg);
+            }
 
             for (int i = 0; i < anchors.Length; ++i)
                 anchors[i].AssignableBytes = toLoad.Skip(i * PosRotAnchor.SIZE).Take(PosRotAnchor.SIZE).ToArray();
