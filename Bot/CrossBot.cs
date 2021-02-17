@@ -859,8 +859,8 @@ namespace SysBot.ACNHOrders
             {
                 ulong offset = await DodoPosition.GetCoordinateAddress(Config.CoordinatePointer, token).ConfigureAwait(false);
                 LogUtil.LogInfo($"Pointer solved: {offset}", Config.IP);
-                var bytesPos = await Connection.ReadBytesAbsoluteAsync(offset, 0xA, token).ConfigureAwait(false);
-                var bytesRot = await Connection.ReadBytesAbsoluteAsync(offset + 0x3A, 0x4, token).ConfigureAwait(false);
+                var bytesPos = await Connection.ReadBytesAbsoluteAsync(offset, 0xC, token).ConfigureAwait(false);
+                var bytesRot = await Connection.ReadBytesAbsoluteAsync(offset + 0x3C, 0x4, token).ConfigureAwait(false);
                 var state = await DodoPosition.GetOverworldState(offset, token).ConfigureAwait(false);
                 LogUtil.LogInfo($"State: {state}", Config.IP);
                 Console.WriteLine("Byte array 1: ");
@@ -886,7 +886,7 @@ namespace SysBot.ACNHOrders
                 {
                     index = 0;
                     await Connection.WriteBytesAbsoluteAsync(a1, offset, token);
-                    await Connection.WriteBytesAbsoluteAsync(b1, offset + 0x3A, token);
+                    await Connection.WriteBytesAbsoluteAsync(b1, offset + 0x3C, token);
                 }
                 index++;*/
             }
