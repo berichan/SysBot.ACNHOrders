@@ -86,7 +86,7 @@ namespace SysBot.ACNHOrders
             byte[] socketReturn = await SwitchConnection.ReadRaw(gvbytes, 9, token).ConfigureAwait(false);
             string version = Encoding.UTF8.GetString(socketReturn).TrimEnd('\0').TrimEnd('\n');
             LogUtil.LogInfo($"sys-botbase version identified as: {version}", Config.IP);
-            CanFollowPointers = double.Parse(version) > 1.699;
+            try { CanFollowPointers = double.Parse(version) > 1.699; } catch { };
 
             // Validate inventory offset.
             LogUtil.LogInfo("Checking inventory offset for validity.", Config.IP);
