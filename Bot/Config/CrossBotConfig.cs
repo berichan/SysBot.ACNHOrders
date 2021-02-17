@@ -37,7 +37,7 @@ namespace SysBot.ACNHOrders
         /// <summary> Skips creating bots when the program is started; helpful for testing integrations. </summary>
         public bool SkipConsoleBotCreation { get; set; }
 
-        public string CoordinatePointer { get; set; } = "[[[[main+396F5A0]+18]+178]+D0]+DA";
+        public string CoordinatePointer { get; set; } = "[[[[main+396F5A0]+18]+178]+D0]+D8";
 
         /// <summary> When enabled, the Bot will not allow RAM edits if the player's item metadata is invalid. </summary>
         /// <remarks> Only disable this as a last resort, and you have corrupted your item metadata through other means. </remarks>

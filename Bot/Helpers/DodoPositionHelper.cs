@@ -28,8 +28,6 @@ namespace SysBot.ACNHOrders
         private readonly Regex DodoRegex = new Regex(DodoPattern);
 
         public string DodoCode { get; set; } = "No code set yet."; 
-        public byte[] InitialPlayerX { get; set; } = new byte[2];
-        public byte[] InitialPlayerY { get; set; } = new byte[2];
 
         public DodoPositionHelper(CrossBot bot)
         {
@@ -150,13 +148,6 @@ namespace SysBot.ACNHOrders
             // Wait for loading screen.	
             while (await GetOverworldState(CoordinateAddress, token).ConfigureAwait(false) != OverworldState.Overworld)
                 await Task.Delay(0_500, token).ConfigureAwait(false);
-        }
-
-        private async Task ResetPosition(ulong CoordinateAddress, CancellationToken token)
-        {
-            // Sets player xy coordinates to their initial values when bot was started and set player rotation to 0.	
-            await Connection.WriteBytesAbsoluteAsync(new byte[] { InitialPlayerX[0], InitialPlayerX[1], 0, 0, 0, 0, 0, 0, InitialPlayerY[0], InitialPlayerY[1] }, CoordinateAddress, token).ConfigureAwait(false);
-            await Connection.WriteBytesAbsoluteAsync(new byte[] { 0, 0, 0, 0 }, CoordinateAddress + 0x3A, token).ConfigureAwait(false);
         }
 
         public async Task<OverworldState> GetOverworldState(string pointer, CancellationToken token)

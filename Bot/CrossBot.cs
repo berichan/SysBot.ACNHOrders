@@ -678,7 +678,7 @@ namespace SysBot.ACNHOrders
 
             ulong offset = await DodoPosition.GetCoordinateAddress(Config.CoordinatePointer, token).ConfigureAwait(false);
             await Connection.WriteBytesAbsoluteAsync(anchors[index].Anchor1, offset, token).ConfigureAwait(false);
-            await Connection.WriteBytesAbsoluteAsync(anchors[index].Anchor2, offset + 0x3A, token).ConfigureAwait(false);
+            await Connection.WriteBytesAbsoluteAsync(anchors[index].Anchor2, offset + 0x3C, token).ConfigureAwait(false);
 
             return true;
         }
@@ -687,14 +687,14 @@ namespace SysBot.ACNHOrders
         {
             ulong offset = await DodoPosition.GetCoordinateAddress(Config.CoordinatePointer, token).ConfigureAwait(false);
             await Connection.WriteBytesAbsoluteAsync(anchor.Anchor1, offset, token).ConfigureAwait(false);
-            await Connection.WriteBytesAbsoluteAsync(anchor.Anchor2, offset + 0x3A, token).ConfigureAwait(false);
+            await Connection.WriteBytesAbsoluteAsync(anchor.Anchor2, offset + 0x3C, token).ConfigureAwait(false);
         }
 
         private async Task<PosRotAnchor> ReadAnchor(CancellationToken token)
         {
             ulong offset = await DodoPosition.GetCoordinateAddress(Config.CoordinatePointer, token).ConfigureAwait(false);
-            var bytesA = await Connection.ReadBytesAbsoluteAsync(offset, 0xA, token).ConfigureAwait(false);
-            var bytesB = await Connection.ReadBytesAbsoluteAsync(offset + 0x3A, 0x4, token).ConfigureAwait(false);
+            var bytesA = await Connection.ReadBytesAbsoluteAsync(offset, 0xC, token).ConfigureAwait(false);
+            var bytesB = await Connection.ReadBytesAbsoluteAsync(offset + 0x3C, 0x4, token).ConfigureAwait(false);
             var sequentinalAnchor = bytesA.Concat(bytesB).ToArray();
             return new PosRotAnchor(sequentinalAnchor);
         }
