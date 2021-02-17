@@ -21,7 +21,7 @@ namespace SysBot.ACNHOrders
             Globals.Self = sys;
             Globals.Bot = bot;
 
-            LogUtil.LogInfo("Starting Discord.", bot.Connection.IP);
+            bot.Log("Starting Discord.");
 #pragma warning disable 4014
             Task.Run(() => sys.MainAsync(config.Token, cancel), cancel);
 #pragma warning restore 4014
@@ -32,7 +32,7 @@ namespace SysBot.ACNHOrders
                 return;
             }
 
-            LogUtil.LogInfo("Starting bot loop.", bot.Connection.IP);
+            bot.Log("Starting bot loop.");
 
             var task = bot.RunAsync(cancel);
             await task.ConfigureAwait(false);
@@ -41,23 +41,23 @@ namespace SysBot.ACNHOrders
             {
                 if (task.Exception == null)
                 {
-                    LogUtil.LogError("Bot has terminated due to an unknown error.", bot.Connection.IP);
+                    bot.Log("Bot has terminated due to an unknown error.");
                 }
                 else
                 {
-                    LogUtil.LogError("Bot has terminated due to an error:", bot.Connection.IP);
+                    bot.Log("Bot has terminated due to an error:");
                     foreach (var ex in task.Exception.InnerExceptions)
                     {
-                        LogUtil.LogError(ex.Message, bot.Connection.IP);
+                        bot.Log(ex.Message);
                         var st = ex.StackTrace;
                         if (st != null)
-                            LogUtil.LogError(st, bot.Connection.IP);
+                            bot.Log(st);
                     }
                 }
             }
             else
             {
-                LogUtil.LogInfo("Bot has terminated.", bot.Connection.IP);
+                bot.Log("Bot has terminated.");
             }
         }
     }

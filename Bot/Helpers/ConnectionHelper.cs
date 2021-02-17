@@ -10,14 +10,14 @@ namespace SysBot.ACNHOrders
 {
     public static class ConnectionHelper
     {
-        public static async Task WriteBytesLargeAsync(this SwitchConnectionAsync connection, byte[] data, uint offset, int chunkSize, CancellationToken token)
+        public static async Task WriteBytesLargeAsync(this IConsoleConnectionAsync connection, byte[] data, uint offset, int chunkSize, CancellationToken token)
         {
             int byteCount = data.Length;
             for (int i = 0; i < byteCount; i += chunkSize)
                 await connection.WriteBytesAsync(SubArray(data, i, chunkSize), offset + (uint)i, token).ConfigureAwait(false);
         }
 
-        public static async Task<byte[]> ReadBytesLargeAsync(this SwitchConnectionAsync connection, uint offset, int length, int chunkSize, CancellationToken token)
+        public static async Task<byte[]> ReadBytesLargeAsync(this IConsoleConnectionAsync connection, uint offset, int length, int chunkSize, CancellationToken token)
         {
             List<byte> read = new List<byte>();
             for (int i = 0; i < length; i += chunkSize)

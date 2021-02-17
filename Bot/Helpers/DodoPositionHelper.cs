@@ -22,7 +22,7 @@ namespace SysBot.ACNHOrders
     {
         private const string DodoPattern = @"^[A-Z0-9]*$";
 
-        private readonly SwitchConnectionAsync Connection;
+        private readonly ISwitchConnectionAsync Connection;
         private readonly CrossBot BotRunner;
         private readonly CrossBotConfig Config;
         private readonly Regex DodoRegex = new Regex(DodoPattern);
@@ -34,50 +34,44 @@ namespace SysBot.ACNHOrders
         public DodoPositionHelper(CrossBot bot)
         {
             BotRunner = bot;
-            Connection = BotRunner.Connection;
+            Connection = BotRunner.SwitchConnection;
             Config = BotRunner.Config;
         }
 
-        public async Task<ulong> GetCoordinateAddress(string pointer, CancellationToken token)
+        public async Task<ulong> FollowMainPointer(long[] jumps, bool canSolveOnSysmodule, CancellationToken token) //include the last jump here
         {
-            // Regex pattern to get operators and offsets from pointer expression.	
-            string pattern = @"(\+|\-)([A-Fa-f0-9]+)";
-            Regex regex = new Regex(pattern);
-            Match match = regex.Match(pointer);
-
-            // Get first offset from pointer expression and read address at that offset from main start.	
-            var ofs = Convert.ToUInt64(match.Groups[2].Value, 16);
-            var address = BitConverter.ToUInt64(await Connection.ReadBytesMainAsync(ofs, 0x8, token).ConfigureAwait(false), 0);
-            match = match.NextMatch();
-
-            // Matches the rest of the operators and offsets in the pointer expression.	
-            while (match.Success)
+            // 1.7+ sys-botbase can solve entire pointer 
+            if (canSolveOnSysmodule)
             {
-                // Get operator and offset from match.	
-                string opp = match.Groups[1].Value;
-                ofs = Convert.ToUInt64(match.Groups[2].Value, 16);
+                var jumpsWithoutLast = jumps.Take(jumps.Length - 1);
 
-                // Add or subtract the offset from the current stored address based on operator in front of offset.	
-                switch (opp)
-                {
-                    case "+":
-                        address += ofs;
-                        break;
-                    case "-":
-                        address -= ofs;
-                        break;
-                }
+                byte[] command = Encoding.UTF8.GetBytes($"pointer{string.Concat(jumpsWithoutLast.Select(z => $" {z}"))}\r\n");
 
-                // Attempt another match and if successful read bytes at address and store the new address.	
-                match = match.NextMatch();
-                if (match.Success)
-                {
-                    byte[] bytes = await Connection.ReadBytesAbsoluteAsync(address, 0x8, token).ConfigureAwait(false);
-                    address = BitConverter.ToUInt64(bytes, 0);
-                }
+                byte[] socketReturn = await Connection.ReadRaw(command, sizeof(ulong) * 2 + 1, token).ConfigureAwait(false);
+                var bytes = Base.Decoder.ConvertHexByteStringToBytes(socketReturn);
+                bytes = bytes.Reverse().ToArray();
+
+                var offset = (ulong)((long)BitConverter.ToUInt64(bytes, 0) + jumps[jumps.Length - 1]);
+                //LogUtil.LogInfo($"Offset: {offset}", Config.IP);
+                return offset;
             }
 
-            return address;
+            // solve pointer manually
+            var ofs = (ulong)jumps[0]; // won't work with negative first jump
+            var address = BitConverter.ToUInt64(await Connection.ReadBytesMainAsync(ofs, 0x8, token).ConfigureAwait(false), 0);
+            for (int i = 1; i < jumps.Length - 1; ++i)
+            {
+                await Task.Delay(0_008, token).ConfigureAwait(false); // 1/4 frame
+                var jump = jumps[i];
+                if (jump > 0)
+                    address += (ulong)jump;
+                else
+                    address -= (ulong)Math.Abs(jump);
+
+                byte[] bytes = await Connection.ReadBytesAbsoluteAsync(address, 0x8, token).ConfigureAwait(false);
+                address = BitConverter.ToUInt64(bytes, 0);
+            }
+            return address + (ulong)jumps[jumps.Length - 1];
         }
 
         public async Task CloseGate(uint Offset, CancellationToken token)
@@ -152,22 +146,15 @@ namespace SysBot.ACNHOrders
                 await Task.Delay(0_500, token).ConfigureAwait(false);
         }
 
-        private async Task ResetPosition(ulong CoordinateAddress, CancellationToken token)
+        public async Task<OverworldState> GetOverworldState(long[] jumps, bool canFollowPointers, CancellationToken token)
         {
-            // Sets player xy coordinates to their initial values when bot was started and set player rotation to 0.	
-            await Connection.WriteBytesAbsoluteAsync(new byte[] { InitialPlayerX[0], InitialPlayerX[1], 0, 0, 0, 0, 0, 0, InitialPlayerY[0], InitialPlayerY[1] }, CoordinateAddress, token).ConfigureAwait(false);
-            await Connection.WriteBytesAbsoluteAsync(new byte[] { 0, 0, 0, 0 }, CoordinateAddress + 0x3A, token).ConfigureAwait(false);
-        }
-
-        public async Task<OverworldState> GetOverworldState(string pointer, CancellationToken token)
-        {
-            ulong coord = await GetCoordinateAddress(pointer, token).ConfigureAwait(false);
+            ulong coord = await FollowMainPointer(jumps, canFollowPointers, token).ConfigureAwait(false);
             return await GetOverworldState(coord, token).ConfigureAwait(false);
         }
 
         public async Task<OverworldState> GetOverworldState(ulong CoordinateAddress, CancellationToken token)
         {
-            var x = BitConverter.ToUInt32(await Connection.ReadBytesAbsoluteAsync(CoordinateAddress + 0x1E, 0x4, token).ConfigureAwait(false), 0);
+            var x = BitConverter.ToUInt32(await Connection.ReadBytesAbsoluteAsync(CoordinateAddress + 0x20, 0x4, token).ConfigureAwait(false), 0);
             //LogUtil.LogInfo($"CurrentVal: {x:X8}", Config.IP);
             return GetOverworldState(x);
         }
