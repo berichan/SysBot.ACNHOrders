@@ -12,6 +12,7 @@ namespace SysBot.ACNHOrders
         public async Task SetAnchorAsync(int anchorId)
         {
             var bot = Globals.Bot;
+            await Task.Delay(2_000, CancellationToken.None).ConfigureAwait(false);
             var success = await bot.UpdateAnchor(anchorId, CancellationToken.None).ConfigureAwait(false);
             var msg = success ? $"Successfully updated anchor {anchorId}." : $"Unable to update anchor {anchorId}.";
             await ReplyAsync(msg).ConfigureAwait(false);
@@ -23,6 +24,7 @@ namespace SysBot.ACNHOrders
         public async Task SendAnchorBytesAsync(int anchorId)
         {
             var bot = Globals.Bot;
+            await Task.Delay(2_000, CancellationToken.None).ConfigureAwait(false);
             var success = await bot.SendAnchorBytes(anchorId, CancellationToken.None).ConfigureAwait(false);
             var msg = success ? $"Successfully set player to anchor {anchorId}." : $"Unable to set player to anchor {anchorId}.";
             await ReplyAsync(msg).ConfigureAwait(false);
