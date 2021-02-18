@@ -52,7 +52,6 @@ namespace SysBot.ACNHOrders
                 bytes = bytes.Reverse().ToArray();
 
                 var offset = (ulong)((long)BitConverter.ToUInt64(bytes, 0) + jumps[jumps.Length - 1]);
-                //LogUtil.LogInfo($"Offset: {offset}", Config.IP);
                 return offset;
             }
 
@@ -142,7 +141,7 @@ namespace SysBot.ACNHOrders
             LogUtil.LogInfo($"Retrieved Dodo code: {DodoCode}.", Config.IP);
 
             // Wait for loading screen.	
-            while (await GetOverworldState(CoordinateAddress, token).ConfigureAwait(false) != OverworldState.Overworld)
+            while (await GetOverworldState(CoordinateAddress, token).ConfigureAwait(false) is not OverworldState.Overworld or OverworldState.Null)
                 await Task.Delay(0_500, token).ConfigureAwait(false);
         }
 

@@ -513,11 +513,15 @@ namespace SysBot.ACNHOrders
             // Wait for arrival animation (flight board, arrival through gate, terrible dodo seaplane joke, etc)
             await Task.Delay(Config.OrderConfig.ArrivalTime * 1_000, token).ConfigureAwait(false);
 
+            int tries = 0;
             // Ensure we're on overworld before starting timer/drop loop
             while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false) != OverworldState.Overworld)
             {
                 await Task.Delay(0_500, token).ConfigureAwait(false);
                 await Click(SwitchButton.A, 0_500, token).ConfigureAwait(false);
+                tries++;
+                if (tries > 10)
+                    break; // In null state
             }
 
             // Update current user Id such that they may use drop commands
@@ -584,7 +588,13 @@ namespace SysBot.ACNHOrders
             await Task.Delay(1_000, token).ConfigureAwait(false);
 
             // Start game
-            for (int i = 0; i < 15; ++i)
+            for (int i = 0; i < 4; ++i)
+                await Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);
+
+            // Wait for "checking if the game can be played" wheel
+            await Task.Delay(8_000, token).ConfigureAwait(false);
+
+            for (int i = 0; i < 3; ++i)
                 await Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);
         }
 
