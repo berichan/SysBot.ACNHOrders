@@ -160,7 +160,11 @@ namespace SysBot.ACNHOrders
                         for (int i = 0; i < 5; ++i)
                             await Click(SwitchButton.B, 0_200, token).ConfigureAwait(false);
 
-                    await VisitorList.UpdateNames(token).ConfigureAwait(false);
+                    var diffs = await VisitorList.UpdateNames(token).ConfigureAwait(false);
+
+                    if (Config.DodoModeConfig.EchoArrivalChannels.Count > 0)
+                        foreach (var diff in diffs)
+                            await AttemptEchoHook($"{diff.Name} has {(diff.Arrived ? "landed at the island" : "departed from the island")}.", Config.DodoModeConfig.EchoArrivalChannels, token).ConfigureAwait(false);
 
                     // Check for new arrivals
                     if (await IsArriverNew(token).ConfigureAwait(false))

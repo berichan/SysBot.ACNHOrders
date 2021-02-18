@@ -9,26 +9,55 @@ using System.Threading;
 
 namespace SysBot.ACNHOrders
 {
+    public class VisitorDifference 
+    {
+        public class Difference
+        {
+            public string Name;
+            public bool Arrived; // (new) Otherwise left
+            public Difference (string n, bool a) { Name = n; Arrived = a; }
+        }
+
+        public List<string> Visitors { get; private set; }
+
+        public VisitorDifference(IReadOnlyCollection<string> str) { Visitors = new List<string>(str); }
+
+        public List<Difference> GetDifferenceWith(VisitorDifference other)
+        {
+            List<Difference> diffs = new List<Difference>();
+            foreach (var visitor in other.Visitors)
+                if (visitor != string.Empty && !Visitors.Contains(visitor))
+                    diffs.Add(new Difference(visitor, true));
+            foreach (var currentVisitor in Visitors)
+                if (currentVisitor != string.Empty && !other.Visitors.Contains(currentVisitor))
+                    diffs.Add(new Difference(currentVisitor, false));
+            return diffs;
+        }
+    }
+
     public class VisitorListHelper
     {
         private const int VisitorNameSize = 0x14;
         private const int VisitorListSize = 8;
 
+        public string VisitorFormattedString { get; private set; } = "Names not loaded.";
+
         private readonly ISwitchConnectionAsync Connection;
         private readonly CrossBot BotRunner;
         private readonly CrossBotConfig Config;
 
-        private string[] Visitors = new string[VisitorListSize];
-        public string VisitorFormattedString { get; private set; } = "Names not loaded.";
+        public string[] Visitors { get; private set; } = new string[VisitorListSize];
+        public VisitorDifference LastVisitorDiff { get; private set; }
 
         public VisitorListHelper(CrossBot bot)
         {
             BotRunner = bot;
             Connection = BotRunner.SwitchConnection;
             Config = BotRunner.Config;
+            LastVisitorDiff = new VisitorDifference(Visitors);
         }
 
-        public async Task UpdateNames(CancellationToken token)
+        public async Task<IReadOnlyCollection<VisitorDifference.Difference>> UpdateNames(CancellationToken token)
         {
             VisitorFormattedString = "The following visitors are on the island:\n";
             for (uint i = 0; i < VisitorListSize; ++i)
@@ -38,6 +67,11 @@ namespace SysBot.ACNHOrders
                 Visitors[i] = Encoding.UTF8.GetString(bytes).TrimEnd('\0');
                 VisitorFormattedString += $"#{i + 1}: {(string.IsNullOrWhiteSpace(Visitors[i]) ? "Available slot" : Visitors[i])}\n";
             }
+
+            VisitorDifference currentVisitors = new VisitorDifference(Visitors);
+            var toRet = LastVisitorDiff.GetDifferenceWith(currentVisitors);
+            LastVisitorDiff = currentVisitors;
+            return toRet;
         }
     }
 }
