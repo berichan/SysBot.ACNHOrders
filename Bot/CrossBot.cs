@@ -142,7 +142,7 @@ namespace SysBot.ACNHOrders
 
                 await SaveDodoCodeToFile(token).ConfigureAwait(false);
 
-                while ((await Connection.ReadBytesAsync((uint)OffsetHelper.OnlineSessionAddress, 0x1, token).ConfigureAwait(false))[0] == 1)
+                while (await IsNetworkSessionActive(token).ConfigureAwait(false))
                 {
                     await Task.Delay(2_000, token).ConfigureAwait(false);
 
@@ -273,8 +273,7 @@ namespace SysBot.ACNHOrders
 
             if (result == OrderResult.Success)
             {
-                await CloseGate(token).ConfigureAwait(false);
-                GameIsDirty = false;
+                GameIsDirty = await CloseGate(token).ConfigureAwait(false);
             }
             else
             {
@@ -516,7 +515,10 @@ namespace SysBot.ACNHOrders
 
             // Ensure we're on overworld before starting timer/drop loop
             while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false) != OverworldState.Overworld)
-                await Task.Delay(1_000, token).ConfigureAwait(false);
+            {
+                await Task.Delay(0_500, token).ConfigureAwait(false);
+                await Click(SwitchButton.A, 0_500, token).ConfigureAwait(false);
+            }
 
             // Update current user Id such that they may use drop commands
             CurrentUserId = order.UserGuid;
@@ -541,6 +543,14 @@ namespace SysBot.ACNHOrders
                     LogUtil.LogError($"{error}. Removed from queue, moving to next order.", Config.IP);
                     order.OrderCancelled(this, $"{error} Your request has been removed.", false);
                     return OrderResult.NoLeave;
+                }
+
+                if (!await IsNetworkSessionActive(token).ConfigureAwait(false))
+                {
+                    var error = "Network crash detected.";
+                    LogUtil.LogError($"{error}. Removed from queue, moving to next order.", Config.IP);
+                    order.OrderCancelled(this, $"{error} Your request has been removed.", true);
+                    return OrderResult.Faulted;
                 }
             }
 
@@ -601,6 +611,7 @@ namespace SysBot.ACNHOrders
             while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false) is OverworldState.Overworld or OverworldState.Null)
             {
                 // Go into airport
+                LogUtil.LogInfo($"Attempting to enter airport. Try: {tries+1}", Config.IP);
                 await SetStick(SwitchStick.LEFT, 20_000, 20_000, 0_400, token).ConfigureAwait(false);
                 await Task.Delay(0_500, token).ConfigureAwait(false);
                 await SetStick(SwitchStick.LEFT, 0, 0, 1_500, token).ConfigureAwait(false);
@@ -626,7 +637,8 @@ namespace SysBot.ACNHOrders
                 await Connection.WriteBytesAsync(mapChunks[i].ToSend, mapChunks[i].Offset, token).ConfigureAwait(false);
         }
 
-        private async Task CloseGate(CancellationToken token)
+        /// <returns>Whether or not the connection is active at the end of the close gate function</returns>
+        private async Task<bool> CloseGate(CancellationToken token)
         {
             // Teleport to airport entry anchor  (twice, in case we get pulled back)
             await SendAnchorBytes(2, token).ConfigureAwait(false);
@@ -643,6 +655,8 @@ namespace SysBot.ACNHOrders
 
             // Close gate (fail-safe without checking if open)
             await DodoPosition.CloseGate((uint)OffsetHelper.DodoAddress, token).ConfigureAwait(false);
+
+            return await IsNetworkSessionActive(token).ConfigureAwait(false);
         }
 
         private async Task<bool> EnsureAnchorMatches(int anchorIndex, int millisecondsTimeout, Func<Task> toDoPerLoop, CancellationToken token)
@@ -729,7 +743,7 @@ namespace SysBot.ACNHOrders
         private async Task<bool> IsArriverNew(CancellationToken token)
         {
             var data = await Connection.ReadBytesAsync((uint)OffsetHelper.ArriverNameLocAddress, 0x14, token).ConfigureAwait(false);
-            var arriverName = System.Text.Encoding.Unicode.GetString(data).TrimEnd('\0'); // only remove null values off end
+            var arriverName = Encoding.Unicode.GetString(data).TrimEnd('\0'); // only remove null values off end
             if (arriverName != string.Empty && arriverName != LastArrival)
             {
                 LogUtil.LogInfo($"{arriverName} is arriving!", Config.IP);
@@ -750,6 +764,8 @@ namespace SysBot.ACNHOrders
                 await sourceStream.WriteAsync(encodedText, 0, encodedText.Length, token).ConfigureAwait(false);
             };
         }
+
+        private async Task<bool> IsNetworkSessionActive(CancellationToken token) => (await Connection.ReadBytesAsync((uint)OffsetHelper.OnlineSessionAddress, 0x1, token).ConfigureAwait(false))[0] == 1;
 
         private async Task DropLoop(CancellationToken token)
         {
