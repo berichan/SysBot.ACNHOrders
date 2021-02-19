@@ -515,7 +515,7 @@ namespace SysBot.ACNHOrders
                 await AttemptEchoHook($"> Visitor arriving: {order.VillagerName}", Config.OrderConfig.EchoArrivingLeavingChannels, token).ConfigureAwait(false);
 
             // Wait for arrival animation (flight board, arrival through gate, terrible dodo seaplane joke, etc)
-            await Task.Delay(Config.OrderConfig.ArrivalTime * 1_000, token).ConfigureAwait(false);
+            await Task.Delay(Config.OrderConfig.ArrivalTime * 1_200, token).ConfigureAwait(false);
 
             int tries = 0;
             // Ensure we're on overworld before starting timer/drop loop
@@ -524,7 +524,7 @@ namespace SysBot.ACNHOrders
                 await Task.Delay(0_500, token).ConfigureAwait(false);
                 await Click(SwitchButton.A, 0_500, token).ConfigureAwait(false);
                 tries++;
-                if (tries > 10)
+                if (tries > 20)
                     break; // In null state
             }
 
@@ -669,6 +669,8 @@ namespace SysBot.ACNHOrders
 
             // Close gate (fail-safe without checking if open)
             await DodoPosition.CloseGate((uint)OffsetHelper.DodoAddress, token).ConfigureAwait(false);
+
+            await Task.Delay(2_000, token).ConfigureAwait(false);
 
             return await IsNetworkSessionActive(token).ConfigureAwait(false);
         }

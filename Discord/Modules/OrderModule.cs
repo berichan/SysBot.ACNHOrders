@@ -106,6 +106,15 @@ namespace SysBot.ACNHOrders
             await ReplyAsync(Globals.Bot.VisitorList.VisitorFormattedString);
         }
 
+        [Command("checkState")]
+        [Alias("checkDirtyState")]
+        [Summary("Prints whether or not the bot will restart the game for the next order.")]
+        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
+        public async Task ShowDirtyState()
+        {
+            await ReplyAsync($"State: {(Globals.Bot.GameIsDirty? "Bad" : "Good")}");
+        }
+
         private async Task AttemptToQueueRequest(IReadOnlyCollection<Item> items, SocketUser orderer, ISocketMessageChannel msgChannel, bool catalogue = false)
         {
             var currentOrderCount = Globals.Bot.Orders.Count;
