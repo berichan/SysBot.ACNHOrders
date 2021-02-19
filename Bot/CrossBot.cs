@@ -380,7 +380,11 @@ namespace SysBot.ACNHOrders
             }
 
             while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false) != OverworldState.Overworld)
+            {
                 await Task.Delay(1_000, token).ConfigureAwait(false);
+                if (ignoreInjection)
+                    await Click(SwitchButton.B, 0_500, token).ConfigureAwait(false);
+            }
 
             // Delay for animation
             await Task.Delay(1_800, token).ConfigureAwait(false);
