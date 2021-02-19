@@ -47,6 +47,8 @@ namespace SysBot.ACNHOrders
         private readonly CrossBotConfig Config;
 
         public string[] Visitors { get; private set; } = new string[VisitorListSize];
+
+        public uint VisitorCount { get; private set; } = 0;
         public VisitorDifference LastVisitorDiff { get; private set; }
 
         public VisitorListHelper(CrossBot bot)
@@ -60,12 +62,21 @@ namespace SysBot.ACNHOrders
         public async Task<IReadOnlyCollection<VisitorDifference.Difference>> UpdateNames(CancellationToken token)
         {
             VisitorFormattedString = "The following visitors are on the island:\n";
+            VisitorCount = 0;
             for (uint i = 0; i < VisitorListSize; ++i)
             {
                 ulong offset = OffsetHelper.OnlineSessionVisitorAddress - (i * OffsetHelper.OnlineSessionVisitorSize);
                 var bytes = await Connection.ReadBytesAsync((uint)offset, VisitorNameSize, token).ConfigureAwait(false);
                 Visitors[i] = Encoding.UTF8.GetString(bytes).TrimEnd('\0');
-                VisitorFormattedString += $"#{i + 1}: {(string.IsNullOrWhiteSpace(Visitors[i]) ? "Available slot" : Visitors[i])}\n";
+
+                string VisitorInformation = "Available slot";
+                if (!string.IsNullOrWhiteSpace(Visitors[i]))
+                {
+                    VisitorCount++;
+                    VisitorInformation = Visitors[i];
+                }
+
+                VisitorFormattedString += $"#{i + 1}: {VisitorInformation}\n";
             }
 
             VisitorDifference currentVisitors = new VisitorDifference(Visitors);

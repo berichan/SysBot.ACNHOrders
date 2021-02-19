@@ -15,6 +15,9 @@ namespace SysBot.ACNHOrders
         /// <summary> Where the newly fetched dodo code will be written to after restore.</summary>
         public string DodoRestoreFilename { get; set; } = "Dodo.txt";
 
+        /// <summary> Where the number of visitors will be written to after restore.</summary>
+        public string VisitorFilename { get; set; } = "Visitors.txt";
+
         /// <summary> Channels where the dodo code will be posted on restore </summary>
         public List<ulong> EchoDodoChannels { get; set; } = new();
 
