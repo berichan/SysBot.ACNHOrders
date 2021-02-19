@@ -75,8 +75,8 @@ namespace SysBot.ACNHOrders
             }
 
             var position = orderArray.Length + 1;
-
-            msg = $"{trader.Mention} - Added you to the order queue. Your position is: **{position}**";
+            var idToken = Globals.Bot.Config.OrderConfig.ShowIDs ? $" ID: {itemReq.OrderID}" : string.Empty;
+            msg = $"{trader.Mention} - Added you to the order queue{idToken}. Your position is: **{position}**";
 
             if (position > 1)
                 msg += $" Your predicted ETA is {GetETA(position)}";

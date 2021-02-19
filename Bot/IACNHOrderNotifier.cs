@@ -7,6 +7,7 @@ namespace SysBot.ACNHOrders
     {
         public T[] Order { get; }
         public ulong UserGuid { get; }
+        public ulong OrderID { get; }
         public string VillagerName { get; }
         void OrderInitializing(CrossBot routine, string msg);
         void OrderReady(CrossBot routine, string msg);

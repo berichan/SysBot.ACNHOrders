@@ -33,7 +33,7 @@ namespace SysBot.ACNHOrders
         /// <summary> When set to true, dodo code will become bot status </summary>
         public bool SetStatusAsDodoCode { get; set; }
 
-        /// <summary> When set to true, dodo code will become bot status </summary>
+        /// <summary> When set to true, the bot will mash B when not doing any of the other restore functionality </summary>
         public bool MashB { get; set; }
     }
 }

@@ -10,6 +10,7 @@ namespace SysBot.ACNHOrders
     {
         public MultiItem ItemOrderData { get; }
         public ulong UserGuid { get; }
+        public ulong OrderID { get; }
         public string VillagerName { get; }
         private SocketUser Trader { get; }
         private ISocketMessageChannel CommandSentChannel { get; }
@@ -17,10 +18,11 @@ namespace SysBot.ACNHOrders
         public T[] Order { get; } // stupid but I cba to work on this part anymore
         public bool SkipRequested { get; set; } = false;
 
-        public OrderRequest(MultiItem data, T[] order, ulong user, SocketUser trader, ISocketMessageChannel commandSentChannel)
+        public OrderRequest(MultiItem data, T[] order, ulong user, ulong orderId, SocketUser trader, ISocketMessageChannel commandSentChannel)
         {
             ItemOrderData = data;
             UserGuid = user;
+            OrderID = orderId;
             Trader = trader;
             CommandSentChannel = commandSentChannel;
             Order = order;

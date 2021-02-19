@@ -17,6 +17,8 @@ namespace SysBot.ACNHOrders
 
         public Action<CrossBot>? OnFinish { private get; set; }
 
+        public ulong OrderID => ulong.MaxValue;
+
         public void OrderCancelled(CrossBot routine, string msg, bool faulted)
         {
         }
