@@ -30,6 +30,7 @@ namespace SysBot.ACNHOrders
         public bool RestoreRestartRequested { private get; set; }
         public bool CanFollowPointers { get; private set; }
         public string DodoCode { get; set; } = "No code set yet.";
+        public string VisitorInfo { get; set; } = "No visitor info yet.";
         public string LastArrival { get; private set; } = string.Empty;
         public ulong CurrentUserId { get; set; } = default!;
         public string CurrentUserName { get; set; } = string.Empty;
@@ -178,10 +179,13 @@ namespace SysBot.ACNHOrders
                         await Connection.WriteBytesAsync(new byte[0x14], (uint)OffsetHelper.ArriverNameLocAddress, token).ConfigureAwait(false);
                         LastArrival = string.Empty;
                     }
+
+                    await SaveVisitorsToFile(token).ConfigureAwait(false);
                 }
 
                 if (Config.DodoModeConfig.EchoDodoChannels.Count > 0)
                     await AttemptEchoHook($"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] Crash detected. Please wait while I get a new Dodo code.", Config.DodoModeConfig.EchoDodoChannels, token).ConfigureAwait(false);
+                    await ResetFiles(token).ConfigureAwait(false);
                 LogUtil.LogInfo($"Crash detected, awaiting overworld to fetch new dodo.", Config.IP);
                 await Task.Delay(5_000, token).ConfigureAwait(false);
 
@@ -785,6 +789,40 @@ namespace SysBot.ACNHOrders
             byte[] encodedText = Encoding.ASCII.GetBytes(DodoCode);
 
             using (FileStream sourceStream = new FileStream(Config.DodoModeConfig.DodoRestoreFilename,
+                FileMode.Create, FileAccess.Write, FileShare.None,
+                bufferSize: 4096, useAsync: true))
+            {
+                await sourceStream.WriteAsync(encodedText, 0, encodedText.Length, token).ConfigureAwait(false);
+            };
+        }
+
+        private async Task SaveVisitorsToFile(CancellationToken token)
+        {
+            // VisitorList.VisitorCount - 1 because the host is always on the island.
+            VisitorInfo = (VisitorList.VisitorCount == 8) ? "Island is full" : $"Visitors: {(VisitorList.VisitorCount - 1)}"; 
+            byte[] encodedText = Encoding.ASCII.GetBytes(VisitorInfo);
+
+            using (FileStream sourceStream = new FileStream(Config.DodoModeConfig.VisitorFilename,
+                FileMode.Create, FileAccess.Write, FileShare.None,
+                bufferSize: 4096, useAsync: true))
+            {
+                await sourceStream.WriteAsync(encodedText, 0, encodedText.Length, token).ConfigureAwait(false);
+            };
+        }
+        private async Task ResetFiles(CancellationToken token)
+        {
+            byte[] encodedText = Encoding.ASCII.GetBytes("Retrieving Dodo Code");
+
+            using (FileStream sourceStream = new FileStream(Config.DodoModeConfig.DodoRestoreFilename,
+                FileMode.Create, FileAccess.Write, FileShare.None,
+                bufferSize: 4096, useAsync: true))
+            {
+                await sourceStream.WriteAsync(encodedText, 0, encodedText.Length, token).ConfigureAwait(false);
+            };
+
+            encodedText = Encoding.ASCII.GetBytes("Visitors: 0");
+
+            using (FileStream sourceStream = new FileStream(Config.DodoModeConfig.VisitorFilename,
                 FileMode.Create, FileAccess.Write, FileShare.None,
                 bufferSize: 4096, useAsync: true))
             {
