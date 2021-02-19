@@ -10,7 +10,7 @@ namespace SysBot.ACNHOrders
         private int _maxQueueCount = 50;
         private int _timeAllowed = 180;
         private int _waitForArriverTime = 60;
-        private int _arrivalTime = 60;
+        private int _arrivalTime = 75;
 
         /// <summary> Amount of people allowed in the queue before the bot stop accepting requests. Won't accept more than 99 (around 8 hours) </summary>
         public int MaxQueueCount
@@ -37,7 +37,7 @@ namespace SysBot.ACNHOrders
         public int ArrivalTime
         {
             get => _arrivalTime;
-            set => _arrivalTime = Math.Max(60, value);
+            set => _arrivalTime = Math.Max(75, value);
         }
 
         /// <summary> Message to send at the end of the order completion string </summary>
