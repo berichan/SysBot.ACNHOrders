@@ -787,47 +787,24 @@ namespace SysBot.ACNHOrders
         private async Task SaveDodoCodeToFile(CancellationToken token)
         {
             byte[] encodedText = Encoding.ASCII.GetBytes(DodoCode);
-
-            using (FileStream sourceStream = new FileStream(Config.DodoModeConfig.DodoRestoreFilename,
-                FileMode.Create, FileAccess.Write, FileShare.None,
-                bufferSize: 4096, useAsync: true))
-            {
-                await sourceStream.WriteAsync(encodedText, 0, encodedText.Length, token).ConfigureAwait(false);
-            };
+            await FileUtil.WriteBytesToFileAsync(encodedText, Config.DodoModeConfig.DodoRestoreFilename, token).ConfigureAwait(false);
         }
 
         private async Task SaveVisitorsToFile(CancellationToken token)
         {
             // VisitorList.VisitorCount - 1 because the host is always on the island.
-            VisitorInfo = (VisitorList.VisitorCount == 8) ? "Island is full" : $"Visitors: {(VisitorList.VisitorCount - 1)}"; 
+            VisitorInfo = (VisitorList.VisitorCount == VisitorListHelper.VisitorListSize) ? "Island is full" : $"Visitors: {(VisitorList.VisitorCount - 1)}"; 
             byte[] encodedText = Encoding.ASCII.GetBytes(VisitorInfo);
-
-            using (FileStream sourceStream = new FileStream(Config.DodoModeConfig.VisitorFilename,
-                FileMode.Create, FileAccess.Write, FileShare.None,
-                bufferSize: 4096, useAsync: true))
-            {
-                await sourceStream.WriteAsync(encodedText, 0, encodedText.Length, token).ConfigureAwait(false);
-            };
+            await FileUtil.WriteBytesToFileAsync(encodedText, Config.DodoModeConfig.VisitorFilename, token).ConfigureAwait(false);
         }
+
         private async Task ResetFiles(CancellationToken token)
         {
             byte[] encodedText = Encoding.ASCII.GetBytes("Retrieving Dodo Code");
-
-            using (FileStream sourceStream = new FileStream(Config.DodoModeConfig.DodoRestoreFilename,
-                FileMode.Create, FileAccess.Write, FileShare.None,
-                bufferSize: 4096, useAsync: true))
-            {
-                await sourceStream.WriteAsync(encodedText, 0, encodedText.Length, token).ConfigureAwait(false);
-            };
+            await FileUtil.WriteBytesToFileAsync(encodedText, Config.DodoModeConfig.DodoRestoreFilename, token).ConfigureAwait(false);
 
             encodedText = Encoding.ASCII.GetBytes("Visitors: 0");
-
-            using (FileStream sourceStream = new FileStream(Config.DodoModeConfig.VisitorFilename,
-                FileMode.Create, FileAccess.Write, FileShare.None,
-                bufferSize: 4096, useAsync: true))
-            {
-                await sourceStream.WriteAsync(encodedText, 0, encodedText.Length, token).ConfigureAwait(false);
-            };
+            await FileUtil.WriteBytesToFileAsync(encodedText, Config.DodoModeConfig.VisitorFilename, token).ConfigureAwait(false);
         }
 
         private async Task<bool> IsNetworkSessionActive(CancellationToken token) => (await Connection.ReadBytesAsync((uint)OffsetHelper.OnlineSessionAddress, 0x1, token).ConfigureAwait(false))[0] == 1;

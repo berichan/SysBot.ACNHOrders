@@ -38,7 +38,7 @@ namespace SysBot.ACNHOrders
     public class VisitorListHelper
     {
         private const int VisitorNameSize = 0x14;
-        private const int VisitorListSize = 8;
+        public const int VisitorListSize = 8;
 
         public string VisitorFormattedString { get; private set; } = "Names not loaded.";
 
