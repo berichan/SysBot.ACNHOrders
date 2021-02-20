@@ -167,13 +167,13 @@ namespace SysBot.ACNHOrders
                     if (Config.DodoModeConfig.EchoArrivalChannels.Count > 0)
                         foreach (var diff in diffs)
                             if (!diff.Arrived)
-                                await AttemptEchoHook($"> [{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] {diff.Name} has departed from the island", Config.DodoModeConfig.EchoArrivalChannels, token).ConfigureAwait(false);
+                                await AttemptEchoHook($"> [{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] 🛫 {diff.Name} has departed from the island", Config.DodoModeConfig.EchoArrivalChannels, token).ConfigureAwait(false);
 
                     // Check for new arrivals
                     if (await IsArriverNew(token).ConfigureAwait(false))
                     {
                         if (Config.DodoModeConfig.EchoArrivalChannels.Count > 0)
-                            await AttemptEchoHook($"> [{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] {LastArrival} from {LastArrivalIsland} is joining the island.{(Config.DodoModeConfig.PostDodoCodeWithNewArrivals ? $" Dodo code is: {DodoCode}." : string.Empty)}", Config.DodoModeConfig.EchoArrivalChannels, token).ConfigureAwait(false);
+                            await AttemptEchoHook($"> [{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] 🛬 {LastArrival} from {LastArrivalIsland} is joining the island.{(Config.DodoModeConfig.PostDodoCodeWithNewArrivals ? $" Dodo code is: {DodoCode}." : string.Empty)}", Config.DodoModeConfig.EchoArrivalChannels, token).ConfigureAwait(false);
 
                         await Task.Delay(60_000, token).ConfigureAwait(false);
 
@@ -349,10 +349,10 @@ namespace SysBot.ACNHOrders
                 // Wait for the load time which feels like an age.
                 // Wait for the game to teleport us from the "hell" position to our front door. Keep pressing A & B incase we're stuck at the day intro.
                 int echoCount = 0;
-                bool gameStarted = await EnsureAnchorMatches(0, 130_000, async () =>
+                bool gameStarted = await EnsureAnchorMatches(0, 150_000, async () =>
                 {
-                    await Click(SwitchButton.A, 0_500, token).ConfigureAwait(false);
-                    await Click(SwitchButton.B, 0_500, token).ConfigureAwait(false);
+                    await Click(SwitchButton.A, 0_300, token).ConfigureAwait(false);
+                    await Click(SwitchButton.B, 0_300, token).ConfigureAwait(false);
                     if (echoCount < 5)
                     {
                         if (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false) == OverworldState.Overworld)
