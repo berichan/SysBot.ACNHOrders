@@ -786,7 +786,7 @@ namespace SysBot.ACNHOrders
             {
                 LogUtil.LogInfo($"{arriverName} is arriving!", Config.IP);
                 LastArrival = arriverName;
-                data = await Connection.ReadBytesAsync((uint)OffsetHelper.ArriverVillageLocAddress, 0xA, token).ConfigureAwait(false);
+                data = await Connection.ReadBytesAsync((uint)OffsetHelper.ArriverVillageLocAddress, 0x14, token).ConfigureAwait(false);
                 LastArrivalIsland = Encoding.Unicode.GetString(data).TrimEnd('\0');
                 return true;
             }
