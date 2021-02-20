@@ -32,6 +32,7 @@ namespace SysBot.ACNHOrders
         public string DodoCode { get; set; } = "No code set yet.";
         public string VisitorInfo { get; set; } = "No visitor info yet.";
         public string LastArrival { get; private set; } = string.Empty;
+        public string LastArrivalIsland { get; private set; } = string.Empty;
         public ulong CurrentUserId { get; set; } = default!;
         public string CurrentUserName { get; set; } = string.Empty;
         public bool GameIsDirty { get; set; } = true; // Dirty if crashed or last user didn't arrive/leave correctly
@@ -165,13 +166,14 @@ namespace SysBot.ACNHOrders
 
                     if (Config.DodoModeConfig.EchoArrivalChannels.Count > 0)
                         foreach (var diff in diffs)
-                            await AttemptEchoHook($"{diff.Name} has {(diff.Arrived ? "landed at the island" : "departed from the island")}.", Config.DodoModeConfig.EchoArrivalChannels, token).ConfigureAwait(false);
+                            if (!diff.Arrived)
+                                await AttemptEchoHook($"> [{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] {diff.Name} has departed from the island", Config.DodoModeConfig.EchoArrivalChannels, token).ConfigureAwait(false);
 
                     // Check for new arrivals
                     if (await IsArriverNew(token).ConfigureAwait(false))
                     {
                         if (Config.DodoModeConfig.EchoArrivalChannels.Count > 0)
-                            await AttemptEchoHook($"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] {LastArrival} is joining the island.{(Config.DodoModeConfig.PostDodoCodeWithNewArrivals ? $" Dodo code is: {DodoCode}." : string.Empty)}", Config.DodoModeConfig.EchoArrivalChannels, token).ConfigureAwait(false);
+                            await AttemptEchoHook($"> [{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] {LastArrival} from {LastArrivalIsland} is joining the island.{(Config.DodoModeConfig.PostDodoCodeWithNewArrivals ? $" Dodo code is: {DodoCode}." : string.Empty)}", Config.DodoModeConfig.EchoArrivalChannels, token).ConfigureAwait(false);
 
                         await Task.Delay(60_000, token).ConfigureAwait(false);
 
@@ -256,7 +258,7 @@ namespace SysBot.ACNHOrders
         private async Task<OrderResult> ExecuteOrder(IACNHOrderNotifier<Item> order, CancellationToken token)
         {
             var idToken = Globals.Bot.Config.OrderConfig.ShowIDs ? $" (ID {order.OrderID})" : string.Empty;
-            string startMsg = $"Starting order for: {order.VillagerName}{idToken}. Q size: {Orders.ToArray().Length + 1}.";
+            string startMsg = $"Starting order for: {order.VillagerName}{idToken}. Q Size: {Orders.ToArray().Length + 1}.";
             LogUtil.LogInfo($"{startMsg} ({order.UserGuid})", Config.IP);
             if (order.VillagerName != string.Empty && Config.OrderConfig.EchoArrivingLeavingChannels.Count > 0)
                 await AttemptEchoHook($"> {startMsg}", Config.OrderConfig.EchoArrivingLeavingChannels, token).ConfigureAwait(false);
@@ -784,6 +786,8 @@ namespace SysBot.ACNHOrders
             {
                 LogUtil.LogInfo($"{arriverName} is arriving!", Config.IP);
                 LastArrival = arriverName;
+                data = await Connection.ReadBytesAsync((uint)OffsetHelper.ArriverVillageLocAddress, 0xA, token).ConfigureAwait(false);
+                LastArrivalIsland = Encoding.Unicode.GetString(data).TrimEnd('\0');
                 return true;
             }
             return false;

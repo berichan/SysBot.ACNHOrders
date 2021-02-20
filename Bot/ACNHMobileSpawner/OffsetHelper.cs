@@ -33,6 +33,7 @@
 
         // other addresses
         public const ulong ArriverNameLocAddress = 0xB66F4EE0;
+        public const ulong ArriverVillageLocAddress = ArriverNameLocAddress - 0x1C;
 
         public const ulong TextSpeedAddress = 0xBA21BB8;
 
