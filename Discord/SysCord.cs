@@ -200,7 +200,17 @@ namespace SysBot.ACNHOrders
             var result = await _commands.ExecuteAsync(context, pos, _services).ConfigureAwait(false);
 
             if (result.Error == CommandError.UnknownCommand)
-                return false;
+            {
+                var usrId = msg.Author.Id;
+                if (!Globals.Bot.Config.DeleteNonCommands || context.IsPrivate || Globals.Bot.Config.CanUseSudo(usrId) || msg.Author.Id == Owner)
+                    return false;
+
+                var msgText = msg.Content;
+                var mention = msg.Author.Mention;
+                await msg.DeleteAsync(RequestOptions.Default).ConfigureAwait(false);
+                await msg.Channel.SendMessageAsync($"{mention} - Refrain from using the order channels for general conversation.\nOriginal Message:\n ```\n{msgText}\n```").ConfigureAwait(false);
+                return true;
+            }
 
             // Uncomment the following lines if you want the bot
             // to send a message if it failed.

@@ -65,6 +65,9 @@ namespace SysBot.ACNHOrders
         /// <summary> How many bytes to pull at a time. Lower = slower but less likely to crash </summary>
         public int MapPullChunkSize { get; set; } = 4096;
 
+        /// <summary> If Channels is populated, should anything invalid (such as general conversation) be removed? Does not apply to sudo </summary>
+        public bool DeleteNonCommands { get; set; } = false;
+
         #endregion
 
         public bool CanUseCommandUser(ulong authorId) => Users.Count == 0 || Users.Contains(authorId);
