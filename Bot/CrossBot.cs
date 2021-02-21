@@ -31,6 +31,7 @@ namespace SysBot.ACNHOrders
         public bool CanFollowPointers { get; private set; }
         public string DodoCode { get; set; } = "No code set yet.";
         public string VisitorInfo { get; set; } = "No visitor info yet.";
+        public string TownName { get; set; } = "No town name yet.";
         public string LastArrival { get; private set; } = string.Empty;
         public string LastArrivalIsland { get; private set; } = string.Empty;
         public ulong CurrentUserId { get; set; } = default!;
@@ -61,6 +62,7 @@ namespace SysBot.ACNHOrders
 
         public override async Task MainLoop(CancellationToken token)
         {
+
             // Validate map spawn vector
             if (Config.MapPlaceX < 0 || Config.MapPlaceX >= (MapGrid.AcreWidth * 32))
             {
@@ -113,6 +115,12 @@ namespace SysBot.ACNHOrders
                 SpawnY = Config.MapPlaceY
             };
 
+            // Pull town name and store it
+            LogUtil.LogInfo("Reading Town Name. Please wait...", Config.IP);
+            bytes = await Connection.ReadBytesAsync((uint)OffsetHelper.TownNameAddress, 0x14, token).ConfigureAwait(false);
+            TownName = Encoding.Unicode.GetString(bytes);
+            LogUtil.LogInfo("Town name set to " + TownName, Config.IP);
+
             if (Config.ForceUpdateAnchors)
                 LogUtil.LogInfo("Force update anchors set to true, no functionality will be activate", Config.IP);
 
@@ -140,7 +148,7 @@ namespace SysBot.ACNHOrders
                 DodoCode = Encoding.UTF8.GetString(bytes, 0, 5);
 
                 if (DodoPosition.IsDodoValid(DodoCode) && Config.DodoModeConfig.EchoDodoChannels.Count > 0)
-                    await AttemptEchoHook($"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] The Dodo code has updated, the new Dodo code is: {DodoCode}.", Config.DodoModeConfig.EchoDodoChannels, token).ConfigureAwait(false);
+                    await AttemptEchoHook($"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] The Dodo code for {TownName} has updated, the new Dodo code is: {DodoCode}.", Config.DodoModeConfig.EchoDodoChannels, token).ConfigureAwait(false);
 
                 await SaveDodoCodeToFile(token).ConfigureAwait(false);
 
@@ -167,13 +175,13 @@ namespace SysBot.ACNHOrders
                     if (Config.DodoModeConfig.EchoArrivalChannels.Count > 0)
                         foreach (var diff in diffs)
                             if (!diff.Arrived)
-                                await AttemptEchoHook($"> [{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] 🛫 {diff.Name} has departed from the island", Config.DodoModeConfig.EchoArrivalChannels, token).ConfigureAwait(false);
+                                await AttemptEchoHook($"> [{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] 🛫 {diff.Name} has departed from {TownName}", Config.DodoModeConfig.EchoArrivalChannels, token).ConfigureAwait(false);
 
                     // Check for new arrivals
                     if (await IsArriverNew(token).ConfigureAwait(false))
                     {
                         if (Config.DodoModeConfig.EchoArrivalChannels.Count > 0)
-                            await AttemptEchoHook($"> [{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] 🛬 {LastArrival} from {LastArrivalIsland} is joining the island.{(Config.DodoModeConfig.PostDodoCodeWithNewArrivals ? $" Dodo code is: {DodoCode}." : string.Empty)}", Config.DodoModeConfig.EchoArrivalChannels, token).ConfigureAwait(false);
+                            await AttemptEchoHook($"> [{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] 🛬 {LastArrival} from {LastArrivalIsland} is joining {TownName}.{(Config.DodoModeConfig.PostDodoCodeWithNewArrivals ? $" Dodo code is: {DodoCode}." : string.Empty)}", Config.DodoModeConfig.EchoArrivalChannels, token).ConfigureAwait(false);
 
                         await Task.Delay(60_000, token).ConfigureAwait(false);
 
@@ -186,9 +194,9 @@ namespace SysBot.ACNHOrders
                 }
 
                 if (Config.DodoModeConfig.EchoDodoChannels.Count > 0)
-                    await AttemptEchoHook($"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] Crash detected. Please wait while I get a new Dodo code.", Config.DodoModeConfig.EchoDodoChannels, token).ConfigureAwait(false);
+                    await AttemptEchoHook($"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] Crash detected on {TownName}. Please wait while I get a new Dodo code.", Config.DodoModeConfig.EchoDodoChannels, token).ConfigureAwait(false);
                     await ResetFiles(token).ConfigureAwait(false);
-                LogUtil.LogInfo($"Crash detected, awaiting overworld to fetch new dodo.", Config.IP);
+                LogUtil.LogInfo($"Crash detected on {TownName}, awaiting overworld to fetch new dodo.", Config.IP);
                 await Task.Delay(5_000, token).ConfigureAwait(false);
 
                 // Clear dodo code
@@ -203,7 +211,7 @@ namespace SysBot.ACNHOrders
                     await Click(SwitchButton.B, 0_100, token).ConfigureAwait(false);
                     if (Math.Abs((DateTime.Now - startTime).TotalSeconds) > 45)
                     {
-                        LogUtil.LogError($"Hard crash detected, restarting game.", Config.IP);
+                        LogUtil.LogError($"Hard crash detected on {TownName}, restarting game.", Config.IP);
                         hardCrash = true;
                         break;
                     }
@@ -221,7 +229,7 @@ namespace SysBot.ACNHOrders
             }
             await SaveDodoCodeToFile(token).ConfigureAwait(false);
 
-            LogUtil.LogError($"Dodo restore successful. New dodo is {DodoCode} and saved to {Config.DodoModeConfig.DodoRestoreFilename}.", Config.IP);
+            LogUtil.LogError($"Dodo restore successful. New dodo for {TownName} is {DodoCode} and saved to {Config.DodoModeConfig.DodoRestoreFilename}.", Config.IP);
         }
 
         // hacked in discord forward, should really be a delegate or resusable forwarder
@@ -454,14 +462,14 @@ namespace SysBot.ACNHOrders
 
         private async Task<OrderResult> FetchDodoAndAwaitOrder(IACNHOrderNotifier<Item> order, bool ignoreInjection, CancellationToken token)
         {
-            LogUtil.LogInfo($"Talking to Orville. Attempting to get Dodo code.", Config.IP);
+            LogUtil.LogInfo($"Talking to Orville. Attempting to get Dodo code for {TownName}.", Config.IP);
             var coord = await DodoPosition.FollowMainPointer(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false);
             await DodoPosition.GetDodoCode(coord, (uint)OffsetHelper.DodoAddress, false, token).ConfigureAwait(false);
 
             // try again if we failed to get a dodo
             if (Config.OrderConfig.RetryFetchDodoOnFail && !DodoPosition.IsDodoValid(DodoPosition.DodoCode))
             {
-                LogUtil.LogInfo("Failed to get a valid Dodo code. Trying again...", Config.IP);
+                LogUtil.LogInfo($"Failed to get a valid Dodo code for {TownName}. Trying again...", Config.IP);
                 for (int i = 0; i < 8; ++i)
                     await Click(SwitchButton.B, 1_000, token).ConfigureAwait(false);
                 await DodoPosition.GetDodoCode(coord, (uint)OffsetHelper.DodoAddress, true, token).ConfigureAwait(false);
@@ -802,14 +810,14 @@ namespace SysBot.ACNHOrders
         private async Task SaveVisitorsToFile(CancellationToken token)
         {
             // VisitorList.VisitorCount - 1 because the host is always on the island.
-            VisitorInfo = (VisitorList.VisitorCount == VisitorListHelper.VisitorListSize) ? "Island is full" : $"Visitors: {(VisitorList.VisitorCount - 1)}"; 
+            VisitorInfo = (VisitorList.VisitorCount == VisitorListHelper.VisitorListSize) ? $"{TownName} is full" : $"Visitors: {(VisitorList.VisitorCount - 1)}";
             byte[] encodedText = Encoding.ASCII.GetBytes(VisitorInfo);
             await FileUtil.WriteBytesToFileAsync(encodedText, Config.DodoModeConfig.VisitorFilename, token).ConfigureAwait(false);
         }
 
         private async Task ResetFiles(CancellationToken token)
         {
-            byte[] encodedText = Encoding.ASCII.GetBytes("Retrieving Dodo Code");
+            byte[] encodedText = Encoding.ASCII.GetBytes($"Retrieving Dodo Code for {TownName}");
             await FileUtil.WriteBytesToFileAsync(encodedText, Config.DodoModeConfig.DodoRestoreFilename, token).ConfigureAwait(false);
 
             encodedText = Encoding.ASCII.GetBytes("Visitors: 0");
