@@ -62,7 +62,6 @@ namespace SysBot.ACNHOrders
 
         public override async Task MainLoop(CancellationToken token)
         {
-
             // Validate map spawn vector
             if (Config.MapPlaceX < 0 || Config.MapPlaceX >= (MapGrid.AcreWidth * 32))
             {
@@ -117,8 +116,9 @@ namespace SysBot.ACNHOrders
 
             // Pull town name and store it
             LogUtil.LogInfo("Reading Town Name. Please wait...", Config.IP);
-            bytes = await Connection.ReadBytesAsync((uint)OffsetHelper.TownNameAddress, 0x14, token).ConfigureAwait(false);
-            TownName = Encoding.Unicode.GetString(bytes);
+            var villagerTNA = OffsetHelper.getTownNameAddress(InventoryOffset);
+            bytes = await Connection.ReadBytesAsync((uint)villagerTNA, 0x14, token).ConfigureAwait(false);
+            TownName = Encoding.Unicode.GetString(bytes).TrimEnd('\0');
             LogUtil.LogInfo("Town name set to " + TownName, Config.IP);
 
             if (Config.ForceUpdateAnchors)

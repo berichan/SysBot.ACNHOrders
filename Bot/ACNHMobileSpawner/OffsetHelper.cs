@@ -19,6 +19,7 @@
         public static ulong getPlayerIdAddress(ulong invOffset) => getPlayerStart(invOffset) + 0xAFA8;
         public static ulong getPlayerProfileMainAddress(ulong invOffset) => getPlayerStart(invOffset) + 0x116A0;
         public static ulong getManpu(ulong invOffset) => invOffset - 0x10 + 0xAF7C + 72;
+        public static ulong getTownNameAddress(ulong invOffset) => getPlayerIdAddress(invOffset) - 0xB8 + 0x04;
 
         // main save offsets
         public const ulong TurnipAddress = 0xABE151EC;
@@ -30,7 +31,6 @@
         public const ulong LandMakingMapStart = FieldItemStart + 0xAAA00;
         public const ulong OutsideFieldStart = FieldItemStart + 0xCF998;
         public const ulong MainFieldStructurStart = FieldItemStart + 0xCF600;
-        public const ulong TownNameAddress = 0xABBDC2A4;
 
         // other addresses
         public const ulong ArriverNameLocAddress = 0xB66F4EE0;
