@@ -30,6 +30,7 @@
         public const ulong LandMakingMapStart = FieldItemStart + 0xAAA00;
         public const ulong OutsideFieldStart = FieldItemStart + 0xCF998;
         public const ulong MainFieldStructurStart = FieldItemStart + 0xCF600;
+        public const ulong TownNameAddress = 0xABBDC2A4;
 
         // other addresses
         public const ulong ArriverNameLocAddress = 0xB66F4EE0;
