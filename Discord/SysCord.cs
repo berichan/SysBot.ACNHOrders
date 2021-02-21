@@ -210,7 +210,7 @@ namespace SysBot.ACNHOrders
                 var msgText = msg.Content;
                 var mention = msg.Author.Mention;
                 await msg.DeleteAsync(RequestOptions.Default).ConfigureAwait(false);
-                await msg.Channel.SendMessageAsync($"{mention} - Refrain from using the order channels for general conversation.\nOriginal Message:\n ```\n{msgText}\n```").ConfigureAwait(false);
+                await msg.Channel.SendMessageAsync($"{mention} - The order channels are for bot commands only.\nOriginal Message:\n ```\n{msgText}\n```").ConfigureAwait(false);
                 return true;
             }
 
