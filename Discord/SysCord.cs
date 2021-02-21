@@ -204,6 +204,8 @@ namespace SysBot.ACNHOrders
                 var usrId = msg.Author.Id;
                 if (!Globals.Bot.Config.DeleteNonCommands || context.IsPrivate || Globals.Bot.Config.CanUseSudo(usrId) || msg.Author.Id == Owner)
                     return false;
+                if (Globals.Bot.Config.Channels.Count < 1 || !Globals.Bot.Config.Channels.Contains(context.Channel.Id))
+                    return false;
 
                 var msgText = msg.Content;
                 var mention = msg.Author.Mention;
