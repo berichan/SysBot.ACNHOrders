@@ -54,7 +54,7 @@ namespace SysBot.ACNHOrders
                         {
                             var toAdd = new Item();
                             toAdd.CopyFrom(currentItem);
-                            toAdd.ItemId = (ushort)associated[i].Value;
+                            toAdd.ItemId = (ushort)associated[j].Value;
                             newItems.Add(toAdd);
                         }
                     }
