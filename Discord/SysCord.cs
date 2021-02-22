@@ -162,8 +162,37 @@ namespace SysBot.ACNHOrders
                 if (handled)
                     return;
             }
+            else
+            {
+                bool handled = await CheckMessageDeletion(msg).ConfigureAwait(false);
+                if (handled)
+                    return;
+            }
 
             await TryHandleMessageAsync(msg).ConfigureAwait(false);
+        }
+
+        private async Task<bool> CheckMessageDeletion(SocketUserMessage msg)
+        {
+            // Create a Command Context.
+            var context = new SocketCommandContext(_client, msg);
+
+            var usrId = msg.Author.Id;
+            if (!Globals.Bot.Config.DeleteNonCommands || context.IsPrivate || msg.Author.IsBot || Globals.Bot.Config.CanUseSudo(usrId))
+                return false;
+            if (Globals.Bot.Config.Channels.Count < 1 || !Globals.Bot.Config.Channels.Contains(context.Channel.Id))
+                return false;
+
+            var msgText = msg.Content;
+            var mention = msg.Author.Mention;
+
+            var guild = msg.Channel is SocketGuildChannel g ? g.Guild.Name : "Unknown Guild";
+            await Log(new LogMessage(LogSeverity.Info, "Command", $"Possible spam detected in {guild}#{msg.Channel.Name}:@{msg.Author.Username}. Content: {msg}")).ConfigureAwait(false);
+
+            await msg.DeleteAsync(RequestOptions.Default).ConfigureAwait(false);
+            await msg.Channel.SendMessageAsync($"{mention} - The order channels are for bot commands only.\nDeleted Message:```\n{msgText}\n```").ConfigureAwait(false);
+
+            return true;
         }
 
         private static async Task TryHandleMessageAsync(SocketMessage msg)
@@ -200,19 +229,7 @@ namespace SysBot.ACNHOrders
             var result = await _commands.ExecuteAsync(context, pos, _services).ConfigureAwait(false);
 
             if (result.Error == CommandError.UnknownCommand)
-            {
-                var usrId = msg.Author.Id;
-                if (!Globals.Bot.Config.DeleteNonCommands || context.IsPrivate || msg.Author.IsBot || Globals.Bot.Config.CanUseSudo(usrId) || msg.Author.Id == Owner)
-                    return false;
-                if (Globals.Bot.Config.Channels.Count < 1 || !Globals.Bot.Config.Channels.Contains(context.Channel.Id))
-                    return false;
-
-                var msgText = msg.Content;
-                var mention = msg.Author.Mention;
-                await msg.DeleteAsync(RequestOptions.Default).ConfigureAwait(false);
-                await msg.Channel.SendMessageAsync($"{mention} - The order channels are for bot commands only.\nOriginal Message:\n ```\n{msgText}\n```").ConfigureAwait(false);
-                return true;
-            }
+                return false;
 
             // Uncomment the following lines if you want the bot
             // to send a message if it failed.
