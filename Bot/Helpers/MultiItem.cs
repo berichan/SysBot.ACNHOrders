@@ -31,7 +31,8 @@ namespace SysBot.ACNHOrders
                     // attempt get body variations
                     var currentItem = items[i];
                     var remake = ItemRemakeUtil.GetRemakeIndex(currentItem.ItemId);
-                    if (remake > 0 && currentItem.Count == 0) // only do this if they've asked for the base count of an item!
+                    var associated = GameInfo.Strings.GetAssociatedItems(currentItem.ItemId, out _);
+                    if (remake > 0 && currentItem.Count == 0) // ItemRemake: only do this if they've asked for the base count of an item!
                     {
                         var info = ItemRemakeInfoData.List[remake];
                         var body = info.GetBodySummary(GameInfo.Strings);
@@ -45,6 +46,16 @@ namespace SysBot.ACNHOrders
                             var itemToAdd = multipliedItems[j];
                             itemToAdd.Count = j;
                             newItems.Add(itemToAdd);
+                        }
+                    }
+                    else if (associated.Count > 1) // clothing with parenthesised versions
+                    {
+                        for (int j = 0; j < associated.Count; ++j)
+                        {
+                            var toAdd = new Item();
+                            toAdd.CopyFrom(currentItem);
+                            toAdd.ItemId = (ushort)associated[i].Value;
+                            newItems.Add(toAdd);
                         }
                     }
                     else if (remake < 0)
