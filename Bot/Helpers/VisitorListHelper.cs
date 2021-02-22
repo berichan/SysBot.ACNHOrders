@@ -61,7 +61,7 @@ namespace SysBot.ACNHOrders
 
         public async Task<IReadOnlyCollection<VisitorDifference.Difference>> UpdateNames(CancellationToken token)
         {
-            VisitorFormattedString = "The following visitors are on the island:\n";
+            var formattedList = "The following visitors are on the island:\n";
             VisitorCount = 0;
             for (uint i = 0; i < VisitorListSize; ++i)
             {
@@ -76,8 +76,10 @@ namespace SysBot.ACNHOrders
                     VisitorInformation = Visitors[i];
                 }
 
-                VisitorFormattedString += $"#{i + 1}: {VisitorInformation}\n";
+                formattedList += $"#{i + 1}: {VisitorInformation}\n";
             }
+
+            VisitorFormattedString = formattedList;
 
             VisitorDifference currentVisitors = new VisitorDifference(Visitors);
             var toRet = LastVisitorDiff.GetDifferenceWith(currentVisitors);
