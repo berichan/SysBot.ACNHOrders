@@ -84,13 +84,14 @@ namespace SysBot.ACNHOrders
             //await ViewPlayerVectors(token).ConfigureAwait(false);
 
             // get version
-            await Task.Delay(100, token).ConfigureAwait(false);
+            await Task.Delay(0_100, token).ConfigureAwait(false);
             LogUtil.LogInfo("Attempting get version. Please wait...", Config.IP);
             var gvbytes = Encoding.ASCII.GetBytes("getVersion\r\n");
             byte[] socketReturn = await SwitchConnection.ReadRaw(gvbytes, 9, token).ConfigureAwait(false);
             string version = Encoding.UTF8.GetString(socketReturn).TrimEnd('\0').TrimEnd('\n');
             LogUtil.LogInfo($"sys-botbase version identified as: {version}", Config.IP);
-            try { CanFollowPointers = double.Parse(version) > 1.699; } catch { };
+            if (double.TryParse(version, out var ver))
+                CanFollowPointers = ver > 1.699;
 
             // Validate inventory offset.
             LogUtil.LogInfo("Checking inventory offset for validity.", Config.IP);
@@ -801,20 +802,16 @@ namespace SysBot.ACNHOrders
 
         private async Task SaveVisitorsToFile(CancellationToken token)
         {
-            string VisitorInfo = "";
-            
+            string VisitorInfo;
             if (VisitorList.VisitorCount == VisitorListHelper.VisitorListSize)
-            {
                 VisitorInfo = Config.DodoModeConfig.MinimizeDetails ? $"FULL" : $"{TownName} is full";
-            } else
+            else
             {
                 // VisitorList.VisitorCount - 1 because the host is always on the island.
                 uint VisitorCount = VisitorList.VisitorCount - 1;
                 VisitorInfo = Config.DodoModeConfig.MinimizeDetails ? $"{VisitorCount}" : $"Visitors: {VisitorCount}";
             }
 
-            
-            VisitorInfo = (VisitorList.VisitorCount == VisitorListHelper.VisitorListSize) ? $"{TownName} is full" : $"Visitors: {(VisitorList.VisitorCount - 1)}";
             byte[] encodedText = Encoding.ASCII.GetBytes(VisitorInfo);
             await FileUtil.WriteBytesToFileAsync(encodedText, Config.DodoModeConfig.VisitorFilename, token).ConfigureAwait(false);
         }
