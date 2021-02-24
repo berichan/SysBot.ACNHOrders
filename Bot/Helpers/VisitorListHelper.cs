@@ -49,7 +49,7 @@ namespace SysBot.ACNHOrders
         public string[] Visitors { get; private set; } = new string[VisitorListSize];
 
         public uint VisitorCount { get; private set; } = 0;
-        public static string TownName { get; private set; } = "the island";
+        public string TownName { get; private set; } = "the island";
         public VisitorDifference LastVisitorDiff { get; private set; }
 
         public VisitorListHelper(CrossBot bot)
@@ -60,11 +60,8 @@ namespace SysBot.ACNHOrders
             LastVisitorDiff = new VisitorDifference(Visitors);
         }
 
-        public static void setTownName(string townName)
-        {
-            TownName = townName;
-        }
-
+        public void SetTownName(string townName) => TownName = townName;
+        
         public async Task<IReadOnlyCollection<VisitorDifference.Difference>> UpdateNames(CancellationToken token)
         {
             var formattedList = $"The following visitors are on {TownName}:\n";

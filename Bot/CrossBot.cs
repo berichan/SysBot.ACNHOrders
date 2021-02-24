@@ -116,10 +116,9 @@ namespace SysBot.ACNHOrders
 
             // Pull town name and store it
             LogUtil.LogInfo("Reading Town Name. Please wait...", Config.IP);
-            var villagerTNA = OffsetHelper.getTownNameAddress(InventoryOffset);
-            bytes = await Connection.ReadBytesAsync((uint)villagerTNA, 0x14, token).ConfigureAwait(false);
+            bytes = await Connection.ReadBytesAsync((uint)OffsetHelper.getTownNameAddress(InventoryOffset), 0x14, token).ConfigureAwait(false);
             TownName = Encoding.Unicode.GetString(bytes).TrimEnd('\0');
-            VisitorListHelper.setTownName(TownName);
+            VisitorList.SetTownName(TownName);
             LogUtil.LogInfo("Town name set to " + TownName, Config.IP);
 
             if (Config.ForceUpdateAnchors)
