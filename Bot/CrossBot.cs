@@ -119,6 +119,7 @@ namespace SysBot.ACNHOrders
             var villagerTNA = OffsetHelper.getTownNameAddress(InventoryOffset);
             bytes = await Connection.ReadBytesAsync((uint)villagerTNA, 0x14, token).ConfigureAwait(false);
             TownName = Encoding.Unicode.GetString(bytes).TrimEnd('\0');
+            VisitorListHelper.setTownName(TownName);
             LogUtil.LogInfo("Town name set to " + TownName, Config.IP);
 
             if (Config.ForceUpdateAnchors)
