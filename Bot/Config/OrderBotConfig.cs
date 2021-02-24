@@ -10,7 +10,6 @@ namespace SysBot.ACNHOrders
         private int _maxQueueCount = 50;
         private int _timeAllowed = 180;
         private int _waitForArriverTime = 60;
-        private int _arrivalTime = 75;
 
         /// <summary> Amount of people allowed in the queue before the bot stop accepting requests. Won't accept more than 99 (around 8 hours) </summary>
         public int MaxQueueCount
@@ -31,13 +30,6 @@ namespace SysBot.ACNHOrders
         {
             get => _waitForArriverTime;
             set => _waitForArriverTime = Math.Max(45, value);
-        }
-
-        /// <summary> Guesstimation amount of time in seconds it takes for someone to player the arrival animation from inability to move to start. Minimum is 60 seconds, depends on both of your connections. </summary>
-        public int ArrivalTime
-        {
-            get => _arrivalTime;
-            set => _arrivalTime = Math.Max(75, value);
         }
 
         /// <summary> Message to send at the end of the order completion string </summary>
