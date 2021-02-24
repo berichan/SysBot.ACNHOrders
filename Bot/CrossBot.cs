@@ -794,13 +794,26 @@ namespace SysBot.ACNHOrders
 
         private async Task SaveDodoCodeToFile(CancellationToken token)
         {
-            byte[] encodedText = Encoding.ASCII.GetBytes(DodoCode);
+            string DodoDetails = Config.DodoModeConfig.MinimizeDetails ? $"{DodoCode}" : $"{TownName}: {DodoCode}";
+            byte[] encodedText = Encoding.ASCII.GetBytes(DodoDetails);
             await FileUtil.WriteBytesToFileAsync(encodedText, Config.DodoModeConfig.DodoRestoreFilename, token).ConfigureAwait(false);
         }
 
         private async Task SaveVisitorsToFile(CancellationToken token)
         {
-            // VisitorList.VisitorCount - 1 because the host is always on the island.
+            string VisitorInfo = "";
+            
+            if (VisitorList.VisitorCount == VisitorListHelper.VisitorListSize)
+            {
+                VisitorInfo = Config.DodoModeConfig.MinimizeDetails ? $"FULL" : $"{TownName} is full";
+            } else
+            {
+                // VisitorList.VisitorCount - 1 because the host is always on the island.
+                uint VisitorCount = VisitorList.VisitorCount - 1;
+                VisitorInfo = Config.DodoModeConfig.MinimizeDetails ? $"{VisitorCount}" : $"Visitors: {VisitorCount}";
+            }
+
+            
             VisitorInfo = (VisitorList.VisitorCount == VisitorListHelper.VisitorListSize) ? $"{TownName} is full" : $"Visitors: {(VisitorList.VisitorCount - 1)}";
             byte[] encodedText = Encoding.ASCII.GetBytes(VisitorInfo);
             await FileUtil.WriteBytesToFileAsync(encodedText, Config.DodoModeConfig.VisitorFilename, token).ConfigureAwait(false);
