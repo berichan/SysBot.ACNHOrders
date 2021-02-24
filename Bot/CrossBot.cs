@@ -262,6 +262,8 @@ namespace SysBot.ACNHOrders
                 LastArrival = string.Empty;
                 CurrentUserName = string.Empty;
             }
+
+            await Task.Delay(1_000, token).ConfigureAwait(false);
         }
 
         private async Task<OrderResult> ExecuteOrder(IACNHOrderNotifier<Item> order, CancellationToken token)
