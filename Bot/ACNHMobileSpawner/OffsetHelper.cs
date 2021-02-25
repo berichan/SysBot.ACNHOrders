@@ -33,13 +33,13 @@
         public const ulong MainFieldStructurStart = FieldItemStart + 0xCF600;
 
         // other addresses
-        public const ulong ArriverNameLocAddress = 0xB66F7EE0; // done
+        public const ulong ArriverNameLocAddress = 0xB66F7EE0; 
         public const ulong ArriverVillageLocAddress = ArriverNameLocAddress - 0x1C;
 
         public const ulong TextSpeedAddress = 0xBA21BB8;
 
-        public const ulong DodoAddress = 0xA98115C; // done
-        public const ulong OnlineSessionAddress = 0x9200740; // done
+        public const ulong DodoAddress = 0xA98115C; 
+        public const ulong OnlineSessionAddress = 0x9200740; 
         public const ulong OnlineSessionVisitorAddress = 0x9D2FB68;
         public const ulong OnlineSessionVisitorSize = 0x448; // reverse order
 
