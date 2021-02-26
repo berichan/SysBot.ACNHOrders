@@ -48,7 +48,7 @@ namespace SysBot.ACNHOrders
                             newItems.Add(itemToAdd);
                         }
                     }
-                    else if (associated.Count > 1) // clothing with parenthesised versions
+                    else if (associated.Count > 1 && currentItem.ItemId != Item.DIYRecipe) // clothing with parenthesised versions
                     {
                         for (int j = 0; j < associated.Count; ++j)
                         {
@@ -74,6 +74,19 @@ namespace SysBot.ACNHOrders
                     itemArray = newItems.ToArray();
             }
             var itemsToAdd = (Item[])itemArray.Clone();
+
+            var len = itemsToAdd.Length;
+            if (len < MaxOrder)
+            {
+                // repeat last item 
+                Item toDupe = itemsToAdd[len - 1];
+                var dupes = DeepDuplicateItem(toDupe, MaxOrder - len);
+                itemsToAdd = itemsToAdd.Concat(dupes).ToArray();
+
+                // add a hole to know where the split is
+                itemsToAdd[len] = new Item(Item.NONE);
+            }
+
             ItemArray = new ItemArrayEditor<Item>(itemsToAdd);
         }
 

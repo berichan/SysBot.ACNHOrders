@@ -123,7 +123,7 @@ namespace SysBot.ACNHOrders
             LogUtil.LogInfo("Town name set to " + TownName, Config.IP);
 
             if (Config.ForceUpdateAnchors)
-                LogUtil.LogInfo("Force update anchors set to true, no functionality will be activate", Config.IP);
+                LogUtil.LogInfo("Force update anchors set to true, no functionality will activate", Config.IP);
 
             LogUtil.LogInfo("Successfully connected to bot. Starting main loop!", Config.IP);
             if (Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
