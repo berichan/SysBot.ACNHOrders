@@ -362,8 +362,8 @@ namespace SysBot.ACNHOrders
                 int echoCount = 0;
                 bool gameStarted = await EnsureAnchorMatches(0, 150_000, async () =>
                 {
-                    await Click(SwitchButton.A, 0_300, token).ConfigureAwait(false);
-                    await Click(SwitchButton.B, 0_300, token).ConfigureAwait(false);
+                    await ClickConversation(SwitchButton.A, 0_300, token).ConfigureAwait(false);
+                    await ClickConversation(SwitchButton.B, 0_300, token).ConfigureAwait(false);
                     if (echoCount < 5)
                     {
                         if (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false) == OverworldState.Overworld)
@@ -999,11 +999,11 @@ namespace SysBot.ACNHOrders
         }
 
         // Additional
-        private readonly byte[] MaxTextSpeed = new byte[4] { 0, 0, 0, 3 };
-        public async Task FinishConversation(int delay, CancellationToken token)
+        private readonly byte[] MaxTextSpeed = new byte[1] { 3 };
+        public async Task ClickConversation(SwitchButton b, int delay, CancellationToken token)
         {
             await Connection.WriteBytesAsync(MaxTextSpeed, (int)OffsetHelper.TextSpeedAddress, token).ConfigureAwait(false);
-            await Task.Delay(delay, token).ConfigureAwait(false);
+            await Click(b, delay, token).ConfigureAwait(false);
         }
     }
 }

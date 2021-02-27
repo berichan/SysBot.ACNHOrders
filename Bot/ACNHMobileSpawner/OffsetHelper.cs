@@ -36,7 +36,7 @@
         public const ulong ArriverNameLocAddress = 0xB66F8208;
         public const ulong ArriverVillageLocAddress = ArriverNameLocAddress - 0x1C;
 
-        public const ulong TextSpeedAddress = 0xBA21BB8;
+        public const ulong TextSpeedAddress = 0xBA24BC8;
 
         public const ulong DodoAddress = 0xA98115C;
         public const ulong OnlineSessionAddress = 0x9200740;
