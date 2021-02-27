@@ -76,7 +76,7 @@ namespace SysBot.ACNHOrders
             var itemsToAdd = (Item[])itemArray.Clone();
 
             var len = itemsToAdd.Length;
-            if (len < MaxOrder)
+            if (len < MaxOrder && fillToMax)
             {
                 // repeat last item 
                 Item toDupe = itemsToAdd[len - 1];
