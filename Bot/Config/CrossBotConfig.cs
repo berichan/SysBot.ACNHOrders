@@ -68,6 +68,12 @@ namespace SysBot.ACNHOrders
         /// <summary> If Channels is populated, should anything invalid (such as general conversation) be removed? Does not apply to sudo </summary>
         public bool DeleteNonCommands { get; set; } = false;
 
+        /// <summary> Extra time to wait between dodo talk keypresses in milliseconds </summary>
+        public int DialogueButtonPressExtraDelay { get; set; } = 0;
+
+        /// <summary> Extra time to wait before game gets restarted. Possibly useful if you have to wait for the "checking if game can be played" wheel </summary>
+        public int RestartGameWait { get; set; } = 0;
+
         #endregion
 
         public bool CanUseCommandUser(ulong authorId) => Users.Count == 0 || Users.Contains(authorId);

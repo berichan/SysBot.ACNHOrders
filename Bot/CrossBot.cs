@@ -609,6 +609,9 @@ namespace SysBot.ACNHOrders
             await Task.Delay(0_500, token).ConfigureAwait(false);
             await Click(SwitchButton.HOME, 0_800, token).ConfigureAwait(false);
 
+            if (Config.RestartGameWait > 0)
+                await Task.Delay(Config.RestartGameWait, token).ConfigureAwait(false);
+
             await Click(SwitchButton.X, 0_500, token).ConfigureAwait(false);
             await Click(SwitchButton.A, 0_500, token).ConfigureAwait(false);
 
@@ -620,7 +623,7 @@ namespace SysBot.ACNHOrders
                 await Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);
 
             // Wait for "checking if the game can be played" wheel
-            await Task.Delay(8_000, token).ConfigureAwait(false);
+            await Task.Delay(8_000 + Config.RestartGameWait, token).ConfigureAwait(false);
 
             for (int i = 0; i < 3; ++i)
                 await Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);

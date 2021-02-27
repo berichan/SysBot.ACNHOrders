@@ -21,7 +21,7 @@ namespace SysBot.ACNHOrders
     public class DodoPositionHelper
     {
         private const string DodoPattern = @"^[A-Z0-9]*$";
-        private const int ButtonClickTime = 0_900;
+        private int ButtonClickTime => 0_900 + Config.DialogueButtonPressExtraDelay;
 
         private readonly ISwitchConnectionAsync Connection;
         private readonly CrossBot BotRunner;
