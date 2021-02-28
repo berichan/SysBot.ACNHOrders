@@ -74,6 +74,9 @@ namespace SysBot.ACNHOrders
         /// <summary> Extra time to wait before game gets restarted. Possibly useful if you have to wait for the "checking if game can be played" wheel </summary>
         public int RestartGameWait { get; set; } = 0;
 
+        /// <summary> Should we not use instant text? </summary>
+        public bool LegacyDodoCodeRetrieval { get; set; } = false;
+
         #endregion
 
         public bool CanUseCommandUser(ulong authorId) => Users.Count == 0 || Users.Contains(authorId);
