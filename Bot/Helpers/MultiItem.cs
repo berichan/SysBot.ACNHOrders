@@ -37,6 +37,12 @@ namespace SysBot.ACNHOrders
                         var info = ItemRemakeInfoData.List[remake];
                         var body = info.GetBodySummary(GameInfo.Strings);
                         var bodyVariations = body.Split(new string[2] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+                        if (bodyVariations.Length < 1)
+                        {
+                            var mItems = DeepDuplicateItem(currentItem, itemMultiplier);
+                            newItems.AddRange(mItems);
+                            continue;
+                        }
                         int varCount = bodyVariations.Length;
                         if (!bodyVariations[0].StartsWith("0"))
                             varCount++;
