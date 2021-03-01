@@ -14,7 +14,7 @@ namespace SysBot.ACNHOrders.Tests
         [InlineData("Aran-knit sweater (White)", 7672)]
         public static void TestDuplicateVariation(string name, ulong itemValueParse)
         {
-            var items = DropUtil.GetItemsFromUserInput(itemValueParse.ToString("X"), new DropBotConfig(), true);
+            var items = ItemParser.GetItemsFromUserInput(itemValueParse.ToString("X"), new DropBotConfig(), ItemDestination.PlayerDropped);
             items.Count.Should().Be(1);
             
             var currentItem = items.ElementAt(0);

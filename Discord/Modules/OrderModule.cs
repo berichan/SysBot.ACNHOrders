@@ -25,7 +25,7 @@ namespace SysBot.ACNHOrders
         public async Task RequestOrderAsync([Summary(OrderItemSummary)][Remainder] string request)
         {
             var cfg = Globals.Bot.Config;
-            var items = DropUtil.GetItemsFromUserInput(request, cfg.DropConfig, true);
+            var items = ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, ItemDestination.FieldItemDropped);
             await AttemptToQueueRequest(items, Context.User, Context.Channel).ConfigureAwait(false);
         }
 
@@ -35,7 +35,7 @@ namespace SysBot.ACNHOrders
         public async Task RequestCatalogueOrderAsync([Summary(OrderItemSummary)][Remainder] string request)
         {
             var cfg = Globals.Bot.Config;
-            var items = DropUtil.GetItemsFromUserInput(request, cfg.DropConfig, true);
+            var items = ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, ItemDestination.FieldItemDropped);
             await AttemptToQueueRequest(items, Context.User, Context.Channel, true).ConfigureAwait(false);
         }
 
@@ -118,6 +118,12 @@ namespace SysBot.ACNHOrders
 
         private async Task AttemptToQueueRequest(IReadOnlyCollection<Item> items, SocketUser orderer, ISocketMessageChannel msgChannel, bool catalogue = false)
         {
+            if (Globals.Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
+            {
+                await ReplyAsync($"{Context.User.Mention} - Orders are not currently accepted.");
+                return;
+            }
+
             var currentOrderCount = Globals.Bot.Orders.Count;
             if (currentOrderCount >= MaxOrderCount)
             {

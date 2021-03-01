@@ -44,7 +44,7 @@ namespace SysBot.ACNHOrders
                 return;
             }
 
-            var exact = ItemUtil.GetItem(itemName, strings);
+            var exact = ItemParser.GetItem(itemName, strings);
             if (!exact.IsNone)
             {
                 var msg = $"{exact.ItemId:X4} {itemName}";
@@ -52,7 +52,7 @@ namespace SysBot.ACNHOrders
                 return;
             }
 
-            var matches = ItemUtil.GetItemsMatching(itemName, strings).ToArray();
+            var matches = ItemParser.GetItemsMatching(itemName, strings).ToArray();
             var result = string.Join(Environment.NewLine, matches.Select(z => $"{z.Value:X4} {z.Text}"));
 
             if (result.Length == 0)
@@ -79,7 +79,7 @@ namespace SysBot.ACNHOrders
         {
             if (!Globals.Bot.Config.AllowLookup)
                 return;
-            ushort itemID = ItemUtil.GetID(itemHex);
+            ushort itemID = ItemParser.GetID(itemHex);
             if (itemID == Item.NONE)
             {
                 await ReplyAsync("Invalid item requested.").ConfigureAwait(false);
@@ -87,7 +87,7 @@ namespace SysBot.ACNHOrders
             }
 
             var name = GameInfo.Strings.GetItemName(itemID);
-            var result = ItemUtil.GetItemInfo(itemID);
+            var result = ItemInfo.GetItemInfo(itemID);
             if (result.Length == 0)
                 await ReplyAsync($"No customization data available for the requested item ({name}).").ConfigureAwait(false);
             else
@@ -101,7 +101,7 @@ namespace SysBot.ACNHOrders
         {
             if (!Globals.Bot.Config.AllowLookup)
                 return;
-            ushort itemID = ItemUtil.GetID(itemHex);
+            ushort itemID = ItemParser.GetID(itemHex);
             if (itemID == Item.NONE || count < 1 || count > 99)
             {
                 await ReplyAsync("Invalid item requested.").ConfigureAwait(false);
@@ -110,7 +110,7 @@ namespace SysBot.ACNHOrders
 
             var ct = count - 1; // value 0 => count of 1
             var item = new Item(itemID) { Count = (ushort)ct };
-            var msg = ItemUtil.GetItemText(item);
+            var msg = ItemParser.GetItemText(item);
             await ReplyAsync(msg).ConfigureAwait(false);
         }
 
@@ -127,7 +127,7 @@ namespace SysBot.ACNHOrders
         {
             if (!Globals.Bot.Config.AllowLookup)
                 return;
-            ushort itemID = ItemUtil.GetID(itemHex);
+            ushort itemID = ItemParser.GetID(itemHex);
             if (itemID == Item.NONE)
             {
                 await ReplyAsync("Invalid item requested.").ConfigureAwait(false);
@@ -163,7 +163,7 @@ namespace SysBot.ACNHOrders
                 await ReplyAsync("Requested customization for item appears to be invalid.").ConfigureAwait(false);
 
             var item = new Item(itemID) { BodyType = body, PatternChoice = fabric };
-            var msg = ItemUtil.GetItemText(item);
+            var msg = ItemParser.GetItemText(item);
             await ReplyAsync(msg).ConfigureAwait(false);
         }
     }

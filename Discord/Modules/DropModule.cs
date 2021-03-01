@@ -32,17 +32,7 @@ namespace SysBot.ACNHOrders
         [Alias("dodo")]
         [Summary("Prints the Dodo Code for the island.")]
         [RequireSudo]
-        public async Task RequestDodoCodeAsync()
-        {
-            try
-            {
-                await Context.User.SendMessageAsync($"Dodo Code: {Globals.Bot.DodoCode}.").ConfigureAwait(false);
-            }
-            catch (HttpException ex)
-            {
-                await ReplyAsync($"{ex.Message}: Private messages must be open to use this command. I won't leak the Dodo code in this channel!");
-            }
-        }
+        public async Task RequestDodoCodeAsync() => await ReplyAsync($"Dodo Code for {Globals.Bot.TownName}: {Globals.Bot.DodoCode}.").ConfigureAwait(false);
 
         [Command("sendDodo")]
         [Summary("Prints the Dodo Code for the island. Only works in dodo restore mode.")]
@@ -67,7 +57,7 @@ namespace SysBot.ACNHOrders
             if (Globals.Bot.CurrentUserId != Context.User.Id)
                 return;
             var cfg = Globals.Bot.Config;
-            var items = DropUtil.GetItemsFromUserInput(request, cfg.DropConfig, false);
+            var items = ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, ItemDestination.PlayerDropped);
             MultiItem.StackToMax(items);
             await DropItems(items).ConfigureAwait(false);
         }
@@ -84,7 +74,7 @@ namespace SysBot.ACNHOrders
         {
             if (Globals.Bot.CurrentUserId != Context.User.Id)
                 return;
-            var items = DropUtil.GetDIYsFromUserInput(recipeIDs);
+            var items = ItemParser.GetDIYsFromUserInput(recipeIDs);
             await DropItems(items).ConfigureAwait(false);
         }
 

@@ -45,25 +45,25 @@ namespace SysBot.ACNHOrders
                 if (!string.Equals(item.Text, itemName, StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                if (!DropUtil.InvertedRecipeDictionary.TryGetValue((ushort) item.Value, out var recipeID))
+                if (!ItemParser.InvertedRecipeDictionary.TryGetValue((ushort)item.Value, out var recipeID))
                 {
                     await ReplyAsync("Requested item is not a DIY recipe.").ConfigureAwait(false);
                     return;
                 }
 
-                var msg = $"{item.Value:X4} {item.Text}: Recipe order code: 0{recipeID:X3}000016A2";
+                var msg = $"{item.Value:X4} {item.Text}: Recipe order code: {recipeID:X3}000016A2";
                 await ReplyAsync(Format.Code(msg)).ConfigureAwait(false);
                 return;
             }
 
-            var items = ItemUtil.GetItemsMatching(itemName, strings).ToArray();
+            var items = ItemParser.GetItemsMatching(itemName, strings).ToArray();
             var matches = new List<string>();
             foreach (var item in items)
             {
-                if (!DropUtil.InvertedRecipeDictionary.TryGetValue((ushort) item.Value, out var recipeID))
+                if (!ItemParser.InvertedRecipeDictionary.TryGetValue((ushort)item.Value, out var recipeID))
                     continue;
 
-                var msg = $"{item.Value:X4} {item.Text}: Recipe order code: 0{recipeID:X3}000016A2";
+                var msg = $"{item.Value:X4} {item.Text}: Recipe order code: {recipeID:X3}000016A2";
                 matches.Add(msg);
             }
 
