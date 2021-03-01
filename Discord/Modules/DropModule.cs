@@ -17,8 +17,9 @@ namespace SysBot.ACNHOrders
         [Summary("Picks up items around the bot.")]
         public async Task RequestCleanAsync()
         {
-            if (Globals.Bot.CurrentUserId != Context.User.Id)
+            if (!await GetDropAvailability().ConfigureAwait(false))
                 return;
+
             if (!Globals.Bot.Config.AllowClean)
             {
                 await ReplyAsync("Clean functionality is currently disabled.").ConfigureAwait(false);
@@ -54,10 +55,8 @@ namespace SysBot.ACNHOrders
         [Summary("Drops a custom item (or items).")]
         public async Task RequestDropAsync([Summary(DropItemSummary)][Remainder]string request)
         {
-            if (Globals.Bot.CurrentUserId != Context.User.Id)
-                return;
             var cfg = Globals.Bot.Config;
-            var items = ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, ItemDestination.PlayerDropped);
+            var items = ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, cfg.DropConfig.UseLegacyDrop ? ItemDestination.PlayerDropped : ItemDestination.HeldItem);
             MultiItem.StackToMax(items);
             await DropItems(items).ConfigureAwait(false);
         }
@@ -72,14 +71,15 @@ namespace SysBot.ACNHOrders
         [Summary("Drops a DIY recipe with the requested recipe ID(s).")]
         public async Task RequestDropDIYAsync([Summary(DropDIYSummary)][Remainder]string recipeIDs)
         {
-            if (Globals.Bot.CurrentUserId != Context.User.Id)
-                return;
             var items = ItemParser.GetDIYsFromUserInput(recipeIDs);
             await DropItems(items).ConfigureAwait(false);
         }
 
         private async Task DropItems(IReadOnlyCollection<Item> items)
         {
+            if (!await GetDropAvailability().ConfigureAwait(false))
+                return;
+
             if (items.Count > MaxRequestCount)
             {
                 var clamped = $"Users are limited to {MaxRequestCount} items per command. Please use this bot responsibly.";
@@ -92,6 +92,23 @@ namespace SysBot.ACNHOrders
 
             var msg = $"Item drop request{(requestInfo.Items.Count > 1 ? "s" : string.Empty)} will be executed momentarily.";
             await ReplyAsync(msg).ConfigureAwait(false);
+        }
+
+        private async Task<bool> GetDropAvailability()
+        {
+            var cfg = Globals.Bot.Config;
+            if (!cfg.DodoModeConfig.LimitedDodoRestoreOnlyMode && Globals.Bot.CurrentUserId != Context.User.Id)
+            {
+                await ReplyAsync($"{Context.User.Mention} - You are only permitted to use this command while on the island during your order, and only if you have forgotten something in your order.");
+                return false;
+            }
+            else if (!cfg.DodoModeConfig.AllowDrop)
+            {
+                await ReplyAsync($"AllowDrop is currently set to false.");
+                return false;
+            }
+
+            return true;
         }
     }
 }

@@ -90,8 +90,10 @@ namespace ACNHMobileSpawner
             return dataSendList.ToArray();
         }
 
-        public OffsetData[] GetDifferencePrioritizeStartup(byte[] newMapBytes, int chunkSize = 4096, uint mapOffset = (uint)OffsetHelper.FieldItemStart)
+        public OffsetData[] GetDifferencePrioritizeStartup(byte[] newMapBytes, int chunkSize = 4096, bool merge = false, uint mapOffset = (uint)OffsetHelper.FieldItemStart)
         {
+            if (merge)
+                return GetDifferenceMerge(newMapBytes, mapOffset);
             if (newMapBytes.Length != ByteSize)
                 throw new Exception("Field items are of the incorrect size.");
             var listStartData = new List<byte>(StartupBytes);
@@ -105,6 +107,44 @@ namespace ACNHMobileSpawner
             {
                 if (!chunkSD[i].SequenceEqual(chunkND[i]))
                     dataSendList.Add(new OffsetData((uint)(mapOffset + (i * chunkSize)), chunkSD[i].ToArray()));
+            }
+
+            return dataSendList.ToArray();
+        }
+
+        private OffsetData[] GetDifferenceMerge(byte[] newMapBytes, uint mapOffset = (uint)OffsetHelper.FieldItemStart)
+        {
+            const int chunkSize = 4096;
+            if (newMapBytes.Length != ByteSize)
+                throw new Exception("Field items are of the incorrect size.");
+            var listStartData = new List<byte>(StartupBytes);
+            var listNewData = new List<byte>(newMapBytes);
+            var chunkSD = listStartData.ChunkBy(chunkSize);
+            var chunkND = listNewData.ChunkBy(chunkSize);
+
+            var dataSendList = new List<OffsetData>();
+
+            for (int i = 0; i < chunkSD.Count; ++i)
+            {
+                var sd = Item.GetArray(chunkSD[i].ToArray());
+                var nd = Item.GetArray(chunkND[i].ToArray());
+                bool changed = false;
+                for (int j = 0; j < sd.Length; ++j)
+                {
+                    if (sd[j].IsDifferentTo(nd[j]))
+                    {
+                        if (sd[j].IsNone)
+                            sd[j].CopyFrom(nd[j]);
+
+                        changed = true;
+                    }
+                }
+
+                if (changed)
+                {
+                    var nBytes = sd.SetArray(Item.SIZE);
+                    dataSendList.Add(new OffsetData((uint)(mapOffset + (i * chunkSize)), nBytes));
+                }
             }
 
             return dataSendList.ToArray();

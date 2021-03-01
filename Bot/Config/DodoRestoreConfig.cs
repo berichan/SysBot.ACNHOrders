@@ -30,6 +30,9 @@ namespace SysBot.ACNHOrders
         /// <summary> When set to true, restore mode will also regen the map. </summary>
         public bool RefreshMap { get; set; } = false;
 
+        /// <summary> When set to true, and while accepting commands, allow the use of the item dropper. </summary>
+        public bool AllowDrop { get; set; } = false;
+
         /// <summary> When set to true, new arrivals will be posted in all channels in restore mode. </summary>
         public bool PostDodoCodeWithNewArrivals { get; set; } 
 

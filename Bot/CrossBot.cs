@@ -14,10 +14,11 @@ namespace SysBot.ACNHOrders
 {
     public sealed class CrossBot : SwitchRoutineExecutor<CrossBotConfig>
     {
-        private const uint InventoryOffset = (uint)OffsetHelper.InventoryOffset;
+        private uint InventoryOffset { get; set; } = (uint)OffsetHelper.InventoryOffset;
 
         public readonly ConcurrentQueue<ItemRequest> Injections = new();
         public readonly ConcurrentQueue<OrderRequest<Item>> Orders = new();
+        public readonly PocketInjectorAsync PocketInjector;
         public readonly DodoPositionHelper DodoPosition;
         public readonly DropBotState State;
         public readonly AnchorHelper Anchors;
@@ -52,11 +53,8 @@ namespace SysBot.ACNHOrders
 
             DodoPosition = new DodoPositionHelper(this);
             VisitorList = new VisitorListHelper(this);
+            PocketInjector = new PocketInjectorAsync(SwitchConnection, InventoryOffset);
         }
-
-        private const int pocket = Item.SIZE * 20;
-        private const int size = (pocket + 0x18) * 2;
-        private const int shift = -0x18 - (Item.SIZE * 20);
 
         public override void SoftStop() => Config.AcceptingCommands = false;
 
@@ -92,6 +90,10 @@ namespace SysBot.ACNHOrders
             LogUtil.LogInfo($"sys-botbase version identified as: {version}", Config.IP);
             if (double.TryParse(version, out var ver))
                 CanFollowPointers = ver > 1.699;
+
+            // Get inentory offset
+            InventoryOffset = await this.GetCurrentPlayerOffset((uint)OffsetHelper.InventoryOffset, (uint)OffsetHelper.PlayerSize, token).ConfigureAwait(false);
+            PocketInjector.WriteOffset = InventoryOffset;
 
             // Validate inventory offset.
             LogUtil.LogInfo("Checking inventory offset for validity.", Config.IP);
@@ -171,6 +173,8 @@ namespace SysBot.ACNHOrders
                         for (int i = 0; i < 5; ++i)
                             await Click(SwitchButton.B, 0_200, token).ConfigureAwait(false);
 
+                    await DropLoop(token).ConfigureAwait(false);
+
                     var diffs = await VisitorList.UpdateNames(token).ConfigureAwait(false);
 
                     if (Config.DodoModeConfig.EchoArrivalChannels.Count > 0)
@@ -192,6 +196,8 @@ namespace SysBot.ACNHOrders
                     }
 
                     await SaveVisitorsToFile(token).ConfigureAwait(false);
+
+                    await DropLoop(token).ConfigureAwait(false);
                 }
 
                 if (Config.DodoModeConfig.EchoDodoChannels.Count > 0)
@@ -452,11 +458,12 @@ namespace SysBot.ACNHOrders
                 clearMap.Spawn(MultiItem.DeepDuplicateItem(Item.NO_ITEM, 40)); // clear area
                 clearMap.Spawn(order);
             }
-            await Task.Delay(5_000, token).ConfigureAwait(false);
+
+            await Task.Delay(2_000, token).ConfigureAwait(false);
             if (order != null)
                 LogUtil.LogInfo("Map clear has started.", Config.IP);
             var mapData = await Connection.ReadBytesLargeAsync((uint)OffsetHelper.FieldItemStart, MapTerrainLite.ByteSize, Config.MapPullChunkSize, token).ConfigureAwait(false);
-            var offData = clearMap.GetDifferencePrioritizeStartup(mapData, Config.MapPullChunkSize, (uint)OffsetHelper.FieldItemStart);
+            var offData = clearMap.GetDifferencePrioritizeStartup(mapData, Config.MapPullChunkSize, Config.DodoModeConfig.LimitedDodoRestoreOnlyMode && Config.DodoModeConfig.AllowDrop, (uint)OffsetHelper.FieldItemStart);
             for (int i = 0; i < offData.Length; ++i)
                 await Connection.WriteBytesAsync(offData[i].ToSend, offData[i].Offset, token).ConfigureAwait(false);
             if (order != null)
@@ -498,6 +505,7 @@ namespace SysBot.ACNHOrders
             // Walk out
             await Task.Delay(0_500, token).ConfigureAwait(false);
             await SetStick(SwitchStick.LEFT, 0, -20_000, 1_500, token).ConfigureAwait(false);
+            await Task.Delay(1_000, token).ConfigureAwait(false);
             await SetStick(SwitchStick.LEFT, 0, 0, 1_500, token).ConfigureAwait(false);
 
             while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false) != OverworldState.Overworld)
@@ -855,7 +863,7 @@ namespace SysBot.ACNHOrders
             else
             {
                 State.StillIdle();
-                await Task.Delay(1_000, token).ConfigureAwait(false);
+                await Task.Delay(0_300, token).ConfigureAwait(false);
             }
         }
 
@@ -880,12 +888,6 @@ namespace SysBot.ACNHOrders
             return dropped;
         }
 
-        private async Task<(bool success, byte[] data)> ReadValidate(CancellationToken token)
-        {
-            var data = await Connection.ReadBytesAsync((uint)(InventoryOffset + shift), size, token).ConfigureAwait(false);
-            return (Validate(data), data);
-        }
-
         private async Task DropItem(Item item, bool first, CancellationToken token)
         {
             // Exit out of any menus.
@@ -897,34 +899,45 @@ namespace SysBot.ACNHOrders
 
             var itemName = GameInfo.Strings.GetItemName(item);
             LogUtil.LogInfo($"Injecting Item: {item.DisplayItemId:X4} ({itemName}).", Config.IP);
+            Item[]? startItems = null;
 
             // Inject item into entire inventory
-            (bool success, byte[] data) = await ReadValidate(token).ConfigureAwait(false);
+            if (!Config.DropConfig.UseLegacyDrop)
+            {
+                // Store starting inventory
+                InjectionResult result;
+                (result, startItems) = await PocketInjector.Read(token).ConfigureAwait(false);
+                if (result != InjectionResult.Success)
+                    LogUtil.LogInfo($"Read failed: {result}", Config.IP);
 
-            var Items = new Item[40];
-            for (int i = 0; i < 40; ++i)
-                Items[i] = item;
+                // Inject our safe-to-drop item
+                await PocketInjector.Write40(PocketInjector.DroppableOnlyItem, token);
+                await Task.Delay(0_300, token).ConfigureAwait(false);
 
-            var pocket2 = Items.Take(20).ToArray();
-            var pocket1 = Items.Skip(20).ToArray();
-            var p1 = Item.SetArray(pocket1);
-            var p2 = Item.SetArray(pocket2);
+                // Open player inventory and click A to get to hover over the "drop item" selection
+                await Click(SwitchButton.X, 1_200, token).ConfigureAwait(false);
+                await Click(SwitchButton.A, 0_500, token).ConfigureAwait(false);
 
-            p1.CopyTo(data, 0);
-            p2.CopyTo(data, pocket + 0x18);
+                // Inject correct item
+                await PocketInjector.Write40(item, token);
+                await Task.Delay(0_300, token).ConfigureAwait(false);
+            }
+            else
+            {
+                var data = item.ToBytesClass();
+                var poke = SwitchCommand.Poke(InventoryOffset, data);
+                await Connection.SendAsync(poke, token).ConfigureAwait(false);
+                await Task.Delay(0_300, token).ConfigureAwait(false);
 
-            var poke = SwitchCommand.Poke((uint)(InventoryOffset + shift), data);
-            await Connection.SendAsync(poke, token).ConfigureAwait(false);
-            await Task.Delay(0_300, token).ConfigureAwait(false);
+                // Open player inventory and open the currently selected item slot -- assumed to be the config offset.
+                await Click(SwitchButton.X, 1_100, token).ConfigureAwait(false);
+                await Click(SwitchButton.A, 0_500, token).ConfigureAwait(false);
 
-            // Open player inventory and open the currently selected item slot -- assumed to be the config offset.
-            await Click(SwitchButton.X, 1_100, token).ConfigureAwait(false);
-            await Click(SwitchButton.A, 0_500, token).ConfigureAwait(false);
-
-            // Navigate down to the "drop item" option.
-            var downCount = item.GetItemDropOption();
-            for (int i = 0; i < downCount; i++)
-                await Click(SwitchButton.DDOWN, 0_400, token).ConfigureAwait(false);
+                // Navigate down to the "drop item" option.
+                var downCount = item.GetItemDropOption();
+                for (int i = 0; i < downCount; i++)
+                    await Click(SwitchButton.DDOWN, 0_400, token).ConfigureAwait(false);
+            }
 
             // Drop item, close menu.
             await Click(SwitchButton.A, 0_400, token).ConfigureAwait(false);
@@ -933,6 +946,10 @@ namespace SysBot.ACNHOrders
             // Exit out of any menus (fail-safe)
             for (int i = 0; i < 2; i++)
                 await Click(SwitchButton.B, 0_400, token).ConfigureAwait(false);
+
+            // restore starting inventory if required
+            if (startItems != null)
+                await PocketInjector.Write(startItems, token).ConfigureAwait(false);
         }
 
         private async Task CleanUp(int count, CancellationToken token)

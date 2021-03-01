@@ -30,4 +30,8 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Bot\Injection\" />
+  </ItemGroup>
+
 </Project>
