@@ -18,7 +18,10 @@ namespace SysBot.ACNHOrders
         public async Task SearchItemsAsync([Summary("Language code to search with")] string language, [Summary("Item name / item substring")][Remainder] string itemName)
         {
             if (!Globals.Bot.Config.AllowLookup)
+            {
+                await ReplyAsync($"{Context.User.Mention} - Lookup commands are not accepted.");
                 return;
+            }
             var strings = GameInfo.GetStrings(language).ItemDataSource;
             await PrintItemsAsync(itemName, strings).ConfigureAwait(false);
         }
@@ -30,7 +33,10 @@ namespace SysBot.ACNHOrders
         public async Task SearchItemsAsync([Summary("Item name / item substring")][Remainder] string itemName)
         {
             if (!Globals.Bot.Config.AllowLookup)
+            {
+                await ReplyAsync($"{Context.User.Mention} - Lookup commands are not accepted.");
                 return;
+            }
             var strings = GameInfo.Strings.ItemDataSource;
             await PrintItemsAsync(itemName, strings).ConfigureAwait(false);
         }
@@ -78,7 +84,11 @@ namespace SysBot.ACNHOrders
         public async Task GetItemInfoAsync([Summary("Item ID (in hex)")] string itemHex)
         {
             if (!Globals.Bot.Config.AllowLookup)
+            {
+                await ReplyAsync($"{Context.User.Mention} - Lookup commands are not accepted.");
                 return;
+            }
+
             ushort itemID = ItemParser.GetID(itemHex);
             if (itemID == Item.NONE)
             {
@@ -100,7 +110,11 @@ namespace SysBot.ACNHOrders
         public async Task StackAsync([Summary("Item ID (in hex)")] string itemHex, [Summary("Count of items in the stack")] int count)
         {
             if (!Globals.Bot.Config.AllowLookup)
+            {
+                await ReplyAsync($"{Context.User.Mention} - Lookup commands are not accepted.");
                 return;
+            }
+
             ushort itemID = ItemParser.GetID(itemHex);
             if (itemID == Item.NONE || count < 1 || count > 99)
             {
@@ -126,7 +140,11 @@ namespace SysBot.ACNHOrders
         public async Task CustomizeAsync([Summary("Item ID (in hex)")] string itemHex, [Summary("Customization value sum")] int sum)
         {
             if (!Globals.Bot.Config.AllowLookup)
+            {
+                await ReplyAsync($"{Context.User.Mention} - Lookup commands are not accepted.");
                 return;
+            }
+
             ushort itemID = ItemParser.GetID(itemHex);
             if (itemID == Item.NONE)
             {

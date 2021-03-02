@@ -42,7 +42,14 @@ namespace SysBot.ACNHOrders
         {
             if (!Globals.Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
                 return;
-            await RequestDodoCodeAsync().ConfigureAwait(false);
+            try
+            {
+                await Context.User.SendMessageAsync($"Dodo Code: {Globals.Bot.DodoCode}.").ConfigureAwait(false);
+            }
+            catch (HttpException ex)
+            {
+                await ReplyAsync($"{ex.Message}: Private messages must be open to use this command. I won't leak the Dodo code in this channel!");
+            }
         }
 
         private const string DropItemSummary =

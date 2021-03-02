@@ -21,12 +21,14 @@ namespace SysBot.ACNHOrders
     {
         public readonly VillagerData Villager;
         public readonly byte Index;
+        public readonly string GameName;
         public Action<bool>? OnFinish { get; set; }
 
-        public VillagerRequest(VillagerData data, byte i)
+        public VillagerRequest(VillagerData data, byte i, string gameName)
         {
             Villager = data;
             Index = i;
+            GameName = gameName;
         }
     }
 }

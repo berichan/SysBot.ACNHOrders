@@ -16,6 +16,18 @@ namespace SysBot.ACNHOrders
         [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task InjectVillagerAsync(int index, string internalName)
         {
+            if (!Globals.Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
+            {
+                await ReplyAsync($"{Context.User.Mention} - Villagers cannot be injected in order mode.");
+                return;
+            }
+
+            if (!Globals.Bot.Config.AllowVillagerInjection)
+            {
+                await ReplyAsync($"{Context.User.Mention} - Villager injection is currently disabled.");
+                return;
+            }
+
             var bot = Globals.Bot;
             var nameSearched = internalName;
 
@@ -39,7 +51,7 @@ namespace SysBot.ACNHOrders
             var replace = VillagerResources.GetVillager(internalName);
             var user = Context.User;
             var mention = Context.User.Mention;
-            var request = new VillagerRequest(replace, (byte)index)
+            var request = new VillagerRequest(replace, (byte)index, GameInfo.Strings.GetVillager(internalName))
             {
                 OnFinish = success =>
                 {
@@ -83,8 +95,14 @@ namespace SysBot.ACNHOrders
 
         private async Task ReplyVillagerName(GameStrings strings, string villagerName)
         {
+            if (!Globals.Bot.Config.AllowLookup)
+            {
+                await ReplyAsync($"{Context.User.Mention} - Lookup commands are not accepted.");
+                return;
+            }
+
             var map = strings.VillagerMap;
-            var result = map.FirstOrDefault(z => string.Equals(villagerName, z.Value, StringComparison.InvariantCultureIgnoreCase));
+            var result = map.FirstOrDefault(z => string.Equals(villagerName, z.Value.Replace(" ", string.Empty), StringComparison.InvariantCultureIgnoreCase));
             if (string.IsNullOrWhiteSpace(result.Key))
             {
                 await ReplyAsync($"No villager found of name {villagerName}.").ConfigureAwait(false);

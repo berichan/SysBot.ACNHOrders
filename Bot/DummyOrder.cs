@@ -19,6 +19,8 @@ namespace SysBot.ACNHOrders
 
         public ulong OrderID => ulong.MaxValue;
 
+        public VillagerRequest? VillagerOrder => null;
+
         public void OrderCancelled(CrossBot routine, string msg, bool faulted)
         {
         }

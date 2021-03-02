@@ -137,8 +137,12 @@ namespace SysBot.ACNHOrders
             LogUtil.LogInfo($"Retrieved Dodo code: {DodoCode}.", Config.IP);
 
             // Wait for loading screen.	
-            while (await GetOverworldState(CoordinateAddress, token).ConfigureAwait(false) is not OverworldState.Overworld or OverworldState.Null)
+            var state = await GetOverworldState(CoordinateAddress, token).ConfigureAwait(false);
+            while (state != OverworldState.Overworld || state != OverworldState.Null)
+            {
                 await Task.Delay(0_500, token).ConfigureAwait(false);
+                state = await GetOverworldState(CoordinateAddress, token).ConfigureAwait(false);
+            }
         }
 
         public async Task<OverworldState> GetOverworldState(long[] jumps, bool canFollowPointers, CancellationToken token)
@@ -215,8 +219,12 @@ namespace SysBot.ACNHOrders
             LogUtil.LogInfo($"Retrieved Dodo code: {DodoCode}.", Config.IP);
 
             // Wait for loading screen.	
-            while (await GetOverworldState(CoordinateAddress, token).ConfigureAwait(false) is not OverworldState.Overworld or OverworldState.Null)
+            var state = await GetOverworldState(CoordinateAddress, token).ConfigureAwait(false);
+            while (state != OverworldState.Overworld || state != OverworldState.Null)
+            {
                 await Task.Delay(0_500, token).ConfigureAwait(false);
+                state = await GetOverworldState(CoordinateAddress, token).ConfigureAwait(false);
+            }
         }
     }
 }

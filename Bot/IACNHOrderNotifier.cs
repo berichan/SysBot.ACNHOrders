@@ -6,6 +6,7 @@ namespace SysBot.ACNHOrders
     public interface IACNHOrderNotifier<T> where T : Item, new()
     {
         public T[] Order { get; }
+        public VillagerRequest? VillagerOrder { get; }
         public ulong UserGuid { get; }
         public ulong OrderID { get; }
         public string VillagerName { get; }

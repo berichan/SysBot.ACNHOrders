@@ -1,10 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using NHSE.Core;
+using NHSE.Villagers;
 
 namespace SysBot.ACNHOrders
 {
@@ -25,8 +27,31 @@ namespace SysBot.ACNHOrders
         public async Task RequestOrderAsync([Summary(OrderItemSummary)][Remainder] string request)
         {
             var cfg = Globals.Bot.Config;
-            var items = ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, ItemDestination.FieldItemDropped);
-            await AttemptToQueueRequest(items, Context.User, Context.Channel).ConfigureAwait(false);
+            VillagerRequest? vr = null;
+
+            // try get villager
+            var result = VillagerOrderParser.ExtractVillagerName(request, out var res, out var san);
+            if (result == VillagerOrderParser.VillagerRequestResult.InvalidVillagerRequested)
+            {
+                await ReplyAsync($"{Context.User.Mention} - {res} Order has not been accepted.");
+                return;
+            }
+
+            if (result == VillagerOrderParser.VillagerRequestResult.Success)
+            {
+                if (!Globals.Bot.Config.AllowVillagerInjection)
+                {
+                    await ReplyAsync($"{Context.User.Mention} - Villager injection is currently disabled.");
+                    return;
+                }
+
+                request = san;
+                var replace = VillagerResources.GetVillager(res);
+                vr = new VillagerRequest(replace, 0, GameInfo.Strings.GetVillager(res));
+            }
+
+            var items = string.IsNullOrWhiteSpace(request) ? new Item[1] { new Item(Item.NONE) } : ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, ItemDestination.FieldItemDropped);
+            await AttemptToQueueRequest(items, Context.User, Context.Channel, vr).ConfigureAwait(false);
         }
 
         [Command("ordercat")]
@@ -35,8 +60,31 @@ namespace SysBot.ACNHOrders
         public async Task RequestCatalogueOrderAsync([Summary(OrderItemSummary)][Remainder] string request)
         {
             var cfg = Globals.Bot.Config;
-            var items = ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, ItemDestination.FieldItemDropped);
-            await AttemptToQueueRequest(items, Context.User, Context.Channel, true).ConfigureAwait(false);
+            VillagerRequest? vr = null;
+
+            // try get villager
+            var result = VillagerOrderParser.ExtractVillagerName(request, out var res, out var san);
+            if (result == VillagerOrderParser.VillagerRequestResult.InvalidVillagerRequested)
+            {
+                await ReplyAsync($"{Context.User.Mention} - {res} Order has not been accepted.");
+                return;
+            }
+
+            if (result == VillagerOrderParser.VillagerRequestResult.Success)
+            {
+                if (!Globals.Bot.Config.AllowVillagerInjection)
+                {
+                    await ReplyAsync($"{Context.User.Mention} - Villager injection is currently disabled.");
+                    return;
+                }
+
+                request = san;
+                var replace = VillagerResources.GetVillager(res);
+                vr = new VillagerRequest(replace, 0, GameInfo.Strings.GetVillager(res));
+            }
+
+            var items = string.IsNullOrWhiteSpace(request) ? new Item[1] { new Item(Item.NONE) } : ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, ItemDestination.FieldItemDropped);
+            await AttemptToQueueRequest(items, Context.User, Context.Channel, vr, true).ConfigureAwait(false);
         }
 
         [Command("order")]
@@ -58,7 +106,7 @@ namespace SysBot.ACNHOrders
                 return;
             }
 
-            await AttemptToQueueRequest(items, Context.User, Context.Channel, true).ConfigureAwait(false);
+            await AttemptToQueueRequest(items, Context.User, Context.Channel, null, true).ConfigureAwait(false);
         }
 
         [Command("queue")]
@@ -116,7 +164,7 @@ namespace SysBot.ACNHOrders
             await ReplyAsync($"State: {(Globals.Bot.GameIsDirty? "Bad" : "Good")}");
         }
 
-        private async Task AttemptToQueueRequest(IReadOnlyCollection<Item> items, SocketUser orderer, ISocketMessageChannel msgChannel, bool catalogue = false)
+        private async Task AttemptToQueueRequest(IReadOnlyCollection<Item> items, SocketUser orderer, ISocketMessageChannel msgChannel, VillagerRequest? vr, bool catalogue = false)
         {
             if (Globals.Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
             {
@@ -140,8 +188,44 @@ namespace SysBot.ACNHOrders
             }
 
             var multiOrder = new MultiItem(items.ToArray(), catalogue, true, true);
-            var requestInfo = new OrderRequest<Item>(multiOrder, multiOrder.ItemArray.Items.ToArray(), orderer.Id, InsertionID++, orderer, msgChannel);
+            var requestInfo = new OrderRequest<Item>(multiOrder, multiOrder.ItemArray.Items.ToArray(), orderer.Id, InsertionID++, orderer, msgChannel, vr);
             await Context.AddToQueueAsync(requestInfo, orderer.Username, orderer);
+        }
+    }
+
+    public static class VillagerOrderParser
+    {
+        public enum VillagerRequestResult
+        {
+            NoVillagerRequested,
+            InvalidVillagerRequested,
+            Success
+        }
+
+        public static VillagerRequestResult ExtractVillagerName(string order, out string result, out string sanitizedOrder, string villagerFormat = "Villager:")
+        {
+            result = string.Empty;
+            sanitizedOrder = string.Empty;
+            var index = order.IndexOf(villagerFormat, StringComparison.InvariantCultureIgnoreCase);
+            if (index < 0)
+                return VillagerRequestResult.NoVillagerRequested;
+
+            var internalName = order.Substring(index + villagerFormat.Length);
+            var nameSearched = internalName;
+            internalName = internalName.Trim();
+
+            if (!VillagerResources.IsVillagerDataKnown(internalName))
+                internalName = GameInfo.Strings.VillagerMap.FirstOrDefault(z => string.Equals(z.Value, internalName, StringComparison.InvariantCultureIgnoreCase)).Key;
+
+            if (internalName == default)
+            {
+                result = $"{nameSearched} is not a valid internal villager name.";
+                return VillagerRequestResult.InvalidVillagerRequested;
+            }
+
+            sanitizedOrder = order.Substring(0, index);
+            result = internalName;
+            return VillagerRequestResult.Success;
         }
     }
 }

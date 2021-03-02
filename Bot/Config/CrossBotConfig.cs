@@ -77,6 +77,9 @@ namespace SysBot.ACNHOrders
         /// <summary> Should we not use instant text? </summary>
         public bool LegacyDodoCodeRetrieval { get; set; } = false;
 
+        /// <summary> Should we allow villager injection? </summary>
+        public bool AllowVillagerInjection { get; set; } = true;
+
         #endregion
 
         public bool CanUseCommandUser(ulong authorId) => Users.Count == 0 || Users.Contains(authorId);

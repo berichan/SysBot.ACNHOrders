@@ -334,11 +334,13 @@ namespace SysBot.ACNHOrders
 
             order.OrderInitializing(this, string.Empty);
 
-            // Setup order locally, clear map by puliing all and checking difference. Read is much faster than write
+            // Setup order locally, clear map by pulling all and checking difference. Read is much faster than write
             await ClearMapAndSpawnInternally(order.Order, Map, token).ConfigureAwait(false);
 
             // inject order
             await InjectOrder(Map, token).ConfigureAwait(false);
+            if (order.VillagerOrder != null)
+                await Villagers.InjectVillager(order.VillagerOrder, token).ConfigureAwait(false);
 
             // Teleport to Orville, we should already be there but disconnects cause player to turn around (twice, in case we get pulled back)
             await SendAnchorBytes(3, token).ConfigureAwait(false);
@@ -404,8 +406,10 @@ namespace SysBot.ACNHOrders
                 if (!ignoreInjection)
                 {
                     await InjectOrder(Map, token).ConfigureAwait(false);
-
                     order.OrderInitializing(this, string.Empty);
+
+                    if (order.VillagerOrder != null)
+                        await Villagers.InjectVillager(order.VillagerOrder, token).ConfigureAwait(false);
                 }
             }
 

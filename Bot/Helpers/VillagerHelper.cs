@@ -67,12 +67,30 @@ namespace SysBot.ACNHOrders
             var vd = vr.Villager;
             var index = vr.Index;
 
-            var house = VillagerHouses.Find(x => x.NPC1 == index);
+            if (VillagerHouses == null || VillagerShells == null || Connection == null || Bot == null)
+                return false;
+
+            VillagerHouse? house = VillagerHouses.Find(x => x.NPC1 == (sbyte)index);
+
             if (house == null)
             {
-                LogUtil.LogError($"House {index} requested but does not exist", Bot.Config.IP);
+                LogUtil.LogInfo($"House {index} requested but does not exist. Injecting to first available house", Bot.Config.IP);
+                for (int i = 0; i < VillagerHouses.Count; ++i)
+                {
+                    if (VillagerHouses[i].HouseStatus == 0)
+                    {
+                        house = VillagerHouses[i];
+                        break;
+                    }
+                }
+            }
+
+            if (house == null)
+            {
+                LogUtil.LogInfo($"No house found to inject to.", Bot.Config.IP);
                 return false;
             }
+
             var houseIndex = VillagerHouses.IndexOf(house);
 
             var villagerToInject = (byte[])vd.Villager.Clone();
@@ -81,26 +99,29 @@ namespace SysBot.ACNHOrders
             LogUtil.LogInfo($"Beginning injection for: {GameInfo.Strings.GetVillager(villagerAsVillager.InternalName)}", Bot.Config.IP);
 
             // update moving out state
+            villagerAsVillager.MoveType = 0;
+            villagerAsVillager.MovingOut = true;
             ushort[] flags = villagerAsVillager.GetEventFlagsSave();
             flags[05] = 1; // flag 5 = MoveInCompletion
             flags[09] = 0; // flag 9 = AbandonedHouse
             flags[24] = 0; // flag 24 = ForceMoveOut
             villagerAsVillager.SetEventFlagsSave(flags);
-            villagerAsVillager.MovingOut = true;
 
             var houseToInject = (byte[])vd.House.Clone();
             var houseAsHouse = new VillagerHouse(houseToInject)
             {
-                HouseStatus = house.HouseStatus,
-                NPC1 = house.NPC1,
+                HouseStatus = house.HouseStatus == 0 ? 2 : house.HouseStatus,
+                NPC1 = house.NPC1 == -1 ? (sbyte)index : house.NPC1,
                 NPC2 = house.NPC2
             };
             
             // inject villager
             await Connection.WriteBytesAsync(villagerAsVillager.Data, (uint)OffsetHelper.VillagerAddress + ((uint)index * Villager2.SIZE), token).ConfigureAwait(false);
+            await Connection.WriteBytesAsync(villagerAsVillager.Data, (uint)OffsetHelper.VillagerAddress + ((uint)index * Villager2.SIZE) + (uint)OffsetHelper.BackupSaveDiff, token).ConfigureAwait(false);
 
             // inject house
             await Connection.WriteBytesAsync(houseAsHouse.Data, (uint)OffsetHelper.VillagerHouseAddress + ((uint)houseIndex * VillagerHouse.SIZE), token).ConfigureAwait(false);
+            await Connection.WriteBytesAsync(houseAsHouse.Data, (uint)OffsetHelper.VillagerHouseAddress + ((uint)houseIndex * VillagerHouse.SIZE) + (uint)OffsetHelper.BackupSaveDiff, token).ConfigureAwait(false);
 
             LogUtil.LogInfo($"Villager injection complete.", Bot.Config.IP);
             vr.OnFinish?.Invoke(true);
