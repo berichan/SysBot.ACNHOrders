@@ -25,6 +25,9 @@
     <Reference Include="NHSE.Core">
       <HintPath>deps\NHSE.Core.dll</HintPath>
     </Reference>
+    <Reference Include="NHSE.Villagers">
+      <HintPath>deps\NHSE.Villagers.dll</HintPath>
+    </Reference>
     <Reference Include="SysBot.Base">
       <HintPath>deps\SysBot.Base.dll</HintPath>
     </Reference>

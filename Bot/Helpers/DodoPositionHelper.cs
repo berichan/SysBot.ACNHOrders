@@ -112,6 +112,7 @@ namespace SysBot.ACNHOrders
             await BotRunner.ClickConversation(SwitchButton.A, ButtonClickTime, token).ConfigureAwait(false);
             await BotRunner.ClickConversation(SwitchButton.A, 18_000, token).ConfigureAwait(false);
             await BotRunner.ClickConversation(SwitchButton.A, ButtonClickTime, token).ConfigureAwait(false);
+            await Task.Delay(0_100 + Config.DialogueButtonPressExtraDelay, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.DUP, 0_500, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.DUP, 0_500, token).ConfigureAwait(false);
             await BotRunner.ClickConversation(SwitchButton.A, ButtonClickTime, token).ConfigureAwait(false);

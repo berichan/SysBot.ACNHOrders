@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NHSE.Core;
+using NHSE.Villagers;
 using ACNHMobileSpawner;
 using SysBot.Base;
 using System.Text;
@@ -17,14 +18,16 @@ namespace SysBot.ACNHOrders
         private uint InventoryOffset { get; set; } = (uint)OffsetHelper.InventoryOffset;
 
         public readonly ConcurrentQueue<ItemRequest> Injections = new();
+        public readonly ConcurrentQueue<VillagerRequest> VillagerInjections = new();
         public readonly ConcurrentQueue<OrderRequest<Item>> Orders = new();
         public readonly PocketInjectorAsync PocketInjector;
         public readonly DodoPositionHelper DodoPosition;
-        public readonly DropBotState State;
         public readonly AnchorHelper Anchors;
         public readonly VisitorListHelper VisitorList;
         public readonly DummyOrder<Item> DummyRequest = new();
         public readonly ISwitchConnectionAsync SwitchConnection;
+
+        public readonly DropBotState State;
 
         public MapTerrainLite Map { get; private set; } = new MapTerrainLite(new byte[MapGrid.MapTileCount32x32 * Item.SIZE]);
         public bool CleanRequested { private get; set; }
@@ -38,6 +41,8 @@ namespace SysBot.ACNHOrders
         public ulong CurrentUserId { get; set; } = default!;
         public string CurrentUserName { get; set; } = string.Empty;
         public bool GameIsDirty { get; set; } = true; // Dirty if crashed or last user didn't arrive/leave correctly
+
+        public VillagerHelper Villagers { get; private set; } = VillagerHelper.Empty;
 
         public CrossBot(CrossBotConfig cfg) : base(cfg)
         {
@@ -91,7 +96,7 @@ namespace SysBot.ACNHOrders
             if (double.TryParse(version, out var ver))
                 CanFollowPointers = ver > 1.699;
 
-            // Get inentory offset
+            // Get inventory offset
             InventoryOffset = await this.GetCurrentPlayerOffset((uint)OffsetHelper.InventoryOffset, (uint)OffsetHelper.PlayerSize, token).ConfigureAwait(false);
             PocketInjector.WriteOffset = InventoryOffset;
 
@@ -123,6 +128,9 @@ namespace SysBot.ACNHOrders
             TownName = Encoding.Unicode.GetString(bytes).TrimEnd('\0');
             VisitorList.SetTownName(TownName);
             LogUtil.LogInfo("Town name set to " + TownName, Config.IP);
+
+            // pull villager data and store it
+            Villagers = await VillagerHelper.GenerateHelper(this, token).ConfigureAwait(false);
 
             if (Config.ForceUpdateAnchors)
                 LogUtil.LogInfo("Force update anchors set to true, no functionality will activate", Config.IP);
@@ -198,6 +206,9 @@ namespace SysBot.ACNHOrders
                     await SaveVisitorsToFile(token).ConfigureAwait(false);
 
                     await DropLoop(token).ConfigureAwait(false);
+
+                    if (VillagerInjections.TryDequeue(out var vil))
+                        await Villagers.InjectVillager(vil, token).ConfigureAwait(false);
                 }
 
                 if (Config.DodoModeConfig.EchoDodoChannels.Count > 0)

@@ -97,7 +97,11 @@ namespace SysBot.ACNHOrders
         private async Task<bool> GetDropAvailability()
         {
             var cfg = Globals.Bot.Config;
-            if (!cfg.DodoModeConfig.LimitedDodoRestoreOnlyMode && Globals.Bot.CurrentUserId != Context.User.Id)
+
+            if (Globals.Bot.CurrentUserId != Context.User.Id)
+                return true;
+
+            if (!cfg.DodoModeConfig.LimitedDodoRestoreOnlyMode)
             {
                 await ReplyAsync($"{Context.User.Mention} - You are only permitted to use this command while on the island during your order, and only if you have forgotten something in your order.");
                 return false;
