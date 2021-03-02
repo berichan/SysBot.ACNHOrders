@@ -110,7 +110,7 @@ namespace SysBot.ACNHOrders
             await BotRunner.Click(SwitchButton.DDOWN, 0_500, token).ConfigureAwait(false);
             await BotRunner.ClickConversation(SwitchButton.A, ButtonClickTime, token).ConfigureAwait(false);
             await BotRunner.ClickConversation(SwitchButton.A, ButtonClickTime, token).ConfigureAwait(false);
-            await BotRunner.ClickConversation(SwitchButton.A, 18_000, token).ConfigureAwait(false);
+            await BotRunner.ClickConversation(SwitchButton.A, 18_000 + Config.ExtraTimeConnectionWait, token).ConfigureAwait(false);
             await BotRunner.ClickConversation(SwitchButton.A, ButtonClickTime, token).ConfigureAwait(false);
             await Task.Delay(0_100 + Config.DialogueButtonPressExtraDelay, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.DUP, 0_500, token).ConfigureAwait(false);
@@ -186,7 +186,7 @@ namespace SysBot.ACNHOrders
             await BotRunner.Click(SwitchButton.DDOWN, 0_500, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 2_000, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);
-            await BotRunner.Click(SwitchButton.A, 20_000, token).ConfigureAwait(false);
+            await BotRunner.Click(SwitchButton.A, 20_000 + Config.ExtraTimeConnectionWait, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 1_500, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.DUP, 0_500, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.DUP, 0_500, token).ConfigureAwait(false);
