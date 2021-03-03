@@ -17,6 +17,12 @@ namespace SysBot.ACNHOrders
         [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task SearchItemsAsync([Summary("Language code to search with")] string language, [Summary("Item name / item substring")][Remainder] string itemName)
         {
+            if (!Globals.Bot.Config.AllowLookup)
+            {
+                await ReplyAsync($"{Context.User.Mention} - Lookup commands are not accepted.");
+                return;
+            }
+
             var strings = GameInfo.GetStrings(language).ItemDataSource;
             await PrintItemsAsync(itemName, strings).ConfigureAwait(false);
         }
@@ -27,6 +33,12 @@ namespace SysBot.ACNHOrders
         [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task SearchItemsAsync([Summary("Item name / item substring")][Remainder] string itemName)
         {
+            if (!Globals.Bot.Config.AllowLookup)
+            {
+                await ReplyAsync($"{Context.User.Mention} - Lookup commands are not accepted.");
+                return;
+            }
+
             var strings = GameInfo.Strings.ItemDataSource;
             await PrintItemsAsync(itemName, strings).ConfigureAwait(false);
         }
