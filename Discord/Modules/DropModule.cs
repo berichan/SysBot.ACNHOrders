@@ -105,7 +105,7 @@ namespace SysBot.ACNHOrders
         {
             var cfg = Globals.Bot.Config;
 
-            if (Globals.Bot.CurrentUserId != Context.User.Id)
+            if (Globals.Bot.CurrentUserId == Context.User.Id)
                 return true;
 
             if (!cfg.DodoModeConfig.LimitedDodoRestoreOnlyMode)
