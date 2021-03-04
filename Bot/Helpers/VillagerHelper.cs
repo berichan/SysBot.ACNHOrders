@@ -64,7 +64,7 @@ namespace SysBot.ACNHOrders
 
         public async Task<bool> InjectVillager(VillagerRequest vr, CancellationToken token)
         {
-            var vd = vr.Villager;
+            var vd = vr.Item;
             var index = vr.Index;
 
             if (VillagerHouses == null || VillagerShells == null || Connection == null || Bot == null)

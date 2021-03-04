@@ -18,6 +18,7 @@ namespace SysBot.ACNHOrders
         private uint InventoryOffset { get; set; } = (uint)OffsetHelper.InventoryOffset;
 
         public readonly ConcurrentQueue<ItemRequest> Injections = new();
+        public readonly ConcurrentQueue<SpeakRequest> Speaks = new();
         public readonly ConcurrentQueue<VillagerRequest> VillagerInjections = new();
         public readonly ConcurrentQueue<OrderRequest<Item>> Orders = new();
         public readonly PocketInjectorAsync PocketInjector;
@@ -864,6 +865,13 @@ namespace SysBot.ACNHOrders
                 return;
             }
 
+            // speaks take priority
+            if (Speaks.TryDequeue(out var chat))
+            {
+                LogUtil.LogInfo($"Now speaking: {chat.User}:{chat.Item}", Config.IP);
+                await Speak(chat.Item, token).ConfigureAwait(false);
+            }
+
             if (Injections.TryDequeue(out var item))
             {
                 var count = await DropItems(item, token).ConfigureAwait(false);
@@ -882,6 +890,25 @@ namespace SysBot.ACNHOrders
             }
         }
 
+        private async Task Speak(string toSpeak, CancellationToken token)
+        {
+            await Click(SwitchButton.R, 0_500, token).ConfigureAwait(false);
+            await Click(SwitchButton.A, 0_200, token).ConfigureAwait(false);
+            await Click(SwitchButton.A, 0_200, token).ConfigureAwait(false);
+
+            // Inject text as utf-16, and null the rest
+            var chatBytes = Encoding.Unicode.GetBytes(toSpeak);
+            var sendBytes = new byte[OffsetHelper.ChatBufferSize * 2];
+            Array.Copy(chatBytes, sendBytes, chatBytes.Length);
+            await Connection.WriteBytesAsync(sendBytes, (uint)OffsetHelper.ChatBufferAddress, token).ConfigureAwait(false);
+
+            await Click(SwitchButton.PLUS, 0_200, token).ConfigureAwait(false);
+
+            // Exit out of any menus (fail-safe)
+            for (int i = 0; i < 2; i++)
+                await Click(SwitchButton.B, 0_400, token).ConfigureAwait(false);
+        }
+
         private async Task<bool> GetIsPlayerInventoryValid(uint playerOfs, CancellationToken token)
         {
             var (ofs, len) = InventoryValidator.GetOffsetLength(playerOfs);
@@ -894,7 +921,7 @@ namespace SysBot.ACNHOrders
         {
             int dropped = 0;
             bool first = true;
-            foreach (var item in drop.Items)
+            foreach (var item in drop.Item)
             {
                 await DropItem(item, first, token).ConfigureAwait(false);
                 first = false;

@@ -47,7 +47,7 @@ namespace SysBot.ACNHOrders
 
                 request = san;
                 var replace = VillagerResources.GetVillager(res);
-                vr = new VillagerRequest(replace, 0, GameInfo.Strings.GetVillager(res));
+                vr = new VillagerRequest(Context.User.Username, replace, 0, GameInfo.Strings.GetVillager(res));
             }
 
             var items = string.IsNullOrWhiteSpace(request) ? new Item[1] { new Item(Item.NONE) } : ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, ItemDestination.FieldItemDropped);
@@ -80,7 +80,7 @@ namespace SysBot.ACNHOrders
 
                 request = san;
                 var replace = VillagerResources.GetVillager(res);
-                vr = new VillagerRequest(replace, 0, GameInfo.Strings.GetVillager(res));
+                vr = new VillagerRequest(Context.User.Username, replace, 0, GameInfo.Strings.GetVillager(res));
             }
 
             var items = string.IsNullOrWhiteSpace(request) ? new Item[1] { new Item(Item.NONE) } : ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, ItemDestination.FieldItemDropped);
@@ -158,7 +158,7 @@ namespace SysBot.ACNHOrders
         [Command("checkState")]
         [Alias("checkDirtyState")]
         [Summary("Prints whether or not the bot will restart the game for the next order.")]
-        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
+        [RequireSudo]
         public async Task ShowDirtyState()
         {
             await ReplyAsync($"State: {(Globals.Bot.GameIsDirty? "Bad" : "Good")}");
@@ -166,7 +166,7 @@ namespace SysBot.ACNHOrders
 
         private async Task AttemptToQueueRequest(IReadOnlyCollection<Item> items, SocketUser orderer, ISocketMessageChannel msgChannel, VillagerRequest? vr, bool catalogue = false)
         {
-            if (Globals.Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
+            if (Globals.Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode || Globals.Bot.Config.SkipConsoleBotCreation)
             {
                 await ReplyAsync($"{Context.User.Mention} - Orders are not currently accepted.");
                 return;

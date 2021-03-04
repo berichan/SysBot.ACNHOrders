@@ -51,7 +51,7 @@ namespace SysBot.ACNHOrders
             var replace = VillagerResources.GetVillager(internalName);
             var user = Context.User;
             var mention = Context.User.Mention;
-            var request = new VillagerRequest(replace, (byte)index, GameInfo.Strings.GetVillager(internalName))
+            var request = new VillagerRequest(Context.User.Username, replace, (byte)index, GameInfo.Strings.GetVillager(internalName))
             {
                 OnFinish = success =>
                 {

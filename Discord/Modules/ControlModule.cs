@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using ACNHMobileSpawner;
 using Discord.Commands;
 using SysBot.Base;
 
@@ -56,6 +57,17 @@ namespace SysBot.ACNHOrders
         {
             Globals.Bot.RestoreRestartRequested = true;
             await ReplyAsync($"Sending request to fetch a new dodo code.").ConfigureAwait(false);
+        }
+
+        [Command("speak")]
+        [Alias("talk", "say")]
+        [Summary("Tells the bot to speak during times when people are on the island.")]
+        [RequireSudo]
+        public async Task SpeakAsync([Remainder] string request)
+        {
+            var saneString = request.Length > (int)OffsetHelper.ChatBufferSize ? request.Substring(0, (int)OffsetHelper.ChatBufferSize) : request;
+            Globals.Bot.Speaks.Enqueue(new SpeakRequest(Context.User.Username, saneString));
+            await ReplyAsync($"I'll say `{saneString}` shortly.").ConfigureAwait(false);
         }
     }
 }

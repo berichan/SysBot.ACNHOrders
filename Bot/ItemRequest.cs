@@ -5,30 +5,38 @@ using NHSE.Villagers;
 
 namespace SysBot.ACNHOrders
 {
-    public sealed class ItemRequest
+    public abstract class Request<T>
     {
         public readonly string User;
-        public readonly IReadOnlyCollection<Item> Items;
+        public readonly T Item;
+        public Action<bool>? OnFinish { get; set; }
 
-        public ItemRequest(string user, IReadOnlyCollection<Item> items)
+        public Request(string usr, T item)
         {
-            User = user;
-            Items = items;
+            User = usr;
+            Item = item;
         }
     }
 
-    public sealed class VillagerRequest
+    public sealed class ItemRequest : Request<IReadOnlyCollection<Item>>
     {
-        public readonly VillagerData Villager;
+        public ItemRequest(string user, IReadOnlyCollection<Item> items) : base(user, items) { }
+    }
+
+    public sealed class VillagerRequest : Request<VillagerData>
+    {
         public readonly byte Index;
         public readonly string GameName;
-        public Action<bool>? OnFinish { get; set; }
 
-        public VillagerRequest(VillagerData data, byte i, string gameName)
+        public VillagerRequest(string user, VillagerData data, byte i, string gameName) : base (user, data)
         {
-            Villager = data;
             Index = i;
             GameName = gameName;
         }
+    }
+
+    public sealed class SpeakRequest : Request<string>
+    {
+        public SpeakRequest(string usr, string text) : base(usr, text) { }
     }
 }

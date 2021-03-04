@@ -97,7 +97,7 @@ namespace SysBot.ACNHOrders
             var requestInfo = new ItemRequest(Context.User.Username, items);
             Globals.Bot.Injections.Enqueue(requestInfo);
 
-            var msg = $"Item drop request{(requestInfo.Items.Count > 1 ? "s" : string.Empty)} will be executed momentarily.";
+            var msg = $"Item drop request{(requestInfo.Item.Count > 1 ? "s" : string.Empty)} will be executed momentarily.";
             await ReplyAsync(msg).ConfigureAwait(false);
         }
 
