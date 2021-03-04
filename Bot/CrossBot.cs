@@ -295,6 +295,7 @@ namespace SysBot.ACNHOrders
 
             // Clear any lingering injections from the last user
             Injections.ClearQueue();
+            Speaks.ClearQueue();
 
             int timeOut = (Config.OrderConfig.UserTimeAllowed + 360) * 1_000; // 360 seconds = 6 minutes
             var cts = new CancellationTokenSource(timeOut);
