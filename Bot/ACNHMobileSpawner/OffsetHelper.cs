@@ -37,7 +37,8 @@
         public const ulong ArriverVillageLocAddress = ArriverNameLocAddress - 0x1C;
 
         public const ulong TextSpeedAddress = 0xBA24BC8;
-        public const ulong ChatBufferAddress = 0x42F216C8;
+        //public const ulong ChatBufferAddressEUen = 0x42F216C8;
+        //public const ulong ChatBufferAddressUSen = ChatBufferAddressEUen - 0x80;
         public const ulong ChatBufferSize = 0x1E;
 
         public const ulong DodoAddress = 0xA98115C;
@@ -47,5 +48,7 @@
 
         // pointers
         public static readonly long[] PlayerCoordJumps = new long[5] { 0x398C380L, 0x18L, 0x178L, 0xD0L, 0xD8L };
+        public static readonly long[] ChatCoordJumps   = new long[2] { 0x03C3EED0L, 0x40L };
+
     }
 }

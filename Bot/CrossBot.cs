@@ -42,6 +42,7 @@ namespace SysBot.ACNHOrders
         public ulong CurrentUserId { get; set; } = default!;
         public string CurrentUserName { get; set; } = string.Empty;
         public bool GameIsDirty { get; set; } = true; // Dirty if crashed or last user didn't arrive/leave correctly
+        public ulong ChatAddress { get; set; } = 0;
 
         public VillagerHelper Villagers { get; private set; } = VillagerHelper.Empty;
 
@@ -132,6 +133,9 @@ namespace SysBot.ACNHOrders
 
             // pull villager data and store it
             Villagers = await VillagerHelper.GenerateHelper(this, token).ConfigureAwait(false);
+
+            // get chat addr
+            ChatAddress = await DodoPosition.FollowMainPointer(OffsetHelper.ChatCoordJumps, CanFollowPointers, token).ConfigureAwait(false);
 
             if (Config.ForceUpdateAnchors)
                 LogUtil.LogInfo("Force update anchors set to true, no functionality will activate", Config.IP);
@@ -894,14 +898,14 @@ namespace SysBot.ACNHOrders
         private async Task Speak(string toSpeak, CancellationToken token)
         {
             await Click(SwitchButton.R, 0_500, token).ConfigureAwait(false);
-            await Click(SwitchButton.A, 0_200, token).ConfigureAwait(false);
-            await Click(SwitchButton.A, 0_200, token).ConfigureAwait(false);
+            await Click(SwitchButton.A, 0_400, token).ConfigureAwait(false);
+            await Click(SwitchButton.A, 0_400, token).ConfigureAwait(false);
 
             // Inject text as utf-16, and null the rest
             var chatBytes = Encoding.Unicode.GetBytes(toSpeak);
             var sendBytes = new byte[OffsetHelper.ChatBufferSize * 2];
             Array.Copy(chatBytes, sendBytes, chatBytes.Length);
-            await Connection.WriteBytesAsync(sendBytes, (uint)OffsetHelper.ChatBufferAddress, token).ConfigureAwait(false);
+            await SwitchConnection.WriteBytesAbsoluteAsync(sendBytes, ChatAddress, token).ConfigureAwait(false);
 
             await Click(SwitchButton.PLUS, 0_200, token).ConfigureAwait(false);
 
