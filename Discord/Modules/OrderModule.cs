@@ -39,7 +39,7 @@ namespace SysBot.ACNHOrders
 
             if (result == VillagerOrderParser.VillagerRequestResult.Success)
             {
-                if (!Globals.Bot.Config.AllowVillagerInjection)
+                if (!cfg.AllowVillagerInjection)
                 {
                     await ReplyAsync($"{Context.User.Mention} - Villager injection is currently disabled.");
                     return;
@@ -50,7 +50,26 @@ namespace SysBot.ACNHOrders
                 vr = new VillagerRequest(Context.User.Username, replace, 0, GameInfo.Strings.GetVillager(res));
             }
 
-            var items = string.IsNullOrWhiteSpace(request) ? new Item[1] { new Item(Item.NONE) } : ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, ItemDestination.FieldItemDropped);
+            Item[]? items = null;
+
+            var attachment = Context.Message.Attachments.FirstOrDefault();
+            if (attachment != default)
+            {
+                var att = await NetUtil.DownloadNHIAsync(attachment).ConfigureAwait(false);
+                if (!att.Success || !(att.Data is Item[] itemData))
+                {
+                    await ReplyAsync("No NHI attachment provided!").ConfigureAwait(false);
+                    return;
+                }
+                else
+                {
+                    items = itemData;
+                }
+            }
+
+            if (items == null)
+                items = string.IsNullOrWhiteSpace(request) ? new Item[1] { new Item(Item.NONE) } : ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, ItemDestination.FieldItemDropped).ToArray();
+
             await AttemptToQueueRequest(items, Context.User, Context.Channel, vr).ConfigureAwait(false);
         }
 
@@ -72,7 +91,7 @@ namespace SysBot.ACNHOrders
 
             if (result == VillagerOrderParser.VillagerRequestResult.Success)
             {
-                if (!Globals.Bot.Config.AllowVillagerInjection)
+                if (!cfg.AllowVillagerInjection)
                 {
                     await ReplyAsync($"{Context.User.Mention} - Villager injection is currently disabled.");
                     return;
