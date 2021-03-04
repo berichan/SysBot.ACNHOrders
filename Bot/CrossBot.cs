@@ -179,8 +179,10 @@ namespace SysBot.ACNHOrders
                         return;
                     }
 
+                    var owState = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false);
                     if (Config.DodoModeConfig.RefreshMap)
-                        await ClearMapAndSpawnInternally(null, Map, token).ConfigureAwait(false);
+                        if (owState == OverworldState.UserArriveLeaving || owState == OverworldState.Loading) // only refresh when someone leaves/joins or when moving out/in a building
+                            await ClearMapAndSpawnInternally(null, Map, token).ConfigureAwait(false);
 
                     if (Config.DodoModeConfig.MashB)
                         for (int i = 0; i < 5; ++i)
