@@ -134,9 +134,6 @@ namespace SysBot.ACNHOrders
             // pull villager data and store it
             Villagers = await VillagerHelper.GenerateHelper(this, token).ConfigureAwait(false);
 
-            // get chat addr
-            ChatAddress = await DodoPosition.FollowMainPointer(OffsetHelper.ChatCoordJumps, CanFollowPointers, token).ConfigureAwait(false);
-
             if (Config.ForceUpdateAnchors)
                 LogUtil.LogInfo("Force update anchors set to true, no functionality will activate", Config.IP);
 
@@ -765,7 +762,7 @@ namespace SysBot.ACNHOrders
         private async Task EnsureAnchorsAreInitialised(CancellationToken token)
         {
             while (Config.ForceUpdateAnchors || Anchors.IsOneEmpty(out _))
-                await Task.Delay(1_000).ConfigureAwait(false);
+                await Task.Delay(1_000, token).ConfigureAwait(false);
         }
 
         public async Task<bool> UpdateAnchor(int index, CancellationToken token)
@@ -848,8 +845,13 @@ namespace SysBot.ACNHOrders
                 VisitorInfo = Config.DodoModeConfig.MinimizeDetails ? $"{VisitorCount}" : $"Visitors: {VisitorCount}";
             }
 
+            // visitor count
             byte[] encodedText = Encoding.ASCII.GetBytes(VisitorInfo);
             await FileUtil.WriteBytesToFileAsync(encodedText, Config.DodoModeConfig.VisitorFilename, token).ConfigureAwait(false);
+
+            // visitor name list
+            encodedText = Encoding.ASCII.GetBytes(VisitorList.VisitorFormattedString);
+            await FileUtil.WriteBytesToFileAsync(encodedText, Config.DodoModeConfig.VisitorListFilename, token).ConfigureAwait(false);
         }
 
         private async Task ResetFiles(CancellationToken token)
@@ -860,6 +862,9 @@ namespace SysBot.ACNHOrders
 
             encodedText = Encoding.ASCII.GetBytes(Config.DodoModeConfig.MinimizeDetails ? "0" : "Visitors: 0");
             await FileUtil.WriteBytesToFileAsync(encodedText, Config.DodoModeConfig.VisitorFilename, token).ConfigureAwait(false);
+
+            encodedText = Encoding.ASCII.GetBytes(Config.DodoModeConfig.MinimizeDetails ? "No-one" : "No visitors");
+            await FileUtil.WriteBytesToFileAsync(encodedText, Config.DodoModeConfig.VisitorListFilename, token).ConfigureAwait(false);
         }
 
         private async Task<bool> IsNetworkSessionActive(CancellationToken token) => (await Connection.ReadBytesAsync((uint)OffsetHelper.OnlineSessionAddress, 0x1, token).ConfigureAwait(false))[0] == 1;
@@ -899,6 +904,10 @@ namespace SysBot.ACNHOrders
 
         private async Task Speak(string toSpeak, CancellationToken token)
         {
+            // get chat addr
+            ChatAddress = await DodoPosition.FollowMainPointer(OffsetHelper.ChatCoordJumps, CanFollowPointers, token).ConfigureAwait(false);
+            await Task.Delay(0_200, token).ConfigureAwait(false);
+
             await Click(SwitchButton.R, 0_500, token).ConfigureAwait(false);
             await Click(SwitchButton.A, 0_400, token).ConfigureAwait(false);
             await Click(SwitchButton.A, 0_400, token).ConfigureAwait(false);

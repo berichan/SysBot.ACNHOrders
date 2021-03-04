@@ -18,6 +18,9 @@ namespace SysBot.ACNHOrders
         /// <summary> Where the number of visitors will be written to after restore.</summary>
         public string VisitorFilename { get; set; } = "Visitors.txt";
 
+        /// <summary> Where the list of names of visitors will be written to after restore.</summary>
+        public string VisitorListFilename { get; set; } = "VisitorsList.txt";
+
         /// <summary> Whether or not we should minimize the amount of text written to the dodo/visitor files</summary>
         public bool MinimizeDetails { get; set; } = false;
 
