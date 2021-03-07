@@ -120,7 +120,7 @@ namespace SysBot.ACNHOrders
             int minSeconds = ArriveTime + SetupTime + Globals.Bot.Config.OrderConfig.UserTimeAllowed + Globals.Bot.Config.OrderConfig.WaitForArriverTime;
             int addSeconds = ArriveTime + Globals.Bot.Config.OrderConfig.UserTimeAllowed + Globals.Bot.Config.OrderConfig.WaitForArriverTime;
             var timeSpan = TimeSpan.FromSeconds(minSeconds + (addSeconds * (pos-1)));
-            if (minSeconds > 3600)
+            if (timeSpan.Hours > 0)
                 return string.Format("{0:D2}h:{1:D2}m:{2:D2}s", timeSpan.Hours, timeSpan.Minutes, timeSpan.Seconds);
             else
                 return string.Format("{0:D2}m:{1:D2}s", timeSpan.Minutes, timeSpan.Seconds);
