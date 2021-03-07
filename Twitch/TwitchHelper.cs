@@ -1,5 +1,9 @@
-﻿using System;
+﻿using NHSE.Core;
+using NHSE.Villagers;
+using SysBot.Base;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace SysBot.ACNHOrders.Twitch
@@ -7,15 +11,48 @@ namespace SysBot.ACNHOrders.Twitch
     public static class TwitchHelper
     {
         // Helper functions for commands
-        public static bool AddToWaitingList(string setstring, string display, string username, bool sub, out string msg)
+        public static bool AddToWaitingList(string orderString, string display, string username, ulong id, bool sub, bool cat, out string msg)
         {
-            if (!TwitchCrossBot.Bot.Config.AcceptingCommands)
+            if (!TwitchCrossBot.Bot.Config.AcceptingCommands || TwitchCrossBot.Bot.Config.SkipConsoleBotCreation)
             {
-                msg = "Sorry, I am not currently accepting queue requests!";
+                msg = $"@{username} - Sorry, I am not currently accepting queue requests!";
                 return false;
             }
 
-            msg = "An error occured";
+            try
+            {
+                var cfg = Globals.Bot.Config;
+                VillagerRequest? vr = null;
+
+                // try get villager
+                var result = VillagerOrderParser.ExtractVillagerName(orderString, out var res, out var san);
+                if (result == VillagerOrderParser.VillagerRequestResult.InvalidVillagerRequested)
+                {
+                    msg = $"@{username} - {res} Order has not been accepted.";
+                    return false;
+                }
+
+                if (result == VillagerOrderParser.VillagerRequestResult.Success)
+                {
+                    if (!cfg.AllowVillagerInjection)
+                    {
+                        msg = $"@{username} - Villager injection is currently disabled.";
+                        return false;
+                    }
+
+                    orderString = san;
+                    var replace = VillagerResources.GetVillager(res);
+                    vr = new VillagerRequest(username, replace, 0, GameInfo.Strings.GetVillager(res));
+                }
+
+                var items = string.IsNullOrWhiteSpace(orderString) ? new Item[1] { new Item(Item.NONE) } : ItemParser.GetItemsFromUserInput(orderString, cfg.DropConfig, ItemDestination.FieldItemDropped);
+                var multiOrder = new MultiItem(items.ToArray(), cat, true, true);
+
+                var tq = new TwitchQueue(multiOrder.ItemArray.Items, vr, display, id, sub);
+            }
+            catch (Exception e) { LogUtil.LogError($"{username}@{orderString}: {e.Message}", nameof(TwitchHelper)); }
+
+            msg = $"@{username} - An error occured";
             return false;
         }
 

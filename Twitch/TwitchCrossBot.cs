@@ -158,8 +158,11 @@ namespace SysBot.ACNHOrders.Twitch
             {
                 // User Usable Commands
                 case "order":
-                    var _ = TwitchHelper.AddToWaitingList(args, m.DisplayName, m.Username, subscriber(), out string msg);
+                    var _ = TwitchHelper.AddToWaitingList(args, m.DisplayName, m.Username, ulong.Parse(m.UserId), subscriber(), false, out string msg);
                     return msg;
+                case "ordercat":
+                    var _ = TwitchHelper.AddToWaitingList(args, m.DisplayName, m.Username, ulong.Parse(m.UserId), subscriber(), true, out string msge);
+                    return msge;
                 case "ts":
                     return $"@{m.Username}: {TwitchHelper.GetPosition(ulong.Parse(m.UserId))}";
                 case "tc":
