@@ -20,7 +20,7 @@ namespace SysBot.ACNHOrders
         public readonly ConcurrentQueue<ItemRequest> Injections = new();
         public readonly ConcurrentQueue<SpeakRequest> Speaks = new();
         public readonly ConcurrentQueue<VillagerRequest> VillagerInjections = new();
-        public readonly ConcurrentQueue<OrderRequest<Item>> Orders = new();
+        public readonly ConcurrentQueue<IACNHOrderNotifier<Item>> Orders = new();
         public readonly PocketInjectorAsync PocketInjector;
         public readonly DodoPositionHelper DodoPosition;
         public readonly AnchorHelper Anchors;

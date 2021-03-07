@@ -32,7 +32,7 @@ namespace SysBot.ACNHOrders
             }
 
             // Try adding
-            var result = Context.AttemptAddToQueue(itemReq, trader, out var msg);
+            var result = AttemptAddToQueue(itemReq, trader.Mention, trader.Username, out var msg);
 
             // Notify in channel
             await Context.Channel.SendMessageAsync(msg).ConfigureAwait(false);
@@ -53,8 +53,16 @@ namespace SysBot.ACNHOrders
             }
         }
 
+        public static bool AddToQueueSync(IACNHOrderNotifier<Item> itemReq, string playerMention, string playerNameId, out string msg)
+        {
+            var result = AttemptAddToQueue(itemReq, playerMention, playerNameId, out var msge);
+            msg = msge;
+
+            return result;
+        }
+
         // this sucks
-        private static bool AttemptAddToQueue(this SocketCommandContext Context, OrderRequest<Item> itemReq, SocketUser trader, out string msg)
+        private static bool AttemptAddToQueue(IACNHOrderNotifier<Item> itemReq, string traderMention, string traderDispName, out string msg)
         {
             var orders = Globals.Bot.Orders;
             var orderArray = orders.ToArray();
@@ -62,21 +70,21 @@ namespace SysBot.ACNHOrders
             if (order != null)
             {
                 if (!order.SkipRequested)
-                    msg = $"{trader.Mention} - Sorry, you are already in the queue.";
+                    msg = $"{traderMention} - Sorry, you are already in the queue.";
                 else
-                    msg = $"{trader.Mention} - You have been recently removed from the queue. Please wait a while before attempting to enter the queue again.";
+                    msg = $"{traderMention} - You have been recently removed from the queue. Please wait a while before attempting to enter the queue again.";
                 return false;
             }
 
-            if(Globals.Bot.CurrentUserName == trader.Username)
+            if(Globals.Bot.CurrentUserName == traderDispName)
             {
-                msg = $"{trader.Mention} - Failed to queue your order as it is the current processing order. Please wait a few seconds for the queue to clear if you've already completed it.";
+                msg = $"{traderMention} - Failed to queue your order as it is the current processing order. Please wait a few seconds for the queue to clear if you've already completed it.";
                 return false;
             }
 
             var position = orderArray.Length + 1;
             var idToken = Globals.Bot.Config.OrderConfig.ShowIDs ? $" (ID {itemReq.OrderID})" : string.Empty;
-            msg = $"{trader.Mention} - Added you to the order queue{idToken}. Your position is: **{position}**";
+            msg = $"{traderMention} - Added you to the order queue{idToken}. Your position is: **{position}**";
 
             if (position > 1)
                 msg += $" Your predicted ETA is {GetETA(position)}";
@@ -96,8 +104,11 @@ namespace SysBot.ACNHOrders
             var orderFound = Array.Find(orderArray, x => x.UserGuid == id);
             if (orderFound != null && !orderFound.SkipRequested)
             {
-                order = orderFound;
-                return Array.IndexOf(orderArray, orderFound) + 1;
+                if (orderFound is OrderRequest<Item> oreq)
+                {
+                    order = oreq;
+                    return Array.IndexOf(orderArray, orderFound) + 1;
+                }
             }
 
             order = null;

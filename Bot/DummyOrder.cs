@@ -21,6 +21,8 @@ namespace SysBot.ACNHOrders
 
         public VillagerRequest? VillagerOrder => null;
 
+        public bool SkipRequested => false;
+
         public void OrderCancelled(CrossBot routine, string msg, bool faulted)
         {
         }
