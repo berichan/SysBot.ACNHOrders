@@ -14,7 +14,6 @@ namespace SysBot.ACNHOrders
     public class OrderModule : ModuleBase<SocketCommandContext>
     {
         private static int MaxOrderCount => Globals.Bot.Config.OrderConfig.MaxQueueCount;
-        private static ulong InsertionID = 0;
 
         private const string OrderItemSummary =
             "Requests the bot add the item order to the queue with the user's provided input. " +
@@ -207,7 +206,7 @@ namespace SysBot.ACNHOrders
             }
 
             var multiOrder = new MultiItem(items.ToArray(), catalogue, true, true);
-            var requestInfo = new OrderRequest<Item>(multiOrder, multiOrder.ItemArray.Items.ToArray(), orderer.Id, InsertionID++, orderer, msgChannel, vr);
+            var requestInfo = new OrderRequest<Item>(multiOrder, multiOrder.ItemArray.Items.ToArray(), orderer.Id, QueueExtensions.GetNextID(), orderer, msgChannel, vr);
             await Context.AddToQueueAsync(requestInfo, orderer.Username, orderer);
         }
     }
