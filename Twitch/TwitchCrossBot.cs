@@ -23,8 +23,6 @@ namespace SysBot.ACNHOrders.Twitch
         private readonly string Channel;
         private readonly TwitchConfig Settings;
 
-        public ulong CurrentOrderID { get; private set; } = ulong.MaxValue / 2;
-
         public TwitchCrossBot(TwitchConfig settings, CrossBot bot)
         {
             Settings = settings;
@@ -187,7 +185,7 @@ namespace SysBot.ACNHOrders.Twitch
 
         private bool AddToTradeQueue(TwitchQueue queueItem, string viName, out string msg)
         {
-            var twitchRequest = new TwitchOrderRequest<Item>(queueItem.ItemReq.ToArray(), queueItem.ID, CurrentOrderID, queueItem.DisplayName, viName, client, Channel, Settings, queueItem.VillagerReq);
+            var twitchRequest = new TwitchOrderRequest<Item>(queueItem.ItemReq.ToArray(), queueItem.ID, QueueExtensions.GetNextID(), queueItem.DisplayName, viName, client, Channel, Settings, queueItem.VillagerReq);
             var result = QueueExtensions.AddToQueueSync(twitchRequest, queueItem.DisplayName, queueItem.DisplayName, out var msge);
             msg = msge;
             return result;

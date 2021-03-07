@@ -126,6 +126,16 @@ namespace SysBot.ACNHOrders
                 return string.Format("{0:D2}m:{1:D2}s", timeSpan.Minutes, timeSpan.Seconds);
         }
 
+        private static ulong ID = 0;
+        private static object IDAccessor = new();
+        public static ulong GetNextID()
+        {
+            lock(IDAccessor)
+            {
+                return ID++;
+            }
+        }
+
         public static void ClearQueue<T>(this ConcurrentQueue<T> queue)
         {
             T item; // weird runtime error
