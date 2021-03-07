@@ -392,7 +392,7 @@ namespace SysBot.ACNHOrders
                     {
                         if (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false) == OverworldState.Overworld)
                         {
-                            LogUtil.LogInfo("Reached overworld but Anchor 0 does not match.", Config.IP);
+                            LogUtil.LogInfo("Reached overworld, waiting for anchor 0 to match...", Config.IP);
                             echoCount++;
                         }
                     }
@@ -406,6 +406,8 @@ namespace SysBot.ACNHOrders
                     order.OrderCancelled(this, $"{error} Sorry, your request has been removed.", true);
                     return OrderResult.Faulted;
                 }
+
+                LogUtil.LogInfo("Anchor 0 matched successfully.", Config.IP);
 
                 // inject order
                 if (!ignoreInjection)
@@ -462,6 +464,9 @@ namespace SysBot.ACNHOrders
             LogUtil.LogInfo($"Entering airport.", Config.IP);
 
             await EnterAirport(token).ConfigureAwait(false);
+
+            if (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false) == OverworldState.Null)
+                return OrderResult.Faulted; // we are in the water
 
             // Teleport to Orville (twice, in case we get pulled back)
             await SendAnchorBytes(3, token).ConfigureAwait(false);
@@ -677,7 +682,8 @@ namespace SysBot.ACNHOrders
             await Task.Delay(0_200, token).ConfigureAwait(false);
 
             int tries = 0;
-            while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false) is OverworldState.Overworld or OverworldState.Null)
+            var state = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false);
+            while (state == OverworldState.Overworld || state == OverworldState.Null)
             {
                 // Go into airport
                 LogUtil.LogInfo($"Attempting to enter airport. Try: {tries+1}", Config.IP);
@@ -686,13 +692,22 @@ namespace SysBot.ACNHOrders
                 await SetStick(SwitchStick.LEFT, 0, 0, 1_500, token).ConfigureAwait(false);
                 await Task.Delay(1_000, token).ConfigureAwait(false);
 
+                state = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false);
+
                 tries++;
                 if (tries > 5)
                     break;
             }
 
-            while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false) != OverworldState.Overworld)
+            tries = 0;
+            while (state != OverworldState.Overworld)
+            {
                 await Task.Delay(1_000, token).ConfigureAwait(false);
+                state = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false);
+                tries++;
+                if (tries > 5)
+                    break;
+            }
 
             // Delay for animation
             await Task.Delay(1_200, token).ConfigureAwait(false);
