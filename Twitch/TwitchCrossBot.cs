@@ -157,15 +157,13 @@ namespace SysBot.ACNHOrders.Twitch
             string islandName() => Bot.TownName;
             string dodoCode() => Bot.DodoCode;
 
-            // non-constant
-
-
+            /// non-constant
             // dodo-restore
             if (Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
             {
                 if (c == Settings.DodoIslandCommand)
                 {
-                    bool full = visCount() - 1 > 7;
+                    bool full = visCount() - 1 > 6;
                     var p1Take = full ? Settings.DodoExtraMessage.Split('|')[0] : Settings.DodoExtraMessage.Replace("|", string.Empty);
                     string p1 = string.Format(p1Take, visCount(), islandName());
 
@@ -173,7 +171,6 @@ namespace SysBot.ACNHOrders.Twitch
                     return p2;
                 }
             }
-
 
             switch (c)
             {
@@ -188,6 +185,8 @@ namespace SysBot.ACNHOrders.Twitch
                     return $"@{m.Username}: {TwitchHelper.GetPosition(ulong.Parse(m.UserId))}";
                 case "tc":
                     return $"@{m.Username}: {TwitchHelper.ClearTrade(ulong.Parse(m.UserId))}";
+                case "ping":
+                    return $"@{m.Username}: pong";
 
                 case "pos" when whisper:
                     return TwitchHelper.GetPosition(ulong.Parse(m.UserId));

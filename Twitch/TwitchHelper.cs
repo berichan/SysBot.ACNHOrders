@@ -19,6 +19,18 @@ namespace SysBot.ACNHOrders.Twitch
                 return false;
             }
 
+            if (string.IsNullOrWhiteSpace(orderString))
+            {
+                msg = $"@{username} - No valid order text.";
+                return false;
+            }
+
+            if (GlobalBan.IsBanned(id.ToString()))
+            {
+                msg = $"@{username} - You have been banned for abuse. Order has not been accepted.";
+                return false;
+            }
+
             try
             {
                 var cfg = Globals.Bot.Config;
@@ -49,6 +61,9 @@ namespace SysBot.ACNHOrders.Twitch
                 var multiOrder = new MultiItem(items.ToArray(), cat, true, true);
 
                 var tq = new TwitchQueue(multiOrder.ItemArray.Items, vr, display, id, sub);
+                TwitchCrossBot.QueuePool.Add(tq);
+                msg = $"@{username} - I've got your order! You must now whisper me your villager name to be added to the order queue. Your order will not be accepted until I get your whisper!";
+                return true;
             }
             catch (Exception e) { LogUtil.LogError($"{username}@{orderString}: {e.Message}", nameof(TwitchHelper)); }
 

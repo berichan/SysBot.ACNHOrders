@@ -325,6 +325,9 @@ namespace SysBot.ACNHOrders
                 GameIsDirty = true;
             }
 
+            if (result == OrderResult.NoArrival || result == OrderResult.NoLeave)
+                GlobalBan.Penalize(order.UserGuid.ToString());
+
             // Clear username of last arrival
             await Connection.WriteBytesAsync(new byte[0x14], (uint)OffsetHelper.ArriverNameLocAddress, token).ConfigureAwait(false);
 

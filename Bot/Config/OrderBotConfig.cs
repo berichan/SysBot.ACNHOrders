@@ -41,6 +41,9 @@ namespace SysBot.ACNHOrders
         /// <summary> Should we include IDs in the echos and order replies? </summary>
         public bool ShowIDs { get; set; } = false;
 
+        /// <summary> Set this to a number higher than 0 if you want to softban people for not arriving/leaving on time </summary>
+        public int PenaltyBanCount { get; set; } = 0;
+
         /// <summary> Send messages of orders starting/arriving in the echo channels </summary>
         public List<ulong> EchoArrivingLeavingChannels { get; set; } = new();
     }

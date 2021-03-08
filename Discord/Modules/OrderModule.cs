@@ -190,6 +190,12 @@ namespace SysBot.ACNHOrders
                 return;
             }
 
+            if (GlobalBan.IsBanned(orderer.Id.ToString()))
+            {
+                await ReplyAsync($"{Context.User.Mention} - You have been banned for abuse. Order has not been accepted.");
+                return;
+            }
+
             var currentOrderCount = Globals.Bot.Orders.Count;
             if (currentOrderCount >= MaxOrderCount)
             {
