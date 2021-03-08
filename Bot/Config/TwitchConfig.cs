@@ -72,6 +72,12 @@ namespace SysBot.ACNHOrders
         ///<summary>Determines where Canceled notifications are sent.</summary>
         public TwitchMessageDestination OrderCanceledDestination { get; set; } = TwitchMessageDestination.Channel;
 
+        // Commands
+
+        public string DodoIslandCommand { get; set; } = "island";
+        public string DodoReplyMessage { get; set; } = "The dodo code for {1} is {0}. {2}";
+        public string DodoExtraMessage { get; set; } = "There are currently {0} players on {1}. |{1} is currently full";
+
         public bool IsSudo(string username)
         {
             var sudos = SudoList.Split(new[] { ",", ", ", " " }, StringSplitOptions.RemoveEmptyEntries);

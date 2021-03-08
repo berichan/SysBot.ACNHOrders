@@ -153,6 +153,27 @@ namespace SysBot.ACNHOrders.Twitch
         {
             bool sudo() => m is ChatMessage ch && (ch.IsBroadcaster || Settings.IsSudo(m.Username));
             bool subscriber() => m is ChatMessage { IsSubscriber: true };
+            uint visCount() => Bot.VisitorList.VisitorCount;
+            string islandName() => Bot.TownName;
+            string dodoCode() => Bot.DodoCode;
+
+            // non-constant
+
+
+            // dodo-restore
+            if (Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
+            {
+                if (c == Settings.DodoIslandCommand)
+                {
+                    bool full = visCount() - 1 > 7;
+                    var p1Take = full ? Settings.DodoExtraMessage.Split('|')[0] : Settings.DodoExtraMessage.Replace("|", string.Empty);
+                    string p1 = string.Format(p1Take, visCount(), islandName());
+
+                    string p2 = string.Format(Settings.DodoReplyMessage, islandName(), dodoCode(), p1);
+                    return p2;
+                }
+            }
+
 
             switch (c)
             {
