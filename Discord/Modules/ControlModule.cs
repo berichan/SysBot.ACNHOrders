@@ -29,17 +29,6 @@ namespace SysBot.ACNHOrders
             await ReplyAsync($"Accepting drop requests: {value}.").ConfigureAwait(false);
         }
 
-        [Command("setStick")]
-        [Summary("Sets the left joystick a certain vector. Requires two numbers in the range -32768 to 32767.")]
-        [RequireSudo]
-        public async Task SetStickValuesAsync([Remainder]string val)
-        {
-            var split = val.Split(new[] { " ", "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
-            short a = short.Parse(split[0]);
-            short b = short.Parse(split[1]);
-            await Globals.Bot.SetStick(SwitchStick.LEFT, a, b, 0_400, CancellationToken.None).ConfigureAwait(false);
-        }
-
         [Command("toggleMashB")]
         [Summary("Toggle whether or not the bot should mash the B button to ensure all dialogue is processed. Only works in dodo restore mode.")]
         [RequireSudo]
