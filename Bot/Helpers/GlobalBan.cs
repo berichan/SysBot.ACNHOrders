@@ -75,6 +75,37 @@ namespace SysBot.ACNHOrders
             return false;
         }
 
+        public static void UnBan(string id)
+        {
+            lock (MapAccessor)
+            {
+                var pen = PenaltyList.Find(x => x.ID == id);
+
+                if (pen == null)
+                    return;
+
+                PenaltyList.Remove(pen);
+                saveBanList();
+            }
+        }
+
+        public static void Ban(string id)
+        {
+            lock (MapAccessor)
+            {
+                var pen = PenaltyList.Find(x => x.ID == id);
+
+                if (pen != null)
+                {
+                    pen.PenaltyCount = (uint)PenaltyCountBan;
+                }
+                else
+                    PenaltyList.Add(new Penalty(id, (uint)PenaltyCountBan));
+
+                saveBanList();
+            }
+        }
+
         // only call within a lock
         private static void saveBanList()
         {

@@ -20,6 +20,7 @@ namespace SysBot.ACNHOrders
 
             Globals.Self = sys;
             Globals.Bot = bot;
+            GlobalBan.UpdateConfiguration(config);
 
             bot.Log("Starting Discord.");
 #pragma warning disable 4014
