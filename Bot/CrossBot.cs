@@ -381,7 +381,12 @@ namespace SysBot.ACNHOrders
 
                 // Setup order locally, clear map by puliing all and checking difference. Read is much faster than write
                 if (!ignoreInjection)
+                {
                     await ClearMapAndSpawnInternally(order.Order, Map, token).ConfigureAwait(false);
+
+                    if (order.VillagerOrder != null)
+                        await Villagers.InjectVillager(order.VillagerOrder, token).ConfigureAwait(false);
+                }
 
                 // Press A on title screen
                 await Click(SwitchButton.A, 0_500, token).ConfigureAwait(false);
@@ -419,9 +424,6 @@ namespace SysBot.ACNHOrders
                 {
                     await InjectOrder(Map, token).ConfigureAwait(false);
                     order.OrderInitializing(this, string.Empty);
-
-                    if (order.VillagerOrder != null)
-                        await Villagers.InjectVillager(order.VillagerOrder, token).ConfigureAwait(false);
                 }
             }
 

@@ -35,7 +35,9 @@ namespace SysBot.ACNHOrders
             PenaltyCountBan = config.OrderConfig.PenaltyBanCount;
 
             lock (MapAccessor)
+            {
                 loadBanList();
+            }
         }
 
         public static bool Penalize(string id)
@@ -124,7 +126,10 @@ namespace SysBot.ACNHOrders
         private static void loadBanList()
         {
             if (!File.Exists(FilePath))
-                File.Create(FilePath);
+            {
+                var f = File.Create(FilePath);
+                f.Close();
+            }
 
             var bans = File.ReadAllLines(FilePath);
 
