@@ -37,18 +37,22 @@ namespace SysBot.ACNHOrders.Twitch
         public void OrderCancelled(CrossBot routine, string msg, bool faulted)
         {
             OnFinish?.Invoke(routine);
-            SendMessage($"@{Trader} - Oops! Something has happened with your order: {msg}", Settings.OrderCanceledDestination);
+            SendMessage($"@{Trader} - {msg}", Settings.OrderCanceledDestination);
         }
 
         public void OrderInitializing(CrossBot routine, string msg)
         {
-            SendMessage($"@{Trader} - Your order is starting, please ensure your inventory is empty, then go talk to Orville and stay on the Dodo code entry screen. I will send you the Dodo code shortly. {msg}", Settings.OrderStartDestination);
+            msg = SanitizeForTwitch(msg);
+            SendMessage($"@{Trader} - Your order is starting, please ensure your inventory is empty, then go talk to Orville and stay on the Dodo code entry screen. I will send you the Dodo link shortly. {msg}", Settings.OrderStartDestination);
         }
 
         public void OrderReady(CrossBot routine, string msg, string dodo)
         {
-            if (Settings.OrderWaitDestination != TwitchMessageDestination.Disabled)
-                SendMessage($"I'm waiting for you @{Trader}! {msg}. Enter the number you whispered to me on https://berichan.github.io/GetDodoCode/?hash={SimpleEncrypt.SimpleEncryptToBase64(dodo, Password).MakeWebSafe()} to get your dodo code.", TwitchMessageDestination.Whisper);
+            msg = SanitizeForTwitch(msg);
+            if (Settings.OrderWaitDestination == TwitchMessageDestination.Channel)
+                SendMessage($"I'm waiting for you @{Trader}! {msg}. Enter the number you whispered to me on https://berichan.github.io/GetDodoCode/?hash={SimpleEncrypt.SimpleEncryptToBase64(dodo, Password).MakeWebSafe()} to get your dodo code.", Settings.OrderWaitDestination);
+            else if (Settings.OrderWaitDestination == TwitchMessageDestination.Whisper)
+                SendMessage($"I'm waiting for you @{Trader}! {msg}. Your Dodo code is {dodo}", Settings.OrderWaitDestination);
         }
 
         public void OrderFinished(CrossBot routine, string msg)
@@ -59,6 +63,7 @@ namespace SysBot.ACNHOrders.Twitch
 
         public void SendNotification(CrossBot routine, string msg)
         {
+            msg = SanitizeForTwitch(msg);
             SendMessage($"@{Trader} - {msg}", Settings.NotifyDestination);
         }
 
@@ -73,6 +78,11 @@ namespace SysBot.ACNHOrders.Twitch
                     Client.SendWhisper(Trader, message);
                     break;
             }
+        }
+
+        public static string SanitizeForTwitch(string msg)
+        {
+            return msg.Replace("**", string.Empty);
         }
     }
 }

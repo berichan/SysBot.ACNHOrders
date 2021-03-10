@@ -156,6 +156,7 @@ namespace SysBot.ACNHOrders.Twitch
             uint visCount() => Bot.VisitorList.VisitorCount;
             string islandName() => Bot.TownName;
             string dodoCode() => Bot.DodoCode;
+            LogUtil.LogInfo($"[Command] {m.Username}: {c} {args}", nameof(TwitchCrossBot));
 
             /// non-constant
             // dodo-restore
@@ -208,11 +209,12 @@ namespace SysBot.ACNHOrders.Twitch
 
         private bool AddToTradeQueue(TwitchQueue queueItem, string pass, out string msg)
         {
+            LogUtil.LogInfo($"[Whisper] {queueItem.DisplayName}: {pass}", nameof(TwitchCrossBot));
             if (int.TryParse(pass, out var ps))
             {
                 var twitchRequest = new TwitchOrderRequest<Item>(queueItem.ItemReq.ToArray(), queueItem.ID, QueueExtensions.GetNextID(), queueItem.DisplayName, queueItem.DisplayName, client, Channel, Settings, ps, queueItem.VillagerReq);
                 var result = QueueExtensions.AddToQueueSync(twitchRequest, queueItem.DisplayName, queueItem.DisplayName, out var msge);
-                msg = msge;
+                msg = TwitchOrderRequest<Item>.SanitizeForTwitch(msge);
                 return result;
             }
 

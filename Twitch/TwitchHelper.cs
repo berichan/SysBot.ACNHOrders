@@ -62,10 +62,15 @@ namespace SysBot.ACNHOrders.Twitch
 
                 var tq = new TwitchQueue(multiOrder.ItemArray.Items, vr, display, id, sub);
                 TwitchCrossBot.QueuePool.Add(tq);
-                msg = $"@{username} - I've got your order! You must now whisper me any random 3-digit number that will be used as a password to show you your dodo code. Your order will not be accepted until I get your whisper!";
+                msg = $"@{username} - I've got your order! You must now whisper me any random 3-digit number. Your order will not be accepted until I get your whisper!";
                 return true;
             }
-            catch (Exception e) { LogUtil.LogError($"{username}@{orderString}: {e.Message}", nameof(TwitchHelper)); }
+            catch (Exception e) 
+            { 
+                LogUtil.LogError($"{username}@{orderString}: {e.Message}", nameof(TwitchHelper)); 
+                msg = $"@{username} {e.Message}";
+                return false;
+            }
 
             msg = $"@{username} - An error occured";
             return false;

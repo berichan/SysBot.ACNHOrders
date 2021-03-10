@@ -123,6 +123,7 @@ namespace SysBot.ACNHOrders
             await BotRunner.ClickConversation(SwitchButton.A, ButtonClickTime, token).ConfigureAwait(false);
             await BotRunner.ClickConversation(SwitchButton.A, ButtonClickTime, token).ConfigureAwait(false);
             await BotRunner.ClickConversation(SwitchButton.A, ButtonClickTime, token).ConfigureAwait(false);
+            await BotRunner.UpdateBlocker(true, token).ConfigureAwait(false);
             await BotRunner.ClickConversation(SwitchButton.A, ButtonClickTime, token).ConfigureAwait(false);
             await BotRunner.ClickConversation(SwitchButton.A, ButtonClickTime, token).ConfigureAwait(false);
             await Task.Delay(0_500, token).ConfigureAwait(false);
@@ -130,6 +131,7 @@ namespace SysBot.ACNHOrders
             // Clear incase opening the gate took too long
             for (int i = 0; i < 4; ++i)
                 await BotRunner.ClickConversation(SwitchButton.B, 1_000, token).ConfigureAwait(false);
+            await BotRunner.UpdateBlocker(false, token).ConfigureAwait(false);
 
             // Obtain Dodo code from offset and store it.	
             byte[] bytes = await Connection.ReadBytesAsync(Offset, 0x5, token).ConfigureAwait(false);
@@ -198,6 +200,7 @@ namespace SysBot.ACNHOrders
             await BotRunner.Click(SwitchButton.A, 1_500, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 2_500, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 3_000, token).ConfigureAwait(false);
+            await BotRunner.UpdateBlocker(true, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 2_000, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.A, 2_000, token).ConfigureAwait(false);
             await Task.Delay(0_500, token).ConfigureAwait(false);
@@ -207,6 +210,7 @@ namespace SysBot.ACNHOrders
             // Clear incase opening the gate took too long
             for (int i = 0; i < 6; ++i)
                 await BotRunner.Click(SwitchButton.B, 1_000, token).ConfigureAwait(false);
+            await BotRunner.UpdateBlocker(false, token).ConfigureAwait(false);
 
             // Obtain Dodo code from offset and store it.	
             byte[] bytes = await Connection.ReadBytesAsync(Offset, 0x5, token).ConfigureAwait(false);

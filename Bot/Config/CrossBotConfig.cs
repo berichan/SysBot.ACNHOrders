@@ -83,6 +83,8 @@ namespace SysBot.ACNHOrders
         /// <summary> Should we allow villager injection? </summary>
         public bool AllowVillagerInjection { get; set; } = true;
 
+        public string BlockerEmoji { get; set; } = "\u2764";
+
         #endregion
 
         public bool CanUseCommandUser(ulong authorId) => Users.Count == 0 || Users.Contains(authorId);

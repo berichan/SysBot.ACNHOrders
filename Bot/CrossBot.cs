@@ -88,6 +88,8 @@ namespace SysBot.ACNHOrders
             // For viewing player vectors
             //await ViewPlayerVectors(token).ConfigureAwait(false);
 
+            await UpdateBlocker(false, token).ConfigureAwait(false);
+
             // get version
             await Task.Delay(0_100, token).ConfigureAwait(false);
             LogUtil.LogInfo("Attempting get version. Please wait...", Config.IP);
@@ -1101,5 +1103,8 @@ namespace SysBot.ACNHOrders
             await Connection.WriteBytesAsync(MaxTextSpeed, (int)OffsetHelper.TextSpeedAddress, token).ConfigureAwait(false);
             await Click(b, delay, token).ConfigureAwait(false);
         }
+
+        public async Task UpdateBlocker(bool show, CancellationToken token) => await FileUtil.WriteBytesToFileAsync(show ? Encoding.UTF8.GetBytes(Config.BlockerEmoji) : Array.Empty<byte>(), "blocker.txt", token).ConfigureAwait(false);
+        
     }
 }
