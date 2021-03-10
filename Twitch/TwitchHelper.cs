@@ -71,9 +71,6 @@ namespace SysBot.ACNHOrders.Twitch
                 msg = $"@{username} {e.Message}";
                 return false;
             }
-
-            msg = $"@{username} - An error occured";
-            return false;
         }
 
         public static string ClearTrade(ulong userID)
