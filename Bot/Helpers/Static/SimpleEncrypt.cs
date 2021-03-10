@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace SysBot.ACNHOrders
 {
+    // JS: Decrypt using https://berichan.github.io/GetDodoCode/
     public static class SimpleEncrypt
     {
         public static readonly List<char> DodoChars = new List<char>(new char[33]

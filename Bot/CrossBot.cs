@@ -523,7 +523,7 @@ namespace SysBot.ACNHOrders
 
             DodoCode = DodoPosition.DodoCode;
             if (!ignoreInjection)
-                order.OrderReady(this, $"You have {(int)(Config.OrderConfig.WaitForArriverTime * 0.9f)} seconds to arrive. My island name is **{TownName}**. Your Dodo code is **{DodoCode}**");
+                order.OrderReady(this, $"You have {(int)(Config.OrderConfig.WaitForArriverTime * 0.9f)} seconds to arrive. My island name is **{TownName}**", DodoCode);
 
             // Teleport to airport leave zone (twice, in case we get pulled back)
             await SendAnchorBytes(4, token).ConfigureAwait(false);

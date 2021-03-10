@@ -206,12 +206,18 @@ namespace SysBot.ACNHOrders.Twitch
             }
         }
 
-        private bool AddToTradeQueue(TwitchQueue queueItem, string viName, out string msg)
+        private bool AddToTradeQueue(TwitchQueue queueItem, string pass, out string msg)
         {
-            var twitchRequest = new TwitchOrderRequest<Item>(queueItem.ItemReq.ToArray(), queueItem.ID, QueueExtensions.GetNextID(), queueItem.DisplayName, viName, client, Channel, Settings, queueItem.VillagerReq);
-            var result = QueueExtensions.AddToQueueSync(twitchRequest, queueItem.DisplayName, queueItem.DisplayName, out var msge);
-            msg = msge;
-            return result;
+            if (int.TryParse(pass, out var ps))
+            {
+                var twitchRequest = new TwitchOrderRequest<Item>(queueItem.ItemReq.ToArray(), queueItem.ID, QueueExtensions.GetNextID(), queueItem.DisplayName, queueItem.DisplayName, client, Channel, Settings, ps, queueItem.VillagerReq);
+                var result = QueueExtensions.AddToQueueSync(twitchRequest, queueItem.DisplayName, queueItem.DisplayName, out var msge);
+                msg = msge;
+                return result;
+            }
+
+            msg = $"@{queueItem.DisplayName} - Your 3-digit number was invalid. Order has been removed, please start over.";
+            return false;
         }
 
         private void Client_OnWhisperReceived(object? sender, OnWhisperReceivedArgs e)

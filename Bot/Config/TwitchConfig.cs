@@ -64,7 +64,7 @@ namespace SysBot.ACNHOrders
         public TwitchMessageDestination OrderStartDestination { get; set; } = TwitchMessageDestination.Channel;
 
         ///<summary>Determines where Wait notifications are sent. Cannot be public</summary>
-        public TwitchMessageDestination OrderWaitDestination { get; set; } = TwitchMessageDestination.Whisper;
+        public TwitchMessageDestination OrderWaitDestination { get; set; } = TwitchMessageDestination.Channel;
 
         ///<summary>Determines where Finish notifications are sent.</summary>
         public TwitchMessageDestination OrderFinishDestination { get; set; }

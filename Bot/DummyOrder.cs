@@ -35,7 +35,7 @@ namespace SysBot.ACNHOrders
         {
         }
 
-        public void OrderReady(CrossBot routine, string msg)
+        public void OrderReady(CrossBot routine, string msg, string dodo)
         {
         }
 

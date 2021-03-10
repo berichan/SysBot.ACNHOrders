@@ -44,9 +44,9 @@ namespace SysBot.ACNHOrders
             Trader.SendMessageAsync($"Your order is starting, please **ensure your inventory is __empty__**, then go talk to Orville and stay on the Dodo code entry screen. I will send you the Dodo code shortly. {msg}");
         }
 
-        public void OrderReady(CrossBot routine, string msg)
+        public void OrderReady(CrossBot routine, string msg, string dodo)
         {
-            Trader.SendMessageAsync($"I'm waiting for you {Trader.Username}! {msg}");
+            Trader.SendMessageAsync($"I'm waiting for you {Trader.Username}! {msg}. Your Dodo code is **{dodo}**");
         }
 
         public void OrderFinished(CrossBot routine, string msg)

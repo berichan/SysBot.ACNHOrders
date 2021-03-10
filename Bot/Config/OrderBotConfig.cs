@@ -44,6 +44,9 @@ namespace SysBot.ACNHOrders
         /// <summary> Set this to a number higher than 0 if you want to softban people for not arriving/leaving on time </summary>
         public int PenaltyBanCount { get; set; } = 0;
 
+        /// <summary> Folder of presets that can be ordered using $preset [filename] </summary>
+        public string NHIPresetsDirectory = "presets";
+
         /// <summary> Send messages of orders starting/arriving in the echo channels </summary>
         public List<ulong> EchoArrivingLeavingChannels { get; set; } = new();
     }

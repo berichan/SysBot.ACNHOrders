@@ -18,8 +18,9 @@ namespace SysBot.ACNHOrders.Twitch
         private TwitchClient Client { get; }
         private string Channel { get; }
         private TwitchConfig Settings { get; }
+        private int Password { get; }
 
-        public TwitchOrderRequest(T[] order, ulong user, ulong orderId, string trader, string villagerName, TwitchClient client, string channel, TwitchConfig settings, VillagerRequest? vil)
+        public TwitchOrderRequest(T[] order, ulong user, ulong orderId, string trader, string villagerName, TwitchClient client, string channel, TwitchConfig settings, int pass, VillagerRequest? vil)
         {
             UserGuid = user;
             OrderID = orderId;
@@ -30,6 +31,7 @@ namespace SysBot.ACNHOrders.Twitch
             Client = client;
             Channel = channel;
             Settings = settings;
+            Password = pass;
         }
 
         public void OrderCancelled(CrossBot routine, string msg, bool faulted)
@@ -40,13 +42,13 @@ namespace SysBot.ACNHOrders.Twitch
 
         public void OrderInitializing(CrossBot routine, string msg)
         {
-            SendMessage($"@{Trader} - Your order is starting, please **ensure your inventory is __empty__**, then go talk to Orville and stay on the Dodo code entry screen. I will send you the Dodo code shortly. {msg}", Settings.OrderStartDestination);
+            SendMessage($"@{Trader} - Your order is starting, please ensure your inventory is empty, then go talk to Orville and stay on the Dodo code entry screen. I will send you the Dodo code shortly. {msg}", Settings.OrderStartDestination);
         }
 
-        public void OrderReady(CrossBot routine, string msg)
+        public void OrderReady(CrossBot routine, string msg, string dodo)
         {
             if (Settings.OrderWaitDestination != TwitchMessageDestination.Disabled)
-                SendMessage($"I'm waiting for you @{Trader}! {msg}", TwitchMessageDestination.Whisper);
+                SendMessage($"I'm waiting for you @{Trader}! {msg}. Enter the number you whispered to me on https://berichan.github.io/GetDodoCode/?hash={SimpleEncrypt.SimpleEncryptToBase64(dodo, Password).MakeWebSafe()} to get your dodo code.", TwitchMessageDestination.Whisper);
         }
 
         public void OrderFinished(CrossBot routine, string msg)
