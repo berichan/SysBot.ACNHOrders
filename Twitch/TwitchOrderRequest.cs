@@ -50,7 +50,7 @@ namespace SysBot.ACNHOrders.Twitch
         {
             msg = SanitizeForTwitch(msg);
             if (Settings.OrderWaitDestination == TwitchMessageDestination.Channel)
-                SendMessage($"I'm waiting for you @{Trader}! {msg}. Enter the number you whispered to me on https://berichan.github.io/GetDodoCode/?hash={SimpleEncrypt.SimpleEncryptToBase64(dodo, Password).MakeWebSafe()} to get your dodo code.", Settings.OrderWaitDestination);
+                SendMessage($"I'm waiting for you @{Trader}! {msg}. Enter the number you whispered to me on https://berichan.github.io/GetDodoCode/?hash={SimpleEncrypt.SimpleEncryptToBase64(dodo, Password).MakeWebSafe()} to get your dodo code. Click this link, not an old one or someone else's.", Settings.OrderWaitDestination);
             else if (Settings.OrderWaitDestination == TwitchMessageDestination.Whisper)
                 SendMessage($"I'm waiting for you @{Trader}! {msg}. Your Dodo code is {dodo}", Settings.OrderWaitDestination);
         }

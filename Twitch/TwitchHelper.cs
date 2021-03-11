@@ -62,7 +62,7 @@ namespace SysBot.ACNHOrders.Twitch
 
                 var tq = new TwitchQueue(multiOrder.ItemArray.Items, vr, display, id, sub);
                 TwitchCrossBot.QueuePool.Add(tq);
-                msg = $"@{username} - Now you must whisper me any random 3-digit number. Your order will not be placed in the queue until I get your whisper!";
+                msg = $"@{username} - Whisper me any random 3-digit number. Simply type /w @{TwitchCrossBot.BotName.ToLower()} [3-digit number] in this channel! Your order will not be placed in the queue until I get your whisper!";
                 return true;
             }
             catch (Exception e) 

@@ -74,6 +74,10 @@ namespace SysBot.ACNHOrders
 
         // Commands
 
+        /// <summary> Dictionary of user-defined commands</summary>
+        public Dictionary<string, string> UserDefinitedCommands { get; set; } = new Dictionary<string, string>() { { "test", "I am alive!" }, { "test2", "I am still alive!" } };
+
+        // Restore mode dodo syntax
         public string DodoIslandCommand { get; set; } = "island";
         public string DodoReplyMessage { get; set; } = "The dodo code for {1} is {0}. {2}";
         public string DodoExtraMessage { get; set; } = "There are currently {0} players on {1}. |{1} is currently full";

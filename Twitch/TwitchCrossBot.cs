@@ -17,7 +17,7 @@ namespace SysBot.ACNHOrders.Twitch
     public class TwitchCrossBot
     {
         internal static CrossBot Bot = default!;
-
+        internal static string BotName = default!;
         internal static readonly List<TwitchQueue> QueuePool = new();
         private readonly TwitchClient client;
         private readonly string Channel;
@@ -27,6 +27,7 @@ namespace SysBot.ACNHOrders.Twitch
         {
             Settings = settings;
             Bot = bot;
+            BotName = settings.Username;
 
             var credentials = new ConnectionCredentials(settings.Username.ToLower(), settings.Token);
 
