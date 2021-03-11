@@ -209,7 +209,6 @@ namespace SysBot.ACNHOrders.Twitch
 
         private bool AddToTradeQueue(TwitchQueue queueItem, string pass, out string msg)
         {
-            LogUtil.LogInfo($"[Whisper] {queueItem.DisplayName}: {pass}", nameof(TwitchCrossBot));
             if (int.TryParse(pass, out var ps))
             {
                 var twitchRequest = new TwitchOrderRequest<Item>(queueItem.ItemReq.ToArray(), queueItem.ID, QueueExtensions.GetNextID(), queueItem.DisplayName, queueItem.DisplayName, client, Channel, Settings, ps, queueItem.VillagerReq);
@@ -224,7 +223,7 @@ namespace SysBot.ACNHOrders.Twitch
 
         private void Client_OnWhisperReceived(object? sender, OnWhisperReceivedArgs e)
         {
-            LogUtil.LogText($"[{client.TwitchUsername}] - @{e.WhisperMessage.Username}: {e.WhisperMessage.Message}");
+            LogUtil.LogInfo($"[{client.TwitchUsername}] - @{e.WhisperMessage.Username}: {e.WhisperMessage.Message}", nameof(TwitchCrossBot));
             if (QueuePool.Count > 100)
             {
                 var removed = QueuePool[0];
@@ -234,7 +233,10 @@ namespace SysBot.ACNHOrders.Twitch
 
             var queueItem = QueuePool.FindLast(q => q.DisplayName == e.WhisperMessage.Username);
             if (queueItem == null)
+            {
+                LogUtil.LogInfo($"No queue item found, returning...", nameof(TwitchCrossBot));
                 return;
+            }
             QueuePool.Remove(queueItem);
             var msg = e.WhisperMessage.Message;
             try
