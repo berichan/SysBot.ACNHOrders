@@ -58,6 +58,13 @@ namespace SysBot.ACNHOrders.Twitch
                 }
 
                 var items = string.IsNullOrWhiteSpace(orderString) ? new Item[1] { new Item(Item.NONE) } : ItemParser.GetItemsFromUserInput(orderString, cfg.DropConfig, ItemDestination.FieldItemDropped);
+
+                if (!OrderModule.IsSane(items))
+                {
+                    msg = $"@{username} - You are attempting to order items that will damage your save. Order not accepted.";
+                    return false;
+                }
+
                 var multiOrder = new MultiItem(items.ToArray(), cat, true, true);
 
                 var tq = new TwitchQueue(multiOrder.ItemArray.Items, vr, display, id, sub);

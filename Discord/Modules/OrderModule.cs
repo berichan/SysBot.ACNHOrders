@@ -204,6 +204,12 @@ namespace SysBot.ACNHOrders
                 return;
             }
 
+            if (!IsSane(items))
+            {
+                await ReplyAsync($"{Context.User.Mention} - You are attempting to order items that will damage your save. Order not accepted.");
+                return;
+            }
+
             if (items.Count > MultiItem.MaxOrder)
             {
                 var clamped = $"Users are limited to {MultiItem.MaxOrder} items per command, You've asked for {items.Count}. All items above the limit have been removed.";
@@ -215,6 +221,22 @@ namespace SysBot.ACNHOrders
             var requestInfo = new OrderRequest<Item>(multiOrder, multiOrder.ItemArray.Items.ToArray(), orderer.Id, QueueExtensions.GetNextID(), orderer, msgChannel, vr);
             await Context.AddToQueueAsync(requestInfo, orderer.Username, orderer);
         }
+
+        public static bool IsSane(IReadOnlyCollection<Item> items)
+        {
+            foreach (var it in items)
+                if (UnorderableItems.Contains(it.ItemId))
+                    return false;
+            return true;
+        }
+
+        private static List<ushort> UnorderableItems = new List<ushort>()
+        {
+            { 2750 },
+            { 2755 },
+            { 2756 },
+            { 2757 },
+        };
     }
 
     public static class VillagerOrderParser
