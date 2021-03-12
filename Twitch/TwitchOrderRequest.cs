@@ -63,6 +63,8 @@ namespace SysBot.ACNHOrders.Twitch
 
         public void SendNotification(CrossBot routine, string msg)
         {
+            if (msg.StartsWith("Visitor arriving"))
+                return;
             msg = SanitizeForTwitch(msg);
             SendMessage($"@{Trader} - {msg}", Settings.NotifyDestination);
         }
