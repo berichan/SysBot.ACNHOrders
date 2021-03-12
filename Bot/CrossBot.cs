@@ -843,6 +843,14 @@ namespace SysBot.ACNHOrders
                 LastArrival = arriverName;
                 data = await Connection.ReadBytesAsync((uint)OffsetHelper.ArriverVillageLocAddress, 0x14, token).ConfigureAwait(false);
                 LastArrivalIsland = Encoding.Unicode.GetString(data).TrimEnd('\0');
+
+                if (Config.HideArrivalNames)
+                {
+                    var blank = new byte[0x14];
+                    await Connection.WriteBytesAsync(blank, (uint)OffsetHelper.ArriverNameLocAddress, token).ConfigureAwait(false);
+                    await Connection.WriteBytesAsync(blank, (uint)OffsetHelper.ArriverVillageLocAddress, token).ConfigureAwait(false);
+                }
+
                 return true;
             }
             return false;

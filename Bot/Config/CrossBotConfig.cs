@@ -83,6 +83,8 @@ namespace SysBot.ACNHOrders
         /// <summary> Should we allow villager injection? </summary>
         public bool AllowVillagerInjection { get; set; } = true;
 
+        public bool HideArrivalNames { get; set; } = false;
+
         public string BlockerEmoji { get; set; } = "\u2764";
 
         #endregion
