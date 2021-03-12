@@ -42,5 +42,7 @@ namespace SysBot.ACNHOrders
 
         /// <summary> Wrapping paper to apply when <see cref="WrapAllItems"/> is true. </summary>
         public ItemWrappingPaper WrappingPaper { get; set; } = ItemWrappingPaper.Black;
+
+        public bool SkipDropCheck => true;
     }
 }
