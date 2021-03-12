@@ -58,7 +58,7 @@ namespace SysBot.ACNHOrders
         // Message Destinations
 
         ///<summary>Determines where generic notifications are sent.</summary>
-        public TwitchMessageDestination NotifyDestination { get; set; }
+        public TwitchMessageDestination NotifyDestination { get; set; } = TwitchMessageDestination.Channel;
 
         ///<summary>Determines where Start notifications are sent.</summary>
         public TwitchMessageDestination OrderStartDestination { get; set; } = TwitchMessageDestination.Channel;

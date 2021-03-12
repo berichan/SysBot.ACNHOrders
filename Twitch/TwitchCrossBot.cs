@@ -43,6 +43,11 @@ namespace SysBot.ACNHOrders.Twitch
                 // message send interval is managed (50ms for each message sent)
             };
 
+            var lowerKeyDic = new Dictionary<string, string>();
+            foreach (var kvp in settings.UserDefinitedCommands)
+                lowerKeyDic.Add(kvp.Key.ToLower(), kvp.Value);
+            settings.UserDefinitedCommands = lowerKeyDic;
+
             Channel = settings.Channel;
             WebSocketClient customClient = new(clientOptions);
             client = new TwitchClient(customClient);
@@ -160,6 +165,10 @@ namespace SysBot.ACNHOrders.Twitch
             LogUtil.LogInfo($"[Command] {m.Username}: {c} {args}", nameof(TwitchCrossBot));
 
             /// non-constant
+            //user-defined
+            if (Settings.UserDefinitedCommands.ContainsKey(c.ToLower()))
+                return Settings.UserDefinitedCommands[c];
+
             // dodo-restore
             if (Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
             {
@@ -232,7 +241,7 @@ namespace SysBot.ACNHOrders.Twitch
                 client.SendMessage(Channel, $"Removed @{removed.DisplayName} from the waiting list: stale request.");
             }
 
-            var queueItem = QueuePool.FindLast(q => q.DisplayName == e.WhisperMessage.Username);
+            var queueItem = QueuePool.FindLast(q => q.ID == ulong.Parse(e.WhisperMessage.UserId));
             if (queueItem == null)
             {
                 LogUtil.LogInfo($"No queue item found, returning...", nameof(TwitchCrossBot));
