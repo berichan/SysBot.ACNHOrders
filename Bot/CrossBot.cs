@@ -580,6 +580,7 @@ namespace SysBot.ACNHOrders
             await Task.Delay(10_000, token).ConfigureAwait(false);
 
             OverworldState state = OverworldState.Unknown;
+            bool isUserArriveLeaving = false;
             // Ensure we're on overworld before starting timer/drop loop
             while (state != OverworldState.Overworld)
             {
@@ -587,10 +588,18 @@ namespace SysBot.ACNHOrders
                 await Task.Delay(0_500, token).ConfigureAwait(false);
                 await Click(SwitchButton.A, 0_500, token).ConfigureAwait(false);
 
+                if (!isUserArriveLeaving && state == OverworldState.UserArriveLeaving)
+                {
+                    await UpdateBlocker(true, token).ConfigureAwait(false);
+                    isUserArriveLeaving = true;
+                }
+
                 await VisitorList.UpdateNames(token).ConfigureAwait(false);
                 if (VisitorList.VisitorCount < 2)
                     break;
             }
+
+            await UpdateBlocker(false, token).ConfigureAwait(false);
 
             // Update current user Id such that they may use drop commands
             CurrentUserId = order.UserGuid;
@@ -627,11 +636,13 @@ namespace SysBot.ACNHOrders
             }
 
             LogUtil.LogInfo($"Order completed. Notifying visitor of completion.", Config.IP);
+            await UpdateBlocker(true, token).ConfigureAwait(false);
             order.OrderFinished(this, Config.OrderConfig.CompleteOrderMessage);
             if (order.VillagerName != string.Empty && Config.OrderConfig.EchoArrivingLeavingChannels.Count > 0)
                 await AttemptEchoHook($"> Visitor completed order, and is now leaving: {order.VillagerName}", Config.OrderConfig.EchoArrivingLeavingChannels, token).ConfigureAwait(false);
 
             await Task.Delay(20_000, token).ConfigureAwait(false);
+            await UpdateBlocker(false, token).ConfigureAwait(false);
 
             // Ensure we're on overworld before exiting
             while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false) != OverworldState.Overworld)
