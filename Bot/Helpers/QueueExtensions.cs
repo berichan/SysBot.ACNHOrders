@@ -139,7 +139,9 @@ namespace SysBot.ACNHOrders
         public static void ClearQueue<T>(this ConcurrentQueue<T> queue)
         {
             T item; // weird runtime error
+#pragma warning disable CS8600
             while (queue.TryDequeue(out item)) { } // do nothing
+#pragma warning restore CS8600
         }
     }
 }
