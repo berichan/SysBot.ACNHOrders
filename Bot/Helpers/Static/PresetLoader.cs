@@ -32,5 +32,15 @@ namespace SysBot.ACNHOrders
             var path = Path.Combine(cfg.NHIPresetsDirectory, itemName);
             return GetPreset(path);
         }
+
+        public static string[] GetPresets(OrderBotConfig cfg)
+        {
+            var files = Directory.GetFiles(cfg.NHIPresetsDirectory);
+            var presets = new string[files.Length];
+            for(int i = 0; i < files.Length; ++i)
+                presets[i] = Path.GetFileNameWithoutExtension(files[i]);
+
+            return presets;
+        }
     }
 }

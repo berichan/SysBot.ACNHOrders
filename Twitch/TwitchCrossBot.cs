@@ -195,6 +195,8 @@ namespace SysBot.ACNHOrders.Twitch
                 case "preset":
                     var _2 = TwitchHelper.AddToWaitingListPreset(args, m.DisplayName, m.Username, ulong.Parse(m.UserId), subscriber(), out string msg2);
                     return msg2;
+                case "presets":
+                    return TwitchHelper.GetPresets(Settings.CommandPrefix);
                 case "ts":
                     return $"@{m.Username}: {TwitchHelper.GetPosition(ulong.Parse(m.UserId))}";
                 case "tc":

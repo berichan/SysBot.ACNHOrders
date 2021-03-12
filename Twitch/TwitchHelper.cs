@@ -140,6 +140,16 @@ namespace SysBot.ACNHOrders.Twitch
             return message;
         }
 
+        public static string GetPresets(char prefix)
+        {
+            var presets = PresetLoader.GetPresets(Globals.Bot.Config.OrderConfig);
+
+            if (presets.Length < 1)
+                return "There are not presets available";
+            else
+                return $"The following presets are available: {string.Join(", ", presets)}. Enter {prefix}preset [preset name] to order one!";
+        }
+
         private static bool IsQueueable(string orderString, ulong id, out string msg)
         {
             if (!TwitchCrossBot.Bot.Config.AcceptingCommands || TwitchCrossBot.Bot.Config.SkipConsoleBotCreation)
