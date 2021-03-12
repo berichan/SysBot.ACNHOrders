@@ -127,6 +127,46 @@ namespace SysBot.ACNHOrders
             await AttemptToQueueRequest(items, Context.User, Context.Channel, null, true).ConfigureAwait(false);
         }
 
+        [Command("preset")]
+        [Summary("Requests the bot an order of a preset created by the bot host.")]
+        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
+        public async Task RequestPresetOrderAsync([Remainder] string presetName)
+        {
+            var cfg = Globals.Bot.Config;
+            VillagerRequest? vr = null;
+
+            // try get villager
+            var result = VillagerOrderParser.ExtractVillagerName(presetName, out var res, out var san);
+            if (result == VillagerOrderParser.VillagerRequestResult.InvalidVillagerRequested)
+            {
+                await ReplyAsync($"{Context.User.Mention} - {res} Order has not been accepted.");
+                return;
+            }
+
+            if (result == VillagerOrderParser.VillagerRequestResult.Success)
+            {
+                if (!cfg.AllowVillagerInjection)
+                {
+                    await ReplyAsync($"{Context.User.Mention} - Villager injection is currently disabled.");
+                    return;
+                }
+
+                presetName = san;
+                var replace = VillagerResources.GetVillager(res);
+                vr = new VillagerRequest(Context.User.Username, replace, 0, GameInfo.Strings.GetVillager(res));
+            }
+
+            presetName = presetName.Trim();
+            var preset = PresetLoader.GetPreset(cfg.OrderConfig, presetName);
+            if (preset == null)
+            {
+                await ReplyAsync($"{Context.User.Mention} - {presetName} is not a valid preset.");
+                return;
+            }
+
+            await AttemptToQueueRequest(preset, Context.User, Context.Channel, vr, true).ConfigureAwait(false);
+        }
+
         [Command("queue")]
         [Alias("qs", "qp", "position")]
         [Summary("View your position in the queue.")]

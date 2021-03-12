@@ -190,14 +190,17 @@ namespace SysBot.ACNHOrders.Twitch
                     var _ = TwitchHelper.AddToWaitingList(args, m.DisplayName, m.Username, ulong.Parse(m.UserId), subscriber(), false, out string msg);
                     return msg;
                 case "ordercat":
-                    var _1 = TwitchHelper.AddToWaitingList(args, m.DisplayName, m.Username, ulong.Parse(m.UserId), subscriber(), true, out string msge);
-                    return msge;
+                    var _1 = TwitchHelper.AddToWaitingList(args, m.DisplayName, m.Username, ulong.Parse(m.UserId), subscriber(), true, out string msg1);
+                    return msg1;
+                case "preset":
+                    var _2 = TwitchHelper.AddToWaitingListPreset(args, m.DisplayName, m.Username, ulong.Parse(m.UserId), subscriber(), out string msg2);
+                    return msg2;
                 case "ts":
                     return $"@{m.Username}: {TwitchHelper.GetPosition(ulong.Parse(m.UserId))}";
                 case "tc":
                     return $"@{m.Username}: {TwitchHelper.ClearTrade(ulong.Parse(m.UserId))}";
                 case "ping":
-                    return $"@{m.Username}: pong";
+                    return $"@{m.Username}: pong!";
 
                 case "pos" when whisper:
                     return TwitchHelper.GetPosition(ulong.Parse(m.UserId));

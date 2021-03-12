@@ -1,10 +1,5 @@
 ﻿using NHSE.Core;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using SysBot.Base;
 
 namespace SysBot.ACNHOrders
@@ -27,6 +22,15 @@ namespace SysBot.ACNHOrders
             }
 
             return Item.GetArray(fileBytes);
+        }
+
+        public static Item[]? GetPreset(OrderBotConfig cfg, string itemName, bool nhiOnly = true)
+        {
+            if (nhiOnly && !itemName.EndsWith(".nhi"))
+                itemName += ".nhi";
+
+            var path = Path.Combine(cfg.NHIPresetsDirectory, itemName);
+            return GetPreset(path);
         }
     }
 }

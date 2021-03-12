@@ -13,21 +13,9 @@ namespace SysBot.ACNHOrders.Twitch
         // Helper functions for commands
         public static bool AddToWaitingList(string orderString, string display, string username, ulong id, bool sub, bool cat, out string msg)
         {
-            if (!TwitchCrossBot.Bot.Config.AcceptingCommands || TwitchCrossBot.Bot.Config.SkipConsoleBotCreation)
+            if (!IsQueueable(orderString, id, out var msge))
             {
-                msg = $"@{username} - Sorry, I am not currently accepting queue requests!";
-                return false;
-            }
-
-            if (string.IsNullOrWhiteSpace(orderString))
-            {
-                msg = $"@{username} - No valid order text.";
-                return false;
-            }
-
-            if (GlobalBan.IsBanned(id.ToString()))
-            {
-                msg = $"@{username} - You have been banned for abuse. Order has not been accepted.";
+                msg = $"@{username} - {msge}";
                 return false;
             }
 
@@ -59,22 +47,63 @@ namespace SysBot.ACNHOrders.Twitch
 
                 var items = string.IsNullOrWhiteSpace(orderString) ? new Item[1] { new Item(Item.NONE) } : ItemParser.GetItemsFromUserInput(orderString, cfg.DropConfig, ItemDestination.FieldItemDropped);
 
-                if (!OrderModule.IsSane(items))
-                {
-                    msg = $"@{username} - You are attempting to order items that will damage your save. Order not accepted.";
-                    return false;
-                }
-
-                var multiOrder = new MultiItem(items.ToArray(), cat, true, true);
-
-                var tq = new TwitchQueue(multiOrder.ItemArray.Items, vr, display, id, sub);
-                TwitchCrossBot.QueuePool.Add(tq);
-                msg = $"@{username} - Whisper me any random 3-digit number. Simply type /w @{TwitchCrossBot.BotName.ToLower()} [3-digit number] in this channel! Your order will not be placed in the queue until I get your whisper!";
-                return true;
+                return InsertToQueue(items, vr, display, username, id, sub, cat, out msg);
             }
             catch (Exception e) 
             { 
                 LogUtil.LogError($"{username}@{orderString}: {e.Message}", nameof(TwitchHelper)); 
+                msg = $"@{username} {e.Message}";
+                return false;
+            }
+        }
+
+        public static bool AddToWaitingListPreset(string presetName, string display, string username, ulong id, bool sub, out string msg)
+        {
+            if (!IsQueueable(presetName, id, out var msge))
+            {
+                msg = $"@{username} - {msge}";
+                return false;
+            }
+
+            try
+            {
+                var cfg = Globals.Bot.Config;
+                VillagerRequest? vr = null;
+
+                // try get villager
+                var result = VillagerOrderParser.ExtractVillagerName(presetName, out var res, out var san);
+                if (result == VillagerOrderParser.VillagerRequestResult.InvalidVillagerRequested)
+                {
+                    msg = $"@{username} - {res} Order has not been accepted.";
+                    return false;
+                }
+
+                if (result == VillagerOrderParser.VillagerRequestResult.Success)
+                {
+                    if (!cfg.AllowVillagerInjection)
+                    {
+                        msg = $"@{username} - Villager injection is currently disabled.";
+                        return false;
+                    }
+
+                    presetName = san;
+                    var replace = VillagerResources.GetVillager(res);
+                    vr = new VillagerRequest(username, replace, 0, GameInfo.Strings.GetVillager(res));
+                }
+
+                presetName = presetName.Trim();
+                var preset = PresetLoader.GetPreset(cfg.OrderConfig, presetName);
+                if (preset == null)
+                {
+                    msg = $"{username} - {presetName} is not a valid preset.";
+                    return false;
+                }
+
+                return InsertToQueue(preset, vr, display, username, id, sub, true, out msg);
+            }
+            catch (Exception e)
+            {
+                LogUtil.LogError($"{username}@Preset:{presetName}: {e.Message}", nameof(TwitchHelper));
                 msg = $"@{username} {e.Message}";
                 return false;
             }
@@ -109,6 +138,46 @@ namespace SysBot.ACNHOrders.Twitch
                 message += $" Your predicted ETA is {QueueExtensions.GetETA(position)}.";
 
             return message;
+        }
+
+        private static bool IsQueueable(string orderString, ulong id, out string msg)
+        {
+            if (!TwitchCrossBot.Bot.Config.AcceptingCommands || TwitchCrossBot.Bot.Config.SkipConsoleBotCreation)
+            {
+                msg = "Sorry, I am not currently accepting queue requests!";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(orderString))
+            {
+                msg = "No valid order text.";
+                return false;
+            }
+
+            if (GlobalBan.IsBanned(id.ToString()))
+            {
+                msg = "You have been banned for abuse. Order has not been accepted.";
+                return false;
+            }
+
+            msg = string.Empty;
+            return true;
+        }
+
+        private static bool InsertToQueue(IReadOnlyCollection<Item> items, VillagerRequest? vr, string display, string username, ulong id, bool sub, bool cat, out string msg)
+        {
+            if (!OrderModule.IsSane(items))
+            {
+                msg = $"@{username} - You are attempting to order items that will damage your save. Order not accepted.";
+                return false;
+            }
+
+            var multiOrder = new MultiItem(items.ToArray(), cat, true, true);
+
+            var tq = new TwitchQueue(multiOrder.ItemArray.Items, vr, display, id, sub);
+            TwitchCrossBot.QueuePool.Add(tq);
+            msg = $"@{username} - I've noted your order, now whisper me any random 3-digit number. Simply type /w @{TwitchCrossBot.BotName.ToLower()} [3-digit number] in this channel! Your order will not be placed in the queue until I get your whisper!";
+            return true;
         }
     }
 }
