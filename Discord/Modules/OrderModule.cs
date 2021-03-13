@@ -14,6 +14,8 @@ namespace SysBot.ACNHOrders
     public class OrderModule : ModuleBase<SocketCommandContext>
     {
         private static int MaxOrderCount => Globals.Bot.Config.OrderConfig.MaxQueueCount;
+        private static Dictionary<ulong, DateTime> UserLastCommand = new();
+        private static object commandSync = new();
 
         private const string OrderItemSummary =
             "Requests the bot add the item order to the queue with the user's provided input. " +
@@ -173,6 +175,13 @@ namespace SysBot.ACNHOrders
         [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task ViewQueuePositionAsync()
         {
+            var cooldown = Globals.Bot.Config.OrderConfig.PositionCommandCooldown;
+            if (CanCommand(Context.User.Id, cooldown, true))
+            {
+                await ReplyAsync($"{Context.User.Mention} - This command has a {cooldown} second cooldown. Use this bot responsibly.").ConfigureAwait(false);
+                return;
+            }
+
             var position = QueueExtensions.GetPosition(Context.User.Id, out _);
             if (position < 0)
             {
@@ -196,7 +205,7 @@ namespace SysBot.ACNHOrders
             QueueExtensions.GetPosition(Context.User.Id, out var order);
             if (order == null)
             {
-                await ReplyAsync("Sorry, you are not in the queue, or your order is happening now.").ConfigureAwait(false);
+                await ReplyAsync($"{Context.User.Mention} - Sorry, you are not in the queue, or your order is happening now.").ConfigureAwait(false);
                 return;
             }
 
@@ -276,7 +285,33 @@ namespace SysBot.ACNHOrders
             { 2755 },
             { 2756 },
             { 2757 },
+            { 4310 },
+            { 4311 }
         };
+
+        public static bool CanCommand(ulong id, int secondsCooldown, bool addIfNotAdded)
+        {
+            if (secondsCooldown < 0)
+                return true;
+            lock (commandSync)
+            {
+                if (UserLastCommand.ContainsKey(id))
+                {
+                    bool isLimit = Math.Abs((DateTime.Now - UserLastCommand[id]).TotalSeconds) < secondsCooldown;
+                    if (addIfNotAdded && !isLimit)
+                    {
+                        UserLastCommand.Remove(id);
+                        UserLastCommand.Add(id, DateTime.Now);
+                    }
+                    return isLimit;
+                }
+                else if (addIfNotAdded)
+                {
+                    UserLastCommand.Add(id, DateTime.Now);
+                }
+                return true;
+            }
+        }
     }
 
     public static class VillagerOrderParser
