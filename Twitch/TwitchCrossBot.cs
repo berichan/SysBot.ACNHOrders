@@ -198,14 +198,18 @@ namespace SysBot.ACNHOrders.Twitch
                 case "presets":
                     return TwitchHelper.GetPresets(Settings.CommandPrefix);
                 case "ts":
+                case "pos":
+                case "position":
+                case "time":
+                case "eta":
                     return $"@{m.Username}: {TwitchHelper.GetPosition(ulong.Parse(m.UserId))}";
                 case "tc":
+                case "remove":
+                case "delete":
+                case "qc":
                     return $"@{m.Username}: {TwitchHelper.ClearTrade(ulong.Parse(m.UserId))}";
                 case "ping":
                     return $"@{m.Username}: pong!";
-
-                case "pos" when whisper:
-                    return TwitchHelper.GetPosition(ulong.Parse(m.UserId));
 
                 // Sudo Only Commands
                 case "tca" when !sudo():
