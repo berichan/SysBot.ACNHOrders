@@ -593,6 +593,11 @@ namespace SysBot.ACNHOrders
                     await UpdateBlocker(true, token).ConfigureAwait(false);
                     isUserArriveLeaving = true;
                 }
+                else if (isUserArriveLeaving && state != OverworldState.UserArriveLeaving)
+                {
+                    await UpdateBlocker(false, token).ConfigureAwait(false);
+                    isUserArriveLeaving = false;
+                }
 
                 await VisitorList.UpdateNames(token).ConfigureAwait(false);
                 if (VisitorList.VisitorCount < 2)
@@ -640,9 +645,10 @@ namespace SysBot.ACNHOrders
             order.OrderFinished(this, Config.OrderConfig.CompleteOrderMessage);
             if (order.VillagerName != string.Empty && Config.OrderConfig.EchoArrivingLeavingChannels.Count > 0)
                 await AttemptEchoHook($"> Visitor completed order, and is now leaving: {order.VillagerName}", Config.OrderConfig.EchoArrivingLeavingChannels, token).ConfigureAwait(false);
-
-            await Task.Delay(20_000, token).ConfigureAwait(false);
+            
+            await Task.Delay(5_000, token).ConfigureAwait(false);
             await UpdateBlocker(false, token).ConfigureAwait(false);
+            await Task.Delay(15_000, token).ConfigureAwait(false);
 
             // Ensure we're on overworld before exiting
             while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false) != OverworldState.Overworld)
