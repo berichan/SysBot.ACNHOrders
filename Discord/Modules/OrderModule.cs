@@ -297,13 +297,13 @@ namespace SysBot.ACNHOrders
             {
                 if (UserLastCommand.ContainsKey(id))
                 {
-                    bool isLimit = Math.Abs((DateTime.Now - UserLastCommand[id]).TotalSeconds) < secondsCooldown;
-                    if (addIfNotAdded && !isLimit)
+                    bool isFine = Math.Abs((DateTime.Now - UserLastCommand[id]).TotalSeconds) < secondsCooldown;
+                    if (addIfNotAdded && isFine)
                     {
                         UserLastCommand.Remove(id);
                         UserLastCommand.Add(id, DateTime.Now);
                     }
-                    return isLimit;
+                    return !isFine;
                 }
                 else if (addIfNotAdded)
                 {
