@@ -176,7 +176,7 @@ namespace SysBot.ACNHOrders
         public async Task ViewQueuePositionAsync()
         {
             var cooldown = Globals.Bot.Config.OrderConfig.PositionCommandCooldown;
-            if (CanCommand(Context.User.Id, cooldown, true))
+            if (!CanCommand(Context.User.Id, cooldown, true))
             {
                 await ReplyAsync($"{Context.User.Mention} - This command has a {cooldown} second cooldown. Use this bot responsibly.").ConfigureAwait(false);
                 return;
