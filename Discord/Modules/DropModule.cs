@@ -64,6 +64,7 @@ namespace SysBot.ACNHOrders
         {
             var cfg = Globals.Bot.Config;
             var items = ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, cfg.DropConfig.UseLegacyDrop ? ItemDestination.PlayerDropped : ItemDestination.HeldItem);
+
             MultiItem.StackToMax(items);
             await DropItems(items).ConfigureAwait(false);
         }
@@ -86,6 +87,12 @@ namespace SysBot.ACNHOrders
         {
             if (!await GetDropAvailability().ConfigureAwait(false))
                 return;
+
+            if (!OrderModule.IsSane(items))
+            {
+                await ReplyAsync($"{Context.User.Mention} - You are attempting to drop items that will damage your save. Drop request not accepted.");
+                return;
+            }
 
             if (items.Count > MaxRequestCount)
             {
