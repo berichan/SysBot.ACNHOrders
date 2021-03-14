@@ -60,6 +60,7 @@ namespace SysBot.ACNHOrders
         [Command("drop")]
         [Alias("dropItem")]
         [Summary("Drops a custom item (or items).")]
+        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task RequestDropAsync([Summary(DropItemSummary)][Remainder]string request)
         {
             var cfg = Globals.Bot.Config;
@@ -77,6 +78,7 @@ namespace SysBot.ACNHOrders
         [Command("dropDIY")]
         [Alias("diy")]
         [Summary("Drops a DIY recipe with the requested recipe ID(s).")]
+        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task RequestDropDIYAsync([Summary(DropDIYSummary)][Remainder]string recipeIDs)
         {
             var items = ItemParser.GetDIYsFromUserInput(recipeIDs);
@@ -111,6 +113,9 @@ namespace SysBot.ACNHOrders
         private async Task<bool> GetDropAvailability()
         {
             var cfg = Globals.Bot.Config;
+
+            if (cfg.CanUseSudo(Context.User.Id) || Globals.Self.Owner == Context.User.Id)
+                return true;
 
             if (Globals.Bot.CurrentUserId == Context.User.Id)
                 return true;
