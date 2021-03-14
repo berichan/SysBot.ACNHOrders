@@ -140,6 +140,16 @@ namespace SysBot.ACNHOrders.Twitch
             return message;
         }
 
+        public static string GetDodoString(int visitorCount, string islandName, string dodoCode, string dodoReplyMessage, string dodoExtraMessage)
+        {
+            bool full = visitorCount - 1 > 6;
+            var p1Take = full ? dodoExtraMessage.Replace("|", string.Empty) : dodoExtraMessage.Split('|')[0];
+            string p1 = string.Format(p1Take, visitorCount - 1, islandName);
+
+            string p2 = string.Format(dodoReplyMessage, dodoCode, islandName, p1);
+            return p2;
+        }
+
         public static string GetPresets(char prefix)
         {
             var presets = PresetLoader.GetPresets(Globals.Bot.Config.OrderConfig);

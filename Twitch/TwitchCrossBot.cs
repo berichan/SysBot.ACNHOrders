@@ -173,14 +173,7 @@ namespace SysBot.ACNHOrders.Twitch
             if (Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
             {
                 if (c == Settings.DodoIslandCommand)
-                {
-                    bool full = visCount() - 1 > 6;
-                    var p1Take = full ? Settings.DodoExtraMessage.Split('|')[0] : Settings.DodoExtraMessage.Replace("|", string.Empty);
-                    string p1 = string.Format(p1Take, visCount(), islandName());
-
-                    string p2 = string.Format(Settings.DodoReplyMessage, dodoCode(), islandName(), p1);
-                    return p2;
-                }
+                    TwitchHelper.GetDodoString((int)visCount(), islandName(), dodoCode(), Settings.DodoReplyMessage, Settings.DodoExtraMessage);
             }
 
             switch (c)
