@@ -173,9 +173,12 @@ namespace SysBot.ACNHOrders.Twitch
             if (Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
             {
                 if (c == Settings.DodoIslandCommand)
-                    TwitchHelper.GetDodoString((int)visCount(), islandName(), dodoCode(), Settings.DodoReplyMessage, Settings.DodoExtraMessage);
+                    return TwitchHelper.GetDodoString((int)visCount(), islandName(), dodoCode(), Settings.DodoReplyMessage, Settings.DodoExtraMessage);
+                else if (c == Settings.DodoVisitorListCommand)
+                    return string.Format(Settings.DodoVisitorMessage, islandName(), Bot.VisitorList.VisitorFormattedString);
             }
 
+            // order
             switch (c)
             {
                 // User Usable Commands

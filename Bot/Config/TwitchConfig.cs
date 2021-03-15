@@ -79,8 +79,11 @@ namespace SysBot.ACNHOrders
 
         // Restore mode dodo syntax
         public string DodoIslandCommand { get; set; } = "island";
-        public string DodoReplyMessage { get; set; } = "The dodo code for {1} is {0}. {2}";
+        public string DodoReplyMessage { get; set; } = "The dodo code for {0} is {1}. {2}";
         public string DodoExtraMessage { get; set; } = "There are currently {0} players on {1}. |{1} is currently full";
+
+        public string DodoVisitorListCommand { get; set; } = "islandlist";
+        public string DodoVisitorMessage { get; set; } = "The following people are on {0}: {1}";
 
         public bool IsSudo(string username)
         {

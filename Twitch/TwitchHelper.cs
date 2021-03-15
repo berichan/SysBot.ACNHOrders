@@ -146,7 +146,7 @@ namespace SysBot.ACNHOrders.Twitch
             var p1Take = full ? dodoExtraMessage.Replace("|", string.Empty) : dodoExtraMessage.Split('|')[0];
             string p1 = string.Format(p1Take, visitorCount - 1, islandName);
 
-            string p2 = string.Format(dodoReplyMessage, dodoCode, islandName, p1);
+            string p2 = string.Format(dodoReplyMessage, islandName, dodoCode, p1);
             return p2;
         }
 
