@@ -24,6 +24,7 @@ namespace SysBot.ACNHOrders
         private readonly List<Villager2>? VillagerShells;
 
         public int LastInjectedIndex { get; set; } = 0;
+        public string LastVillagers { get; private set; } = "No villagers loaded yet.";
 
         public VillagerHelper(CrossBot bot, VillagerHouse[] houses, Villager2[] shells)
         {
@@ -32,6 +33,7 @@ namespace SysBot.ACNHOrders
 
             VillagerHouses = new List<VillagerHouse>(houses);
             VillagerShells = new List<Villager2>(shells);
+            updateVillagerList();
         }
 
         public VillagerHelper() { }
@@ -48,18 +50,35 @@ namespace SysBot.ACNHOrders
                 houses[i] = new VillagerHouse(housesData.Skip(i * VillagerHouse.SIZE).Take(VillagerHouse.SIZE).ToArray());
 
             // villager shells
-            var villagers = new Villager2[10];
-            for (int i = 0; i < 10; ++i)
-            {
-                var villagerBytes = await bot.Connection.ReadBytesAsync((uint)(OffsetHelper.VillagerAddress + (uint)(i * Villager2.SIZE)), 0x3, token).ConfigureAwait(false);
-                villagers[i] = new Villager2(villagerBytes);
-
-                if (villagers[i].Species != (byte)VillagerSpecies.non)
-                    LogUtil.LogInfo($"Found villager: {GameInfo.Strings.GetVillager(villagers[i].InternalName)}", bot.Config.IP);
-            }
+            var villagers = await GetVillagerShells(bot.Connection, true, token).ConfigureAwait(false);
 
             LogUtil.LogInfo("Villager data loaded...", bot.Config.IP);
             return new VillagerHelper(bot, houses, villagers);
+        }
+
+        public static async Task<Villager2[]> GetVillagerShells(IConsoleConnectionAsync connection, bool log, CancellationToken token)
+        {
+            // villager shells
+            var villagers = new Villager2[10];
+            for (int i = 0; i < 10; ++i)
+            {
+                var villagerBytes = await connection.ReadBytesAsync((uint)(OffsetHelper.VillagerAddress + (uint)(i * Villager2.SIZE)), 0x3, token).ConfigureAwait(false);
+                villagers[i] = new Villager2(villagerBytes);
+
+                if (log && villagers[i].Species != (byte)VillagerSpecies.non)
+                    LogUtil.LogInfo($"Found villager: {GameInfo.Strings.GetVillager(villagers[i].InternalName)}", nameof(VillagerHelper));
+            }
+            return villagers;
+        }
+
+        public async Task UpdateVillagers(CancellationToken token)
+        {
+            if (Bot == null || VillagerShells == null)
+                return;
+
+            VillagerShells.Clear();
+            VillagerShells.AddRange(await GetVillagerShells(Bot.Connection, false, token).ConfigureAwait(false));
+            updateVillagerList();
         }
 
         public async Task<bool> InjectVillager(VillagerRequest vr, CancellationToken token)
@@ -128,5 +147,14 @@ namespace SysBot.ACNHOrders
             return true;
         }
 
+        private void updateVillagerList()
+        {
+            if (VillagerShells == null)
+                return;
+            string newVillagers = string.Empty;
+            foreach (var v in VillagerShells)
+                newVillagers += $"{GameInfo.Strings.GetVillager(v.InternalName)}, ";
+            LastVillagers = newVillagers.TrimEnd(' ').TrimEnd(',');
+        }
     }
 }

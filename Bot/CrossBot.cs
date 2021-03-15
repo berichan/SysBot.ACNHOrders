@@ -215,6 +215,7 @@ namespace SysBot.ACNHOrders
 
                     if (VillagerInjections.TryDequeue(out var vil))
                         await Villagers.InjectVillager(vil, token).ConfigureAwait(false);
+                    await Villagers.UpdateVillagers(token).ConfigureAwait(false);
                 }
 
                 if (Config.DodoModeConfig.EchoDodoChannels.Count > 0)

@@ -253,7 +253,7 @@ namespace SysBot.ACNHOrders
                 return;
             }
 
-            if (!IsSane(items))
+            if (!InternalItemTool.CurrentInstance.IsSane(items))
             {
                 await ReplyAsync($"{Context.User.Mention} - You are attempting to order items that will damage your save. Order not accepted.");
                 return;
@@ -270,24 +270,6 @@ namespace SysBot.ACNHOrders
             var requestInfo = new OrderRequest<Item>(multiOrder, multiOrder.ItemArray.Items.ToArray(), orderer.Id, QueueExtensions.GetNextID(), orderer, msgChannel, vr);
             await Context.AddToQueueAsync(requestInfo, orderer.Username, orderer);
         }
-
-        public static bool IsSane(IReadOnlyCollection<Item> items)
-        {
-            foreach (var it in items)
-                if (UnorderableItems.Contains(it.ItemId))
-                    return false;
-            return true;
-        }
-
-        private static List<ushort> UnorderableItems = new List<ushort>()
-        {
-            { 2750 },
-            { 2755 },
-            { 2756 },
-            { 2757 },
-            { 4310 },
-            { 4311 }
-        };
 
         public static bool CanCommand(ulong id, int secondsCooldown, bool addIfNotAdded)
         {
