@@ -73,6 +73,21 @@ namespace SysBot.ACNHOrders
         [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task InjectVillagerAsync(string internalName) => await InjectVillagerAsync(0, internalName).ConfigureAwait(false);
 
+        [Command("villagers"), Alias("vl", "villagerList")]
+        [Summary("Prints the list of villagers currently on the island.")]
+        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
+        public async Task GetVillagerListAsync()
+        {
+            if (!Globals.Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
+            {
+                await ReplyAsync($"{Context.User.Mention} - Villagers on the island may be replaceable by adding them to your order command.");
+                return;
+            }
+
+            await ReplyAsync($"The following villagers are on {Globals.Bot.TownName}: {Globals.Bot.Villagers.LastVillagers}.");
+        }
+        
+
         [Command("villagerName")]
         [Alias("vn", "nv", "name")]
         [Summary("Gets the internal name of a villager.")]
