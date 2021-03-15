@@ -4,7 +4,6 @@ using SysBot.Base;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace SysBot.ACNHOrders.Twitch
 {
@@ -140,16 +139,6 @@ namespace SysBot.ACNHOrders.Twitch
             return message;
         }
 
-        public static string GetDodoString(int visitorCount, string islandName, string dodoCode, string dodoReplyMessage, string dodoExtraMessage)
-        {
-            bool full = visitorCount - 1 > 6;
-            var p1Take = full ? dodoExtraMessage.Replace("|", string.Empty) : dodoExtraMessage.Split('|')[0];
-            string p1 = string.Format(p1Take, visitorCount - 1, islandName);
-
-            string p2 = string.Format(dodoReplyMessage, islandName, dodoCode, p1);
-            return p2;
-        }
-
         public static string GetPresets(char prefix)
         {
             var presets = PresetLoader.GetPresets(Globals.Bot.Config.OrderConfig);
@@ -186,7 +175,7 @@ namespace SysBot.ACNHOrders.Twitch
 
         private static bool InsertToQueue(IReadOnlyCollection<Item> items, VillagerRequest? vr, string display, string username, ulong id, bool sub, bool cat, out string msg)
         {
-            if (!OrderModule.IsSane(items))
+            if (!InternalItemTool.CurrentInstance.IsSane(items))
             {
                 msg = $"@{username} - You are attempting to order items that will damage your save. Order not accepted.";
                 return false;

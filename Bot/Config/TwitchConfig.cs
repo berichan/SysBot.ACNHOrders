@@ -75,15 +75,13 @@ namespace SysBot.ACNHOrders
         // Commands
 
         /// <summary> Dictionary of user-defined commands</summary>
-        public Dictionary<string, string> UserDefinitedCommands { get; set; } = new Dictionary<string, string>() { { "test", "I am alive!" }, { "test2", "I am still alive!" } };
-
-        // Restore mode dodo syntax
-        public string DodoIslandCommand { get; set; } = "island";
-        public string DodoReplyMessage { get; set; } = "The dodo code for {0} is {1}. {2}";
-        public string DodoExtraMessage { get; set; } = "There are currently {0} players on {1}. |{1} is currently full";
-
-        public string DodoVisitorListCommand { get; set; } = "islandlist";
-        public string DodoVisitorMessage { get; set; } = "The following people are on {0}: {1}";
+        public Dictionary<string, string> UserDefinitedCommands { get; set; } = 
+            new Dictionary<string, string>() { 
+                { "island", "The dodo code for {islandname} is {dodo}. There are currently {vcount} visitors on {islandname}." }, 
+                { "islandlist", "The following people are on {islandname}: {visitorlist}." },
+                { "villagers", "The following villagers may be adopted on {islandname}: {villagerlist}." },
+                { "custom", "Hello, @{user}!" }
+            };
 
         public bool IsSudo(string username)
         {

@@ -159,24 +159,14 @@ namespace SysBot.ACNHOrders.Twitch
         {
             bool sudo() => m is ChatMessage ch && (ch.IsBroadcaster || Settings.IsSudo(m.Username));
             bool subscriber() => m is ChatMessage { IsSubscriber: true };
-            uint visCount() => Bot.VisitorList.VisitorCount;
-            string islandName() => Bot.TownName;
-            string dodoCode() => Bot.DodoCode;
             LogUtil.LogInfo($"[Command] {m.Username}: {c} {args}", nameof(TwitchCrossBot));
 
-            /// non-constant
-            //user-defined
+            // user-defined
             if (Settings.UserDefinitedCommands.ContainsKey(c.ToLower()))
-                return Settings.UserDefinitedCommands[c];
+                return ReplacePredefined(Settings.UserDefinitedCommands[c], m.Username);
 
-            // dodo-restore
             if (Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
-            {
-                if (c == Settings.DodoIslandCommand)
-                    return TwitchHelper.GetDodoString((int)visCount(), islandName(), dodoCode(), Settings.DodoReplyMessage, Settings.DodoExtraMessage);
-                else if (c == Settings.DodoVisitorListCommand)
-                    return string.Format(Settings.DodoVisitorMessage, islandName(), Bot.VisitorList.VisitorFormattedString);
-            }
+                return string.Empty;
 
             // order
             switch (c)
@@ -265,6 +255,16 @@ namespace SysBot.ACNHOrders.Twitch
             {
                 LogUtil.LogError($"{ex.Message}", nameof(TwitchCrossBot));
             }
+        }
+
+        private static string ReplacePredefined(string message, string caller)
+        {
+            return message.Replace("{islandname}", Bot.TownName)
+                .Replace("{dodo}", Bot.DodoCode)
+                .Replace("{vcount}", Math.Min(0, Bot.VisitorList.VisitorCount - 1).ToString())
+                .Replace("{visitorlist}", Bot.VisitorList.VisitorFormattedString)
+                .Replace("{villagerlist}", Bot.Villagers.LastVillagers)
+                .Replace("{user}", caller);
         }
     }
 }
