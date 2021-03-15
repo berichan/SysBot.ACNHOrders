@@ -149,6 +149,56 @@ namespace SysBot.ACNHOrders.Twitch
                 return $"The following presets are available: {string.Join(", ", presets)}. Enter {prefix}preset [preset name] to order one!";
         }
 
+        public static string Clean(ulong id, string username, TwitchConfig tcfg)
+        {
+            if (!tcfg.AllowDropViaTwitchChat)
+            {
+                LogUtil.LogInfo($"{username} is attempting to clean items, however the twitch configuration does not currently allow drop commands", nameof(TwitchCrossBot));
+                return string.Empty;
+            }
+
+            if (!GetDropAvailability(id, username, tcfg, out var error))
+                return error;
+
+            if (!Globals.Bot.Config.AllowClean)
+                return "Clean functionality is currently disabled.";
+            
+            Globals.Bot.CleanRequested = true;
+            return "A clean request will be executed momentarily.";
+        }
+
+        public static string Drop(string message, ulong id, string username, TwitchConfig tcfg)
+        {
+            if (!tcfg.AllowDropViaTwitchChat)
+            {
+                LogUtil.LogInfo($"{username} is attempting to drop items, however the twitch configuration does not currently allow drop commands", nameof(TwitchCrossBot));
+                return string.Empty;
+            }
+            if (!GetDropAvailability(id, username, tcfg, out var error))
+                return error;
+
+            var cfg = Globals.Bot.Config;
+            var items = ItemParser.GetItemsFromUserInput(message, cfg.DropConfig, cfg.DropConfig.UseLegacyDrop ? ItemDestination.PlayerDropped : ItemDestination.HeldItem);
+            MultiItem.StackToMax(items);
+
+            if (!InternalItemTool.CurrentInstance.IsSane(items))
+                return $"You are attempting to drop items that will damage your save. Drop request not accepted.";
+
+            var MaxRequestCount = cfg.DropConfig.MaxDropCount;
+            var ret = string.Empty;
+            if (items.Count > MaxRequestCount)
+            {
+                ret += $"Users are limited to {MaxRequestCount} items per command. Please use this bot responsibly. ";
+                items = items.Take(MaxRequestCount).ToArray();
+            }
+
+            var requestInfo = new ItemRequest(username, items);
+            Globals.Bot.Injections.Enqueue(requestInfo);
+
+            ret += $"Item drop request{(requestInfo.Item.Count > 1 ? "s" : string.Empty)} will be executed momentarily.";
+            return ret;
+        }
+
         private static bool IsQueueable(string orderString, ulong id, out string msg)
         {
             if (!TwitchCrossBot.Bot.Config.AcceptingCommands || TwitchCrossBot.Bot.Config.SkipConsoleBotCreation)
@@ -186,6 +236,31 @@ namespace SysBot.ACNHOrders.Twitch
             var tq = new TwitchQueue(multiOrder.ItemArray.Items, vr, display, id, sub);
             TwitchCrossBot.QueuePool.Add(tq);
             msg = $"@{username} - I've noted your order, now whisper me any random 3-digit number. Simply type /w @{TwitchCrossBot.BotName.ToLower()} [3-digit number] in this channel! Your order will not be placed in the queue until I get your whisper!";
+            return true;
+        }
+
+        private static bool GetDropAvailability(ulong callerId, string callerName, TwitchConfig tcfg, out string error)
+        {
+            error = string.Empty;
+            var cfg = Globals.Bot.Config;
+
+            if (tcfg.IsSudo(callerName))
+                return true;
+
+            if (Globals.Bot.CurrentUserId == callerId)
+                return true;
+
+            if (!cfg.DodoModeConfig.LimitedDodoRestoreOnlyMode)
+            {
+                error = $"You are only permitted to use this command while on the island during your order, and only if you have forgotten something in your order.";
+                return false;
+            }
+            else if (!cfg.DodoModeConfig.AllowDrop)
+            {
+                error = $"AllowDrop is currently set to false is the discord configuration.";
+                return false;
+            }
+
             return true;
         }
     }

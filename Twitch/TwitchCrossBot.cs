@@ -165,10 +165,6 @@ namespace SysBot.ACNHOrders.Twitch
             if (Settings.UserDefinitedCommands.ContainsKey(c.ToLower()))
                 return ReplacePredefined(Settings.UserDefinitedCommands[c], m.Username);
 
-            if (Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
-                return string.Empty;
-
-            // order
             switch (c)
             {
                 // User Usable Commands
@@ -183,6 +179,10 @@ namespace SysBot.ACNHOrders.Twitch
                     return msg2;
                 case "presets":
                     return TwitchHelper.GetPresets(Settings.CommandPrefix);
+                case "drop":
+                    return $"@{m.Username}: {TwitchHelper.Drop(args, ulong.Parse(m.UserId), m.Username, Settings)}";
+                case "clean":
+                    return $"@{m.Username}: {TwitchHelper.Clean(ulong.Parse(m.UserId), m.Username, Settings)}";
                 case "ts":
                 case "pos":
                 case "position":
@@ -198,15 +198,15 @@ namespace SysBot.ACNHOrders.Twitch
                     return $"@{m.Username}: pong!";
 
                 // Sudo Only Commands
-                case "tca" when !sudo():
-                case "pr" when !sudo():
-                case "pc" when !sudo():
-                case "tt" when !sudo():
+                case "toggledrop" when !sudo():
                 case "tcu" when !sudo():
                     return "This command is locked for sudo users only!";
 
                 case "tcu":
                     return TwitchHelper.ClearTrade(args);
+                case "toggledrop":
+                    Settings.AllowDropViaTwitchChat = !Settings.AllowDropViaTwitchChat;
+                    return Settings.AllowDropViaTwitchChat ? "I am now accepting drop commands!" : "I am no longer accepting drop commands!";
 
                 default: return string.Empty;
             }

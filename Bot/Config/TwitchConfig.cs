@@ -74,6 +74,8 @@ namespace SysBot.ACNHOrders
 
         // Commands
 
+        public bool AllowDropViaTwitchChat { get; set; } = false;
+
         /// <summary> Dictionary of user-defined commands</summary>
         public Dictionary<string, string> UserDefinitedCommands { get; set; } = 
             new Dictionary<string, string>() { 
