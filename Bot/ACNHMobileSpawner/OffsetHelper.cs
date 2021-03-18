@@ -48,7 +48,7 @@
 
         // pointers
         public static readonly long[] PlayerCoordJumps = new long[5] { 0x39DC030L, 0x18L, 0x178L, 0xD0L, 0xD8L }; 
-        public static readonly long[] ChatCoordJumps   = new long[2] { 0x03C3EED0L, 0x40L };
+        public static readonly long[] ChatCoordJumps   = new long[2] { 0x3C980E8L, 0x40L };
 
     }
 }
