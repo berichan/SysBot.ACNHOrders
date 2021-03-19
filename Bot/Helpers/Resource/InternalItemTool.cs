@@ -13,7 +13,7 @@ namespace SysBot.ACNHOrders
         public InternalItemTool()
         {
             var items = FileUtil.GetEmbeddedResource("SysBot.ACNHOrders.Resources", "InternalHexList.txt");
-            var spl = items.Split(new string[3] { "\r\n", "\r", "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+            var spl = items.Split(new string[3] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
 
             InternalItems = new List<ushort>();
             foreach (var it in spl)
