@@ -65,6 +65,8 @@ namespace SysBot.ACNHOrders
             bot.VillagerInjections.Enqueue(request);
 
             var msg = $"{mention}: Villager inject request has been added to the queue and will be injected momentarily. I will reply to you once this has completed.";
+            if (VillagerOrderParser.IsUnadoptable(internalName))
+                msg += " Please note that you will not be able to adopt this villager.";
             await ReplyAsync(msg).ConfigureAwait(false);
         }
 
