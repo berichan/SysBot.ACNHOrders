@@ -143,5 +143,16 @@ namespace SysBot.ACNHOrders
             while (queue.TryDequeue(out item)) { } // do nothing
 #pragma warning restore CS8600
         }
+
+        public static string GetQueueString()
+        {
+            var orders = Globals.Bot.Orders;
+            var orderArray = orders.ToArray().Where(x => !x.SkipRequested).ToArray();
+            string orderString = string.Empty;
+            foreach (var ord in orderArray)
+                orderString += $"{ord.VillagerName} \r\n";
+
+            return orderString;
+        }
     }
 }

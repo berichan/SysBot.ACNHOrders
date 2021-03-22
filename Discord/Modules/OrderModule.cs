@@ -219,6 +219,12 @@ namespace SysBot.ACNHOrders
         [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task ShowVisitorList()
         {
+            if (!Globals.Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode && Globals.Self.Owner != Context.User.Id)
+            {
+                await ReplyAsync($"{Context.User.Mention} - You may only view visitors in dodo restore mode. Please respect the privacy of other orderers.");
+                return;
+            }
+
             await ReplyAsync(Globals.Bot.VisitorList.VisitorFormattedString);
         }
 
@@ -226,9 +232,37 @@ namespace SysBot.ACNHOrders
         [Alias("checkDirtyState")]
         [Summary("Prints whether or not the bot will restart the game for the next order.")]
         [RequireSudo]
-        public async Task ShowDirtyState()
+        public async Task ShowDirtyStateAsync()
         {
-            await ReplyAsync($"State: {(Globals.Bot.GameIsDirty? "Bad" : "Good")}");
+            if (Globals.Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
+            {
+                await ReplyAsync("There is no order state in dodo restore mode.");
+                return;
+            }
+
+            await ReplyAsync($"State: {(Globals.Bot.GameIsDirty? "Bad" : "Good")}").ConfigureAwait(false);
+        }
+
+        [Command("queueList")]
+        [Alias("ql")]
+        [Summary("DMs the user the current list of names in the queue.")]
+        [RequireSudo]
+        public async Task ShowQueueListAsync()
+        {
+            if (Globals.Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
+            {
+                await ReplyAsync("There is no queue in dodo restore mode.");
+                return;
+            }
+
+            try
+            {
+                await Context.User.SendMessageAsync($"The following users are in the queue for {Globals.Bot.TownName}: \r\n{QueueExtensions.GetQueueString()}").ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                await ReplyAsync($"{e.Message}: Are your DMs open?").ConfigureAwait(false);
+            }
         }
 
         private async Task AttemptToQueueRequest(IReadOnlyCollection<Item> items, SocketUser orderer, ISocketMessageChannel msgChannel, VillagerRequest? vr, bool catalogue = false)
