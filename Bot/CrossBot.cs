@@ -15,12 +15,12 @@ namespace SysBot.ACNHOrders
 {
     public sealed class CrossBot : SwitchRoutineExecutor<CrossBotConfig>
     {
+        private ConcurrentQueue<IACNHOrderNotifier<Item>> Orders => QueueHub.CurrentInstance.Orders;
         private uint InventoryOffset { get; set; } = (uint)OffsetHelper.InventoryOffset;
 
         public readonly ConcurrentQueue<ItemRequest> Injections = new();
         public readonly ConcurrentQueue<SpeakRequest> Speaks = new();
         public readonly ConcurrentQueue<VillagerRequest> VillagerInjections = new();
-        public readonly ConcurrentQueue<IACNHOrderNotifier<Item>> Orders = new();
         public readonly PocketInjectorAsync PocketInjector;
         public readonly DodoPositionHelper DodoPosition;
         public readonly AnchorHelper Anchors;

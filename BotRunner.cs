@@ -2,12 +2,13 @@
 using System.Threading;
 using System.Threading.Tasks;
 using SysBot.Base;
+using SysBot.ACNHOrders.Twitch;
 
 namespace SysBot.ACNHOrders
 {
     public static class BotRunner
     {
-        public static async Task RunFrom(CrossBotConfig config, CancellationToken cancel)
+        public static async Task RunFrom(CrossBotConfig config, CancellationToken cancel, TwitchConfig? tConfig = null)
         {
             // Set up logging for Console Window
             LogUtil.Forwarders.Add(Logger);
@@ -20,12 +21,20 @@ namespace SysBot.ACNHOrders
 
             Globals.Self = sys;
             Globals.Bot = bot;
+            Globals.Hub = QueueHub.CurrentInstance;
             GlobalBan.UpdateConfiguration(config);
 
             bot.Log("Starting Discord.");
 #pragma warning disable 4014
             Task.Run(() => sys.MainAsync(config.Token, cancel), cancel);
 #pragma warning restore 4014
+
+
+            if (tConfig != null && !string.IsNullOrWhiteSpace(tConfig.Token))
+            {
+                bot.Log("Starting Twitch.");
+                var _ = new TwitchCrossBot(tConfig, bot);
+            }
 
             if (config.SkipConsoleBotCreation)
             {

@@ -10,6 +10,7 @@ namespace SysBot.ACNHOrders
     {
         public static SysCord Self { get; set; } = default!;
         public static CrossBot Bot { get; set; } = default!;
+        public static QueueHub Hub { get; set; } = default!;
     }
 
     public sealed class RequireQueueRoleAttribute : PreconditionAttribute

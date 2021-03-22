@@ -64,7 +64,7 @@ namespace SysBot.ACNHOrders
         // this sucks
         private static bool AttemptAddToQueue(IACNHOrderNotifier<Item> itemReq, string traderMention, string traderDispName, out string msg)
         {
-            var orders = Globals.Bot.Orders;
+            var orders = Globals.Hub.Orders;
             var orderArray = orders.ToArray();
             var order = Array.Find(orderArray, x => x.UserGuid == itemReq.UserGuid);
             if (order != null)
@@ -92,14 +92,14 @@ namespace SysBot.ACNHOrders
             if (itemReq.VillagerOrder != null)
                 msg += $". {GameInfo.Strings.GetVillager(itemReq.VillagerOrder.GameName)} will be waiting for you on the island. Ensure you can collect them within the order timeframe.";
 
-            Globals.Bot.Orders.Enqueue(itemReq);
+            Globals.Hub.Orders.Enqueue(itemReq);
 
             return true;
         }
 
         public static int GetPosition(ulong id, out OrderRequest<Item>? order)
         {
-            var orders = Globals.Bot.Orders;
+            var orders = Globals.Hub.Orders;
             var orderArray = orders.ToArray().Where(x => !x.SkipRequested).ToArray();
             var orderFound = Array.Find(orderArray, x => x.UserGuid == id);
             if (orderFound != null && !orderFound.SkipRequested)
@@ -146,7 +146,7 @@ namespace SysBot.ACNHOrders
 
         public static string GetQueueString()
         {
-            var orders = Globals.Bot.Orders;
+            var orders = Globals.Hub.Orders;
             var orderArray = orders.ToArray().Where(x => !x.SkipRequested).ToArray();
             string orderString = string.Empty;
             foreach (var ord in orderArray)

@@ -279,7 +279,7 @@ namespace SysBot.ACNHOrders
                 return;
             }
 
-            var currentOrderCount = Globals.Bot.Orders.Count;
+            var currentOrderCount = Globals.Hub.Orders.Count;
             if (currentOrderCount >= MaxOrderCount)
             {
                 var requestLimit = $"The queue limit has been reached, there are currently {currentOrderCount} players in the queue. Please try again later.";
