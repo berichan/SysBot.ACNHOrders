@@ -228,6 +228,7 @@ namespace SysBot.ACNHOrders
                             SpawnY = Config.MapPlaceY
                         };
                         Map = tempMap;
+                        await ClearMapAndSpawnInternally(null, Map, Config.DodoModeConfig.RefreshTerrainData, token).ConfigureAwait(false);
                     }
                 }
 
