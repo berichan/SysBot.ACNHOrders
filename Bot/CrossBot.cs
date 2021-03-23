@@ -94,9 +94,7 @@ namespace SysBot.ACNHOrders
             // get version
             await Task.Delay(0_100, token).ConfigureAwait(false);
             LogUtil.LogInfo("Attempting get version. Please wait...", Config.IP);
-            var gvbytes = Encoding.ASCII.GetBytes("getVersion\r\n");
-            byte[] socketReturn = await SwitchConnection.ReadRaw(gvbytes, 9, token).ConfigureAwait(false);
-            string version = Encoding.UTF8.GetString(socketReturn).TrimEnd('\0').TrimEnd('\n');
+            string version = await SwitchConnection.GetVersionAsync(token).ConfigureAwait(false);
             LogUtil.LogInfo($"sys-botbase version identified as: {version}", Config.IP);
             if (double.TryParse(version, out var ver))
                 CanFollowPointers = ver > 1.699;
@@ -228,7 +226,9 @@ namespace SysBot.ACNHOrders
                             SpawnY = Config.MapPlaceY
                         };
                         Map = tempMap;
-                        await ClearMapAndSpawnInternally(null, Map, Config.DodoModeConfig.RefreshTerrainData, token).ConfigureAwait(false);
+
+                        // Write one full map with newly loaded nhl
+                        await ClearMapAndSpawnInternally(null, Map, Config.DodoModeConfig.RefreshTerrainData, token, true).ConfigureAwait(false);
                     }
                 }
 
@@ -498,7 +498,7 @@ namespace SysBot.ACNHOrders
             return await FetchDodoAndAwaitOrder(order, ignoreInjection, token).ConfigureAwait(false);
         }
 
-        private async Task ClearMapAndSpawnInternally(Item[]? order, MapTerrainLite clearMap, bool includeAdditionalParams, CancellationToken token)
+        private async Task ClearMapAndSpawnInternally(Item[]? order, MapTerrainLite clearMap, bool includeAdditionalParams, CancellationToken token, bool forceFullWrite = false)
         {
             if (order != null)
             {
@@ -509,10 +509,15 @@ namespace SysBot.ACNHOrders
             await Task.Delay(2_000, token).ConfigureAwait(false);
             if (order != null)
                 LogUtil.LogInfo("Map clear has started.", Config.IP);
-            var mapData = await Connection.ReadBytesLargeAsync((uint)OffsetHelper.FieldItemStart, MapTerrainLite.ByteSize, Config.MapPullChunkSize, token).ConfigureAwait(false);
-            var offData = clearMap.GetDifferencePrioritizeStartup(mapData, Config.MapPullChunkSize, Config.DodoModeConfig.LimitedDodoRestoreOnlyMode && Config.DodoModeConfig.AllowDrop, (uint)OffsetHelper.FieldItemStart);
-            for (int i = 0; i < offData.Length; ++i)
-                await Connection.WriteBytesAsync(offData[i].ToSend, offData[i].Offset, token).ConfigureAwait(false);
+            if (forceFullWrite)
+                await Connection.WriteBytesAsync(clearMap.StartupBytes, (uint)OffsetHelper.FieldItemStart, token).ConfigureAwait(false);
+            else
+            {
+                var mapData = await Connection.ReadBytesLargeAsync((uint)OffsetHelper.FieldItemStart, MapTerrainLite.ByteSize, Config.MapPullChunkSize, token).ConfigureAwait(false);
+                var offData = clearMap.GetDifferencePrioritizeStartup(mapData, Config.MapPullChunkSize, Config.DodoModeConfig.LimitedDodoRestoreOnlyMode && Config.DodoModeConfig.AllowDrop, (uint)OffsetHelper.FieldItemStart);
+                for (int i = 0; i < offData.Length; ++i)
+                    await Connection.WriteBytesAsync(offData[i].ToSend, offData[i].Offset, token).ConfigureAwait(false);
+            }
 
             if (includeAdditionalParams)
             {

@@ -25,6 +25,14 @@ namespace SysBot.ACNHOrders
             return read.ToArray();
         }
 
+        public static async Task<string> GetVersionAsync(this ISwitchConnectionAsync connection, CancellationToken token)
+        {
+            var gvbytes = Encoding.ASCII.GetBytes("getVersion\r\n");
+            byte[] socketReturn = await connection.ReadRaw(gvbytes, 9, token).ConfigureAwait(false);
+            string version = Encoding.UTF8.GetString(socketReturn).TrimEnd('\0').TrimEnd('\n');
+            return version;
+        }
+
         private static T[] SubArray<T>(T[] data, int index, int length)
         {
             if (index + length > data.Length)
