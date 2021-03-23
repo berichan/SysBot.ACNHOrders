@@ -118,10 +118,12 @@ namespace SysBot.ACNHOrders
                 }
             }
 
-            // Pull original map items and store them
+            // Pull original map items & terraindata and store them
             LogUtil.LogInfo("Reading original map status. Please wait...", Config.IP);
             var bytes = await Connection.ReadBytesLargeAsync((uint)OffsetHelper.FieldItemStart, MapGrid.MapTileCount32x32 * Item.SIZE, Config.MapPullChunkSize, token).ConfigureAwait(false);
-            Map = new MapTerrainLite(bytes)
+            var bytesTerrain = await Connection.ReadBytesAsync((uint)OffsetHelper.LandMakingMapStart, MapTerrainLite.TerrainSize, token).ConfigureAwait(false);
+            var bytesMapParams = await Connection.ReadBytesAsync((uint)OffsetHelper.OutsideFieldStart, MapTerrainLite.AcrePlusAdditionalParams, token).ConfigureAwait(false);
+            Map = new MapTerrainLite(bytes, bytesTerrain, bytesMapParams)
             {
                 SpawnX = Config.MapPlaceX,
                 SpawnY = Config.MapPlaceY
@@ -182,7 +184,7 @@ namespace SysBot.ACNHOrders
                     var owState = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false);
                     if (Config.DodoModeConfig.RefreshMap)
                         if (owState == OverworldState.UserArriveLeaving || owState == OverworldState.Loading) // only refresh when someone leaves/joins or when moving out/in a building
-                            await ClearMapAndSpawnInternally(null, Map, token).ConfigureAwait(false);
+                            await ClearMapAndSpawnInternally(null, Map, Config.DodoModeConfig.RefreshTerrainData, token).ConfigureAwait(false);
 
                     if (Config.DodoModeConfig.MashB)
                         for (int i = 0; i < 5; ++i)
@@ -219,7 +221,14 @@ namespace SysBot.ACNHOrders
                     await Villagers.UpdateVillagers(token).ConfigureAwait(false);
 
                     if (MapOverrides.TryDequeue(out var mapRequest))
-                        Map = new MapTerrainLite(mapRequest.Item);
+                    {
+                        var tempMap = new MapTerrainLite(mapRequest.Item, Map.StartupTerrain, Map.StartupAcreParams)
+                        {
+                            SpawnX = Config.MapPlaceX,
+                            SpawnY = Config.MapPlaceY
+                        };
+                        Map = tempMap;
+                    }
                 }
 
                 if (Config.DodoModeConfig.EchoDodoChannels.Count > 0)
@@ -350,7 +359,7 @@ namespace SysBot.ACNHOrders
             order.OrderInitializing(this, string.Empty);
 
             // Setup order locally, clear map by pulling all and checking difference. Read is much faster than write
-            await ClearMapAndSpawnInternally(order.Order, Map, token).ConfigureAwait(false);
+            await ClearMapAndSpawnInternally(order.Order, Map, false, token).ConfigureAwait(false);
 
             // inject order
             await InjectOrder(Map, token).ConfigureAwait(false);
@@ -387,7 +396,7 @@ namespace SysBot.ACNHOrders
                 // Setup order locally, clear map by puliing all and checking difference. Read is much faster than write
                 if (!ignoreInjection)
                 {
-                    await ClearMapAndSpawnInternally(order.Order, Map, token).ConfigureAwait(false);
+                    await ClearMapAndSpawnInternally(order.Order, Map, false, token).ConfigureAwait(false);
 
                     if (order.VillagerOrder != null)
                         await Villagers.InjectVillager(order.VillagerOrder, token).ConfigureAwait(false);
@@ -488,7 +497,7 @@ namespace SysBot.ACNHOrders
             return await FetchDodoAndAwaitOrder(order, ignoreInjection, token).ConfigureAwait(false);
         }
 
-        private async Task ClearMapAndSpawnInternally(Item[]? order, MapTerrainLite clearMap, CancellationToken token)
+        private async Task ClearMapAndSpawnInternally(Item[]? order, MapTerrainLite clearMap, bool includeAdditionalParams, CancellationToken token)
         {
             if (order != null)
             {
@@ -503,6 +512,13 @@ namespace SysBot.ACNHOrders
             var offData = clearMap.GetDifferencePrioritizeStartup(mapData, Config.MapPullChunkSize, Config.DodoModeConfig.LimitedDodoRestoreOnlyMode && Config.DodoModeConfig.AllowDrop, (uint)OffsetHelper.FieldItemStart);
             for (int i = 0; i < offData.Length; ++i)
                 await Connection.WriteBytesAsync(offData[i].ToSend, offData[i].Offset, token).ConfigureAwait(false);
+
+            if (includeAdditionalParams)
+            {
+                await Connection.WriteBytesAsync(clearMap.StartupTerrain, (uint)OffsetHelper.LandMakingMapStart, token).ConfigureAwait(false);
+                await Connection.WriteBytesAsync(clearMap.StartupAcreParams, (uint)OffsetHelper.OutsideFieldStart, token).ConfigureAwait(false);
+            }
+
             if (order != null)
                 LogUtil.LogInfo("Map clear has ended.", Config.IP);
         }

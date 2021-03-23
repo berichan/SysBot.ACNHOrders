@@ -18,15 +18,25 @@ namespace ACNHMobileSpawner
     public class MapTerrainLite
     {
         public const int ByteSize = MapGrid.MapTileCount32x32 * Item.SIZE;
+        public const int TerrainSize = MapGrid.MapTileCount16x16 * TerrainTile.SIZE;
+
+        public const int AcreWidth = 7 + (2 * 1); // 1 on each side cannot be traversed
+        private const int AcreHeight = 6 + (2 * 1); // 1 on each side cannot be traversed
+        private const int AcreMax = AcreWidth * AcreHeight;
+        private const int AcreSizeAll = AcreMax * 2;
+        public const int AcrePlusAdditionalParams = AcreSizeAll + 2 + 4 + 8 + sizeof(uint);
 
         public readonly byte[] StartupBytes;
         public readonly Item[] StartupItems;
+
+        public readonly byte[] StartupTerrain;
+        public readonly byte[] StartupAcreParams;
 
         public readonly FieldItemLayer ItemLayer;
         public int SpawnX { get; set; } = 0;
         public int SpawnY { get; set; } = 0;
 
-        public MapTerrainLite(byte[] itemBytes)
+        public MapTerrainLite(byte[] itemBytes, byte[] terrain, byte[] acreplaza)
         {
             if (itemBytes.Length != ByteSize)
                 throw new Exception("Field items are of the incorrect size.");
@@ -34,7 +44,12 @@ namespace ACNHMobileSpawner
             var items = Item.GetArray(StartupBytes);
             StartupItems = CloneItemArray(items);
             ItemLayer = new FieldItemLayer(items);
+
+            StartupTerrain = terrain;
+            StartupAcreParams = acreplaza;
         }
+
+        public MapTerrainLite(byte[] itemBytes) : this(itemBytes, Array.Empty<byte>(), Array.Empty<byte>()) { }
 
         // Remove all tile checking code
         public void Spawn(Item[] newItems, int itemsPerLine = 10, bool forceFlag32 = true)

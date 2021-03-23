@@ -16,7 +16,7 @@ namespace SysBot.ACNHOrders
 
             if (!bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode || !bot.Config.DodoModeConfig.RefreshMap)
             {
-                await ReplyAsync($"This command can only be used in dodo restore mode with refresh map set to true.");
+                await ReplyAsync($"This command can only be used in dodo restore mode with refresh map set to true.").ConfigureAwait(false);
                 return;
             }
 
@@ -25,7 +25,7 @@ namespace SysBot.ACNHOrders
             filename = Path.Combine(bot.Config.FieldLayerNHLDirectory, filename);
             if (!File.Exists(filename))
             {
-                await ReplyAsync($"File {filename} does not exist or does not have the correct .nhl extension.");
+                await ReplyAsync($"File {filename} does not exist or does not have the correct .nhl extension.").ConfigureAwait(false);
                 return;
             }
 
@@ -33,7 +33,7 @@ namespace SysBot.ACNHOrders
             var req = new MapOverrideRequest(Context.User.Username, bytes);
             bot.MapOverrides.Enqueue(req);
 
-            await ReplyAsync($"Map refresh layer set to: {Path.GetFileNameWithoutExtension(filename)}.");
+            await ReplyAsync($"Map refresh layer set to: {Path.GetFileNameWithoutExtension(filename)}.").ConfigureAwait(false);
         }
     }
 }

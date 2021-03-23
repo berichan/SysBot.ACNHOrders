@@ -33,6 +33,9 @@ namespace SysBot.ACNHOrders
         /// <summary> When set to true, restore mode will also regen the map. </summary>
         public bool RefreshMap { get; set; } = false;
 
+        /// <summary> When set to true, restore mode will also refresh the terrain + elevation. (requires refresh map to be set to true) </summary>
+        public bool RefreshTerrainData { get; set; } = false;
+
         /// <summary> When set to true, and while accepting commands, allow the use of the item dropper. </summary>
         public bool AllowDrop { get; set; } = false;
 
