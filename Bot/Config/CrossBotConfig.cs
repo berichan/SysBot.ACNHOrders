@@ -87,6 +87,8 @@ namespace SysBot.ACNHOrders
 
         public string BlockerEmoji { get; set; } = "\u2764";
 
+        public string FieldLayerNHLDirectory { get; set; } = "nhl";
+
         #endregion
 
         public bool CanUseCommandUser(ulong authorId) => Users.Count == 0 || Users.Contains(authorId);

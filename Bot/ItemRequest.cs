@@ -39,4 +39,13 @@ namespace SysBot.ACNHOrders
     {
         public SpeakRequest(string usr, string text) : base(usr, text) { }
     }
+
+    public sealed class MapOverrideRequest : Request<byte[]>
+    {
+        public MapOverrideRequest(string user, byte[] fieldLayerBytes) : base(user, fieldLayerBytes) 
+        {
+            if (fieldLayerBytes.Length != ACNHMobileSpawner.MapTerrainLite.ByteSize)
+                throw new Exception("Attempting to inject mapdata of the incorrect size.");
+        }
+    }
 }

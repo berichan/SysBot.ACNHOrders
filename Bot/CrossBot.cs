@@ -21,6 +21,7 @@ namespace SysBot.ACNHOrders
         public readonly ConcurrentQueue<ItemRequest> Injections = new();
         public readonly ConcurrentQueue<SpeakRequest> Speaks = new();
         public readonly ConcurrentQueue<VillagerRequest> VillagerInjections = new();
+        public readonly ConcurrentQueue<MapOverrideRequest> MapOverrides = new();
         public readonly PocketInjectorAsync PocketInjector;
         public readonly DodoPositionHelper DodoPosition;
         public readonly AnchorHelper Anchors;
@@ -216,6 +217,9 @@ namespace SysBot.ACNHOrders
                     if (VillagerInjections.TryDequeue(out var vil))
                         await Villagers.InjectVillager(vil, token).ConfigureAwait(false);
                     await Villagers.UpdateVillagers(token).ConfigureAwait(false);
+
+                    if (MapOverrides.TryDequeue(out var mapRequest))
+                        Map = new MapTerrainLite(mapRequest.Item);
                 }
 
                 if (Config.DodoModeConfig.EchoDodoChannels.Count > 0)
