@@ -9,6 +9,7 @@ namespace SysBot.ACNHOrders
     internal static class Program
     {
         private const string ConfigPath = "config.json";
+        private const string TwitchPath = "twitch.json";
 
         private static async Task Main(string[] args)
         {
@@ -22,6 +23,9 @@ namespace SysBot.ACNHOrders
                 return;
             }
 
+            if (!File.Exists(TwitchPath))
+                SaveConfig(new TwitchConfig(), TwitchPath);
+
             var json = File.ReadAllText(ConfigPath);
             var config = JsonSerializer.Deserialize<CrossBotConfig>(json);
             if (config == null)
@@ -31,21 +35,32 @@ namespace SysBot.ACNHOrders
                 return;
             }
 
-            SaveConfig(config);
-            await BotRunner.RunFrom(config, CancellationToken.None).ConfigureAwait(false);
+            json = File.ReadAllText(TwitchPath);
+            var twitchConfig = JsonSerializer.Deserialize<TwitchConfig>(json);
+            if (twitchConfig == null)
+            {
+                Console.WriteLine("Failed to deserialize twitch configuration file.");
+                WaitKeyExit();
+                return;
+            }
+
+            SaveConfig(config, ConfigPath);
+            SaveConfig(twitchConfig, TwitchPath);
+            await BotRunner.RunFrom(config, CancellationToken.None, twitchConfig).ConfigureAwait(false);
             WaitKeyExit();
         }
 
-        private static void SaveConfig(CrossBotConfig config)
+        private static void SaveConfig<T>(T config, string path)
         {
             var options = new JsonSerializerOptions {WriteIndented = true};
             var json = JsonSerializer.Serialize(config, options);
-            File.WriteAllText(ConfigPath, json);
+            File.WriteAllText(path, json);
         }
 
         private static void CreateConfigQuit()
         {
-            SaveConfig(new CrossBotConfig {IP = "192.168.0.1", Port = 6000});
+            SaveConfig(new CrossBotConfig {IP = "192.168.0.1", Port = 6000}, ConfigPath);
+            SaveConfig(new TwitchConfig(), TwitchPath);
             Console.WriteLine("Created blank config file. Please configure it and restart the program.");
             WaitKeyExit();
         }
