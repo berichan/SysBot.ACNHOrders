@@ -36,6 +36,7 @@ namespace SysBot.ACNHOrders
         public async Task RequestDodoCodeAsync() => await ReplyAsync($"Dodo Code for {Globals.Bot.TownName}: {Globals.Bot.DodoCode}.").ConfigureAwait(false);
 
         [Command("sendDodo")]
+        [Alias("sd", "send")]
         [Summary("Prints the Dodo Code for the island. Only works in dodo restore mode.")]
         [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task RequestRestoreLoopDodoAsync()
