@@ -538,8 +538,8 @@ namespace SysBot.ACNHOrders
             if (Config.OrderConfig.RetryFetchDodoOnFail && !DodoPosition.IsDodoValid(DodoPosition.DodoCode))
             {
                 LogUtil.LogInfo($"Failed to get a valid Dodo code for {TownName}. Trying again...", Config.IP);
-                for (int i = 0; i < 8; ++i)
-                    await Click(SwitchButton.B, 1_000, token).ConfigureAwait(false);
+                for (int i = 0; i < 10; ++i)
+                    await ClickConversation(SwitchButton.B, 0_600, token).ConfigureAwait(false);
                 await DodoPosition.GetDodoCode((uint)OffsetHelper.DodoAddress, true, token).ConfigureAwait(false);
             }
 

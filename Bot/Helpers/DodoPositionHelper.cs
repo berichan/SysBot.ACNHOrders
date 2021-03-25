@@ -239,13 +239,13 @@ namespace SysBot.ACNHOrders
             await Task.Delay(0_500, token).ConfigureAwait(false);
 
             var encodedBytesSequence = Encoding.ASCII.GetBytes("clickSeq " +
-                $"A,W{(isRetry ? 1400 : 2600)}," +
-                "A,W800," +
+                $"A,W{(isRetry ? 1_400 : 3_100)}," +
+                "A,W900," +
                 "DD,W400," +
                 "A,W1000," +
-                "A,W500," +
-                "DD,W400," +
                 "A,W550," +
+                "DD,W400," +
+                "A,W600," +
                 "A,W550," +
                 "A,W550," +
                 "A,W550," +
@@ -272,8 +272,8 @@ namespace SysBot.ACNHOrders
                 LogUtil.LogInfo("FATAL ERROR", Config.IP);
 
             // Clear incase opening the gate took too long
-            for (int i = 0; i < 8; ++i)
-                await BotRunner.Click(SwitchButton.B, 500, token).ConfigureAwait(false);
+            for (int i = 0; i < 9; ++i)
+                await BotRunner.Click(SwitchButton.B, 0_500, token).ConfigureAwait(false);
             await BotRunner.UpdateBlocker(false, token).ConfigureAwait(false);
 
             await BotRunner.SwitchConnection.SendRaw(unFreezeBytes, token).ConfigureAwait(false);
