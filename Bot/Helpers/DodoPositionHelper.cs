@@ -21,6 +21,7 @@ namespace SysBot.ACNHOrders
     public class DodoPositionHelper
     {
         private const string DodoPattern = @"^[A-Z0-9]*$";
+
         private int ButtonClickTime => 0_900 + Config.DialogueButtonPressExtraDelay;
 
         private readonly ISwitchConnectionAsync Connection;
@@ -90,11 +91,20 @@ namespace SysBot.ACNHOrders
             DodoCode = string.Empty;
         }
 
-        public async Task GetDodoCode(ulong CoordinateAddress, uint Offset, bool isRetry, CancellationToken token)
+        byte[] freezeBytes = Encoding.ASCII.GetBytes($"freeze 0x{ACNHMobileSpawner.OffsetHelper.TextSpeedAddress:X8} 0x03\r\n");
+        byte[] unFreezeBytes = Encoding.ASCII.GetBytes($"unFreeze 0x{ACNHMobileSpawner.OffsetHelper.TextSpeedAddress:X8}\r\n");
+
+        public async Task GetDodoCode(uint Offset, bool isRetry, CancellationToken token)
         {
+            if (Config.ExperimentalFreezeDodoCodeRetrieval)
+            {
+                await GetDodoCodeGigafast(Offset, isRetry, token);
+                return;
+            }
+
             if (Config.LegacyDodoCodeRetrieval)
             {
-                await GetDodoCodeLegacy(CoordinateAddress, Offset, isRetry, token);
+                await GetDodoCodeLegacy(Offset, isRetry, token);
                 return;
             }
 
@@ -171,7 +181,7 @@ namespace SysBot.ACNHOrders
         public bool IsDodoValid(string dodoCode) => DodoRegex.IsMatch(dodoCode);
 
         // In case player keeps opening up gates on local play
-        public async Task GetDodoCodeLegacy(ulong CoordinateAddress, uint Offset, bool isRetry, CancellationToken token)
+        public async Task GetDodoCodeLegacy(uint Offset, bool isRetry, CancellationToken token)
         {
             // Navigate through dialog with Dodo to open gates and to get Dodo code.
             await Task.Delay(0_500, token).ConfigureAwait(false);
@@ -211,6 +221,62 @@ namespace SysBot.ACNHOrders
             for (int i = 0; i < 6; ++i)
                 await BotRunner.Click(SwitchButton.B, 1_000, token).ConfigureAwait(false);
             await BotRunner.UpdateBlocker(false, token).ConfigureAwait(false);
+
+            // Obtain Dodo code from offset and store it.	
+            byte[] bytes = await Connection.ReadBytesAsync(Offset, 0x5, token).ConfigureAwait(false);
+            DodoCode = Encoding.UTF8.GetString(bytes, 0, 5);
+            LogUtil.LogInfo($"Retrieved Dodo code: {DodoCode}.", Config.IP);
+
+            // Wait for loading screen.	
+            await Task.Delay(2_000, token).ConfigureAwait(false);
+        }
+
+        public async Task GetDodoCodeGigafast(uint Offset, bool isRetry, CancellationToken token)
+        {
+            await BotRunner.SwitchConnection.SendRaw(freezeBytes, token).ConfigureAwait(false);
+
+            // Navigate through dialog with Dodo to open gates and to get Dodo code.
+            await Task.Delay(0_500, token).ConfigureAwait(false);
+
+            var encodedBytesSequence = Encoding.ASCII.GetBytes("clickSeq " +
+                $"A,W{(isRetry ? 1400 : 2600)}," +
+                "A,W800," +
+                "DD,W400," +
+                "A,W1000," +
+                "A,W500," +
+                "DD,W400," +
+                "A,W550," +
+                "A,W550," +
+                "A,W550," +
+                "A,W550," +
+                $"A,W{17_000 + Config.ExtraTimeConnectionWait}," +
+                "A,W550," +
+                "DUP,W400," +
+                "DUP,W400," +
+                "A,W800," +
+                "A,W550," +
+                "DUP,W400," +
+                "A,W550," +
+                "A,W550," +
+                "A,W550," +
+                "A,W550," +
+                "A,W550," +
+                "A,W550," +
+                "A,W550," +
+                "\r\n");
+
+            await BotRunner.UpdateBlocker(true, token).ConfigureAwait(false);
+
+            var bytesRes = await BotRunner.SwitchConnection.ReadRaw(encodedBytesSequence, 6, token).ConfigureAwait(false);
+            if (!Encoding.Default.GetString(bytesRes).ToLower().StartsWith("done"))
+                LogUtil.LogInfo("FATAL ERROR", Config.IP);
+
+            // Clear incase opening the gate took too long
+            for (int i = 0; i < 8; ++i)
+                await BotRunner.Click(SwitchButton.B, 500, token).ConfigureAwait(false);
+            await BotRunner.UpdateBlocker(false, token).ConfigureAwait(false);
+
+            await BotRunner.SwitchConnection.SendRaw(unFreezeBytes, token).ConfigureAwait(false);
 
             // Obtain Dodo code from offset and store it.	
             byte[] bytes = await Connection.ReadBytesAsync(Offset, 0x5, token).ConfigureAwait(false);

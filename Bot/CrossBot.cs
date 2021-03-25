@@ -532,8 +532,7 @@ namespace SysBot.ACNHOrders
         private async Task<OrderResult> FetchDodoAndAwaitOrder(IACNHOrderNotifier<Item> order, bool ignoreInjection, CancellationToken token)
         {
             LogUtil.LogInfo($"Talking to Orville. Attempting to get Dodo code for {TownName}.", Config.IP);
-            var coord = await DodoPosition.FollowMainPointer(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false);
-            await DodoPosition.GetDodoCode(coord, (uint)OffsetHelper.DodoAddress, false, token).ConfigureAwait(false);
+            await DodoPosition.GetDodoCode((uint)OffsetHelper.DodoAddress, false, token).ConfigureAwait(false);
 
             // try again if we failed to get a dodo
             if (Config.OrderConfig.RetryFetchDodoOnFail && !DodoPosition.IsDodoValid(DodoPosition.DodoCode))
@@ -541,7 +540,7 @@ namespace SysBot.ACNHOrders
                 LogUtil.LogInfo($"Failed to get a valid Dodo code for {TownName}. Trying again...", Config.IP);
                 for (int i = 0; i < 8; ++i)
                     await Click(SwitchButton.B, 1_000, token).ConfigureAwait(false);
-                await DodoPosition.GetDodoCode(coord, (uint)OffsetHelper.DodoAddress, true, token).ConfigureAwait(false);
+                await DodoPosition.GetDodoCode((uint)OffsetHelper.DodoAddress, true, token).ConfigureAwait(false);
             }
 
             if (!DodoPosition.IsDodoValid(DodoPosition.DodoCode))
@@ -692,9 +691,7 @@ namespace SysBot.ACNHOrders
             await Click(SwitchButton.B, 0_500, token).ConfigureAwait(false);
             await Task.Delay(0_500, token).ConfigureAwait(false);
             await Click(SwitchButton.HOME, 0_800, token).ConfigureAwait(false);
-
-            if (Config.RestartGameWait > 0)
-                await Task.Delay(Config.RestartGameWait, token).ConfigureAwait(false);
+            await Task.Delay(0_300, token).ConfigureAwait(false);
 
             await Click(SwitchButton.X, 0_500, token).ConfigureAwait(false);
             await Click(SwitchButton.A, 0_500, token).ConfigureAwait(false);
@@ -704,7 +701,7 @@ namespace SysBot.ACNHOrders
 
             // Start game
             for (int i = 0; i < 4; ++i)
-                await Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);
+                await Click(SwitchButton.A, 1_000 + Config.RestartGameWait, token).ConfigureAwait(false);
 
             // Wait for "checking if the game can be played" wheel
             await Task.Delay(8_000 + Config.RestartGameWait, token).ConfigureAwait(false);
