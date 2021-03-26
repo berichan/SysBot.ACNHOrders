@@ -33,7 +33,22 @@ namespace SysBot.ACNHOrders
         [Alias("dodo")]
         [Summary("Prints the Dodo Code for the island.")]
         [RequireSudo]
-        public async Task RequestDodoCodeAsync() => await ReplyAsync($"Dodo Code for {Globals.Bot.TownName}: {Globals.Bot.DodoCode}.").ConfigureAwait(false);
+        public async Task RequestDodoCodeAsync()
+        {
+            var draw = Globals.Bot.DodoImageDrawer;
+            var txt = $"Dodo Code for {Globals.Bot.TownName}: {Globals.Bot.DodoCode}.";
+            if (draw != null )
+            {
+                var path = draw.GetProcessedDodoImagePath();
+                if (path != null)
+                {
+                    await Context.Channel.SendFileAsync(path, txt);
+                    return;
+                }
+            }
+            
+            await ReplyAsync(txt).ConfigureAwait(false);
+        }
 
         [Command("sendDodo")]
         [Alias("sd", "send")]

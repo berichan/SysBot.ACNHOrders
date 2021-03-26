@@ -31,6 +31,8 @@ namespace SysBot.ACNHOrders
 
         public readonly DropBotState State;
 
+        public readonly DodoDraw? DodoImageDrawer;
+
         public MapTerrainLite Map { get; private set; } = new MapTerrainLite(new byte[MapGrid.MapTileCount32x32 * Item.SIZE]);
         public bool CleanRequested { private get; set; }
         public bool RestoreRestartRequested { private get; set; }
@@ -58,6 +60,9 @@ namespace SysBot.ACNHOrders
 
             if (Connection is SwitchSocketAsync ssa)
                 ssa.MaximumTransferSize = cfg.MapPullChunkSize;
+
+            if (File.Exists("dodo.png") && File.Exists("dodo.ttf"))
+                DodoImageDrawer = new DodoDraw();
 
             DodoPosition = new DodoPositionHelper(this);
             VisitorList = new VisitorListHelper(this);
@@ -89,6 +94,7 @@ namespace SysBot.ACNHOrders
             // For viewing player vectors
             //await ViewPlayerVectors(token).ConfigureAwait(false);
 
+            // drawing
             await UpdateBlocker(false, token).ConfigureAwait(false);
 
             // get version
@@ -552,8 +558,12 @@ namespace SysBot.ACNHOrders
             }
 
             DodoCode = DodoPosition.DodoCode;
+
             if (!ignoreInjection)
                 order.OrderReady(this, $"You have {(int)(Config.OrderConfig.WaitForArriverTime * 0.9f)} seconds to arrive. My island name is **{TownName}**", DodoCode);
+
+            if (DodoImageDrawer != null)
+                DodoImageDrawer.Draw(DodoCode);
 
             // Teleport to airport leave zone (twice, in case we get pulled back)
             await SendAnchorBytes(4, token).ConfigureAwait(false);

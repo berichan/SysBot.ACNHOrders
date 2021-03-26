@@ -28,6 +28,9 @@
     <PackageReference Include="Discord.Net.Core" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
     <PackageReference Include="NLog" Version="4.7.6" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.3" />
+    <PackageReference Include="SixLabors.Fonts" Version="1.0.0-beta0013" />
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-beta11" />
     <PackageReference Include="System.Text.Json" Version="5.0.0" />
     <PackageReference Include="TwitchLib.Client" Version="3.2.1" />
   </ItemGroup>
