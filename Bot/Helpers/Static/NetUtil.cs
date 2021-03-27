@@ -14,6 +14,11 @@ namespace SysBot.ACNHOrders
             return await webClient.DownloadDataTaskAsync(url).ConfigureAwait(false);
         }
 
+        public static byte[] DownloadFromUrlSync(string url)
+        {
+            return webClient.DownloadData(url);
+        }
+
         public static async Task<Download<Item[]>> DownloadNHIAsync(IAttachment att)
         {
             var result = new Download<Item[]> { SanitizedFileName = Format.Sanitize(att.Filename) };

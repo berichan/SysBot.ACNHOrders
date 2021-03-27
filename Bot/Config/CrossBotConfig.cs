@@ -30,6 +30,8 @@ namespace SysBot.ACNHOrders
         public List<ulong> Users { get; set; } = new();
         public List<ulong> Sudo { get; set; } = new();
 
+        public List<ulong> LoggingChannels { get; set; } = new();
+
         #endregion
 
         #region Features
@@ -91,6 +93,8 @@ namespace SysBot.ACNHOrders
         public string BlockerEmoji { get; set; } = "\u2764";
 
         public string FieldLayerNHLDirectory { get; set; } = "nhl";
+
+        public bool AllowKnownAbusers { get; set; } = false;
 
         #endregion
 

@@ -115,6 +115,16 @@ namespace SysBot.ACNHOrders
             var app = await _client.GetApplicationInfoAsync().ConfigureAwait(false);
             Owner = app.Owner.Id;
 
+            // Add logging forwarders
+            foreach (var cid in Bot.Config.LoggingChannels)
+            {
+                var c = (ISocketMessageChannel)_client.GetChannel(cid);
+                static string GetMessage(string msg, string identity) => $"> [{DateTime.Now:hh:mm:ss}] - {identity}: {msg}";
+                void Logger(string msg, string identity) => c.SendMessageAsync(GetMessage(msg, identity));
+                Action<string, string> l = Logger;
+                LogUtil.Forwarders.Add(l);
+            }
+
             // Wait infinitely so your bot actually stays connected.
             await MonitorStatusAsync(token).ConfigureAwait(false);
         }
@@ -140,6 +150,18 @@ namespace SysBot.ACNHOrders
                 return true;
             }
             catch{ }
+
+            return false;
+        }
+
+        public async Task<bool> TrySpeakMessage(ISocketMessageChannel channel, string message)
+        {
+            try
+            {
+                await channel.SendMessageAsync(message).ConfigureAwait(false);
+                return true;
+            }
+            catch { }
 
             return false;
         }

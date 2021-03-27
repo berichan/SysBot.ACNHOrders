@@ -608,6 +608,22 @@ namespace SysBot.ACNHOrders
                 }
             }
 
+            // Check the user against known abusers
+            var IsSafe = AntiAbuse.CurrentInstance.LogUser(LastArrival, LastArrivalIsland, $"{order.VillagerName}-{order.UserGuid}");
+            if (!IsSafe)
+            {
+                if (!Config.AllowKnownAbusers)
+                {
+                    LogUtil.LogInfo($"{LastArrival} from {LastArrivalIsland} is a known abuser. Starting next order...", Config.IP);
+                    order.OrderCancelled(this, $"{LastArrival} from {LastArrivalIsland} is a known abuser. You cannot use this bot.", false);
+                    return OrderResult.NoArrival;
+                }
+                else
+                {
+                    LogUtil.LogInfo($"{LastArrival} from {LastArrivalIsland} is a known abuser, but you are allowing them to use your bot at your own risk.", Config.IP);
+                }
+            }
+
             order.SendNotification(this, $"Visitor arriving: {LastArrival}. Your items will be in front of you once you land.");
             if (order.VillagerName != string.Empty && Config.OrderConfig.EchoArrivingLeavingChannels.Count > 0)
                 await AttemptEchoHook($"> Visitor arriving: {order.VillagerName}", Config.OrderConfig.EchoArrivingLeavingChannels, token).ConfigureAwait(false);
@@ -890,10 +906,11 @@ namespace SysBot.ACNHOrders
             var arriverName = Encoding.Unicode.GetString(data).TrimEnd('\0'); // only remove null values off end
             if (arriverName != string.Empty && arriverName != LastArrival)
             {
-                LogUtil.LogInfo($"{arriverName} is arriving!", Config.IP);
                 LastArrival = arriverName;
                 data = await Connection.ReadBytesAsync((uint)OffsetHelper.ArriverVillageLocAddress, 0x14, token).ConfigureAwait(false);
-                LastArrivalIsland = Encoding.Unicode.GetString(data).TrimEnd('\0');
+                LastArrivalIsland = Encoding.Unicode.GetString(data).TrimEnd('\0').TrimEnd();
+
+                LogUtil.LogInfo($"{arriverName} from {LastArrivalIsland} is arriving!", Config.IP);
 
                 if (Config.HideArrivalNames)
                 {
