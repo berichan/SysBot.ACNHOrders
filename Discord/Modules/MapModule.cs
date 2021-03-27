@@ -14,7 +14,7 @@ namespace SysBot.ACNHOrders
         {
             var bot = Globals.Bot;
 
-            if (!bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode || !bot.Config.DodoModeConfig.RefreshMap)
+            if (!bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
             {
                 await ReplyAsync($"This command can only be used in dodo restore mode with refresh map set to true.").ConfigureAwait(false);
                 return;
