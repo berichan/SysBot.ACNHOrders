@@ -90,7 +90,8 @@ namespace SysBot.ACNHOrders
                 itemsToAdd = itemsToAdd.Concat(dupes).ToArray();
 
                 // add a hole to know where the split is
-                itemsToAdd[len] = new Item(Item.NONE);
+                if (catalogue)
+                    itemsToAdd[len] = new Item(Item.NONE);
             }
 
             ItemArray = new ItemArrayEditor<Item>(itemsToAdd);
