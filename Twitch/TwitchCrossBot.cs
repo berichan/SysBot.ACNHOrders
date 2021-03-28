@@ -175,8 +175,13 @@ namespace SysBot.ACNHOrders.Twitch
             // user-defined
             if (Settings.UserDefinedSubOnlyCommands.ContainsKey(c.ToLower()))
             {
-                dest = Settings.UserDefinedSubOnlyCommandsDestination;
-                return ReplacePredefined(Settings.UserDefinedSubOnlyCommands[c], m.Username);
+                if (subscriber())
+                {
+                    dest = Settings.UserDefinedSubOnlyCommandsDestination;
+                    return ReplacePredefined(Settings.UserDefinedSubOnlyCommands[c], m.Username);
+                }
+                else
+                    return $"@{m.Username} - You must be a subscriber to use this command.";
             }
             if (Settings.UserDefinitedCommands.ContainsKey(c.ToLower()))
             {
