@@ -72,6 +72,12 @@ namespace SysBot.ACNHOrders
         ///<summary>Determines where Canceled notifications are sent.</summary>
         public TwitchMessageDestination OrderCanceledDestination { get; set; } = TwitchMessageDestination.Channel;
 
+        ///<summary>Determines where Finish notifications are sent.</summary>
+        public TwitchMessageDestination UserDefinedCommandsDestination { get; set; }
+
+        ///<summary>Determines where Canceled notifications are sent.</summary>
+        public TwitchMessageDestination UserDefinedSubOnlyCommandsDestination { get; set; }
+
         // Commands
 
         public bool AllowDropViaTwitchChat { get; set; } = false;
@@ -83,6 +89,12 @@ namespace SysBot.ACNHOrders
                 { "islandlist", "The following people are on {islandname}: {visitorlist}." },
                 { "villagers", "The following villagers may be adopted on {islandname}: {villagerlist}." },
                 { "custom", "Hello, @{user}!" }
+            };
+
+        public Dictionary<string, string> UserDefinedSubOnlyCommands { get; set; } =
+            new Dictionary<string, string>() {
+                { "subdodo", "The dodo code for {islandname} is {dodo}. There are currently {vcount} visitors on {islandname}." },
+                { "sub", "Hello, @{user}! Thanks for being a subscriber!" }
             };
 
         public bool IsSudo(string username)

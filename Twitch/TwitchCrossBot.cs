@@ -46,6 +46,8 @@ namespace SysBot.ACNHOrders.Twitch
             var lowerKeyDic = new Dictionary<string, string>();
             foreach (var kvp in settings.UserDefinitedCommands)
                 lowerKeyDic.Add(kvp.Key.ToLower(), kvp.Value);
+            foreach (var kvp in settings.UserDefinedSubOnlyCommands)
+                lowerKeyDic.Add(kvp.Key.ToLower(), kvp.Value);
             settings.UserDefinitedCommands = lowerKeyDic;
 
             Channel = settings.Channel;
@@ -132,12 +134,19 @@ namespace SysBot.ACNHOrders.Twitch
             var msg = e.Command.ChatMessage;
             var c = e.Command.CommandText.ToLower();
             var args = e.Command.ArgumentsAsString;
-            var response = HandleCommand(msg, c, args, false);
+            var response = HandleCommand(msg, c, args, false, out var dest);
             if (response.Length == 0)
                 return;
 
-            var channel = e.Command.ChatMessage.Channel;
-            client.SendMessage(channel, response);
+            if (dest == TwitchMessageDestination.Whisper)
+            {
+                client.SendWhisper(msg.Username, response);
+            }
+            else
+            {
+                var channel = e.Command.ChatMessage.Channel;
+                client.SendMessage(channel, response);
+            }
         }
 
         private void Client_OnWhisperCommandReceived(object? sender, OnWhisperCommandReceivedArgs e)
@@ -148,22 +157,32 @@ namespace SysBot.ACNHOrders.Twitch
             var msg = e.Command.WhisperMessage;
             var c = e.Command.CommandText.ToLower();
             var args = e.Command.ArgumentsAsString;
-            var response = HandleCommand(msg, c, args, true);
+            var response = HandleCommand(msg, c, args, true, out _);
             if (response.Length == 0)
                 return;
 
             client.SendWhisper(msg.Username, response);
         }
 
-        private string HandleCommand(TwitchLibMessage m, string c, string args, bool whisper)
+        private string HandleCommand(TwitchLibMessage m, string c, string args, bool whisper, out TwitchMessageDestination dest)
         {
             bool sudo() => m is ChatMessage ch && (ch.IsBroadcaster || Settings.IsSudo(m.Username));
             bool subscriber() => m is ChatMessage { IsSubscriber: true };
             LogUtil.LogInfo($"[Command] {m.Username}: {c} {args}", nameof(TwitchCrossBot));
 
+            dest = TwitchMessageDestination.Disabled; // disable overwrite so responds in same area.
+
             // user-defined
+            if (Settings.UserDefinedSubOnlyCommands.ContainsKey(c.ToLower()))
+            {
+                dest = Settings.UserDefinedSubOnlyCommandsDestination;
+                return ReplacePredefined(Settings.UserDefinedSubOnlyCommands[c], m.Username);
+            }
             if (Settings.UserDefinitedCommands.ContainsKey(c.ToLower()))
+            {
+                dest = Settings.UserDefinedCommandsDestination;
                 return ReplacePredefined(Settings.UserDefinitedCommands[c], m.Username);
+            }
 
             switch (c)
             {
