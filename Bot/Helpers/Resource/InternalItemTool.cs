@@ -22,8 +22,10 @@ namespace SysBot.ACNHOrders
 
         public bool IsInternalItem(ushort val) => InternalItems.Contains(val);
 
-        public bool IsSane(IReadOnlyCollection<Item> items)
+        public bool IsSane(IReadOnlyCollection<Item> items, IConfigItem cfg)
         {
+            if (cfg.SkipDropCheck)
+                return true;
             foreach (var it in items)
                 if (IsInternalItem(it.ItemId))
                     return false;

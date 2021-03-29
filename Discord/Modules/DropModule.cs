@@ -106,7 +106,7 @@ namespace SysBot.ACNHOrders
             if (!await GetDropAvailability().ConfigureAwait(false))
                 return;
 
-            if (!InternalItemTool.CurrentInstance.IsSane(items))
+            if (!InternalItemTool.CurrentInstance.IsSane(items, Globals.Bot.Config.DropConfig))
             {
                 await ReplyAsync($"{Context.User.Mention} - You are attempting to drop items that will damage your save. Drop request not accepted.");
                 return;

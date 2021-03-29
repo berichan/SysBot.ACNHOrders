@@ -43,6 +43,7 @@ namespace SysBot.ACNHOrders
         /// <summary> Wrapping paper to apply when <see cref="WrapAllItems"/> is true. </summary>
         public ItemWrappingPaper WrappingPaper { get; set; } = ItemWrappingPaper.Black;
 
-        public bool SkipDropCheck => true;
+        /// <summary> Should we allow the dropping of broken items such as tent kits, mailboxes, unpickupables etc </summary>
+        public bool SkipDropCheck { get; set; } = false;
     }
 }
