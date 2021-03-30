@@ -41,6 +41,9 @@ namespace SysBot.ACNHOrders
         /// <summary> Should we include IDs in the echos and order replies? </summary>
         public bool ShowIDs { get; set; } = false;
 
+        /// <summary> Should the bot ping the bot owner when it detects an alt account? </summary>
+        public bool PingOnAbuseDetection { get; set; } = true;
+
         /// <summary> Set this to a number higher than 0 if you want to softban people for not arriving/leaving on time </summary>
         public int PenaltyBanCount { get; set; } = 0;
 
