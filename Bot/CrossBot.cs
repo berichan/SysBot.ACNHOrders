@@ -22,6 +22,7 @@ namespace SysBot.ACNHOrders
         public readonly ConcurrentQueue<SpeakRequest> Speaks = new();
         public readonly ConcurrentQueue<VillagerRequest> VillagerInjections = new();
         public readonly ConcurrentQueue<MapOverrideRequest> MapOverrides = new();
+        public readonly ConcurrentQueue<TurnipRequest> StonkRequests = new();
         public readonly PocketInjectorAsync PocketInjector;
         public readonly DodoPositionHelper DodoPosition;
         public readonly AnchorHelper Anchors;
@@ -982,6 +983,12 @@ namespace SysBot.ACNHOrders
                 await Speak(chat.Item, token).ConfigureAwait(false);
             }
 
+            if (StonkRequests.TryDequeue(out var stonk))
+            {
+                await UpdateTurnips(stonk.Item, token).ConfigureAwait(false);
+                stonk.OnFinish?.Invoke(true);
+            }
+
             if (Injections.TryDequeue(out var item))
             {
                 var count = await DropItems(item, token).ConfigureAwait(false);
@@ -1021,6 +1028,15 @@ namespace SysBot.ACNHOrders
             // Exit out of any menus (fail-safe)
             for (int i = 0; i < 2; i++)
                 await Click(SwitchButton.B, 0_400, token).ConfigureAwait(false);
+        }
+
+        private async Task UpdateTurnips(int newStonk, CancellationToken token)
+        {
+            var stonkBytes = await Connection.ReadBytesAsync((uint)OffsetHelper.TurnipAddress, TurnipStonk.SIZE, token).ConfigureAwait(false); 
+            var newStonkBytes = BitConverter.GetBytes(newStonk);
+            for (int i = 0; i < 12; ++i)
+                Array.Copy(newStonkBytes, 0, stonkBytes, 12 + (i * 4), newStonkBytes.Length);
+            await Connection.WriteBytesAsync(stonkBytes, (uint)OffsetHelper.TurnipAddress, token).ConfigureAwait(false); 
         }
 
         private async Task<bool> GetIsPlayerInventoryValid(uint playerOfs, CancellationToken token)

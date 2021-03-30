@@ -48,4 +48,9 @@ namespace SysBot.ACNHOrders
                 throw new Exception("Attempting to inject mapdata of the incorrect size.");
         }
     }
+
+    public sealed class TurnipRequest : Request<int>
+    {
+        public TurnipRequest(string user, int stonk) : base(user, stonk) { }
+    }
 }

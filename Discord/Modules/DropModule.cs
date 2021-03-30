@@ -101,6 +101,32 @@ namespace SysBot.ACNHOrders
             await DropItems(items).ConfigureAwait(false);
         }
 
+        [Command("setTurnips")]
+        [Alias("turnips")]
+        [Summary("Sets all the week's turnips (minus Sunday) to a certain value.")]
+        [RequireSudo]
+        public async Task RequestTurnipSetAsync(int value)
+        {
+            var bot = Globals.Bot;
+            bot.StonkRequests.Enqueue(new TurnipRequest(Context.User.Username, value)
+            {
+                OnFinish = success =>
+                {
+                    var reply = success
+                        ? $"All turnip values successfully set to {value}!"
+                        : "Catastrophic failure.";
+                    Task.Run(async () => await ReplyAsync($"{Context.User.Mention}: {reply}").ConfigureAwait(false));
+                }
+            });
+            await ReplyAsync($"Queued all turnip values to be set to {value}.");
+        }
+
+        [Command("setTurnipsMax")]
+        [Alias("turnipsMax", "stonks")]
+        [Summary("Sets all the week's turnips (minus Sunday) to 999,999,999")]
+        [RequireSudo]
+        public async Task RequestTurnipMaxSetAsync() => await RequestTurnipSetAsync(999999999);
+
         private async Task DropItems(IReadOnlyCollection<Item> items)
         {
             if (!await GetDropAvailability().ConfigureAwait(false))
