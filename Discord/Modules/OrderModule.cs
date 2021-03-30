@@ -197,7 +197,7 @@ namespace SysBot.ACNHOrders
         }
 
         [Command("remove")]
-        [Alias("qc", "delete", "removeMe")]
+        [Alias("qc", "delete", "removeMe", "cancel")]
         [Summary("Remove yourself from the queue.")]
         [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task RemoveFromQueueAsync()
@@ -211,6 +211,28 @@ namespace SysBot.ACNHOrders
 
             order.SkipRequested = true;
             await ReplyAsync($"{Context.User.Mention} - Your order has been removed. Please note that you will not be able to rejoin the queue again for a while.").ConfigureAwait(false);
+        }
+
+        [Command("removeUser")]
+        [Alias("rmu", "removeOther", "rmo")]
+        [Summary("Remove someone from the queue.")]
+        [RequireSudo]
+        public async Task RemoveOtherFromQueueAsync(string identity)
+        {
+            if (ulong.TryParse(identity, out var res))
+            {
+                QueueExtensions.GetPosition(res, out var order);
+                if (order == null)
+                {
+                    await ReplyAsync($"{identity} is not a valid ulong in the queue.").ConfigureAwait(false);
+                    return;
+                }
+
+                order.SkipRequested = true;
+                await ReplyAsync($"{identity} has been removed from the queue.").ConfigureAwait(false);
+            }
+            else
+                await ReplyAsync($"{identity} is not a valid u64.").ConfigureAwait(false);
         }
 
         [Command("visitorList")]
