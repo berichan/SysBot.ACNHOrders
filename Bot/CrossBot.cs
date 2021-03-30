@@ -224,6 +224,7 @@ namespace SysBot.ACNHOrders
                     if (VillagerInjections.TryDequeue(out var vil))
                         await Villagers.InjectVillager(vil, token).ConfigureAwait(false);
                     await Villagers.UpdateVillagers(token).ConfigureAwait(false);
+                    await SaveVillagersToFile(token).ConfigureAwait(false);
 
                     if (MapOverrides.TryDequeue(out var mapRequest))
                     {
@@ -925,9 +926,16 @@ namespace SysBot.ACNHOrders
             return false;
         }
 
+        private async Task SaveVillagersToFile(CancellationToken token)
+        {
+            string DodoDetails = Config.DodoModeConfig.MinimizeDetails ? Villagers.LastVillagers : $"Villagers on {TownName}: {Villagers.LastVillagers}";
+            byte[] encodedText = Encoding.ASCII.GetBytes(DodoDetails);
+            await FileUtil.WriteBytesToFileAsync(encodedText, Config.DodoModeConfig.VillagerFilename, token).ConfigureAwait(false);
+        }
+
         private async Task SaveDodoCodeToFile(CancellationToken token)
         {
-            string DodoDetails = Config.DodoModeConfig.MinimizeDetails ? $"{DodoCode}" : $"{TownName}: {DodoCode}";
+            string DodoDetails = Config.DodoModeConfig.MinimizeDetails ? DodoCode : $"{TownName}: {DodoCode}";
             byte[] encodedText = Encoding.ASCII.GetBytes(DodoDetails);
             await FileUtil.WriteBytesToFileAsync(encodedText, Config.DodoModeConfig.DodoRestoreFilename, token).ConfigureAwait(false);
         }
