@@ -39,7 +39,7 @@ namespace SysBot.ACNHOrders
                         var bodyVariations = body.Split(new string[2] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
                         if (bodyVariations.Length < 1)
                         {
-                            var mItems = DeepDuplicateItem(currentItem, itemMultiplier);
+                            var mItems = DeepDuplicateItem(currentItem, Math.Max(0, itemMultiplier - 1));
                             newItems.AddRange(mItems);
                             continue;
                         }
@@ -66,7 +66,7 @@ namespace SysBot.ACNHOrders
                     }
                     else if (remake < 0)
                     {
-                        var multipliedItems = DeepDuplicateItem(currentItem, itemMultiplier);
+                        var multipliedItems = DeepDuplicateItem(currentItem, Math.Max(0, itemMultiplier-1));
                         newItems.AddRange(multipliedItems);
                     }
 
