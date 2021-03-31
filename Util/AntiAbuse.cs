@@ -147,5 +147,18 @@ namespace SysBot.ACNHOrders
             var banned = GlobalBanList.FirstOrDefault(x => x.VillagerName == user && x.TownName == town);
             return banned == null;
         }
+
+        public bool Remove(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+                return false;
+            var exists = UserInfoList.FirstOrDefault(x => x.Identity.StartsWith(id));
+            if (exists == default)
+                return false;
+
+            UserInfoList.Remove(exists);
+            SaveAllUserInfo();
+            return true;
+        }
     }
 }

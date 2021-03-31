@@ -229,10 +229,21 @@ namespace SysBot.ACNHOrders
                 }
 
                 order.SkipRequested = true;
-                await ReplyAsync($"{identity} has been removed from the queue.").ConfigureAwait(false);
+                await ReplyAsync($"{identity} ({order.VillagerName}) has been removed from the queue.").ConfigureAwait(false);
             }
             else
                 await ReplyAsync($"{identity} is not a valid u64.").ConfigureAwait(false);
+        }
+
+        [Command("removeAlt")]
+        [Alias("removeLog", "rmAlt")]
+        [Summary("Removes an identity (name-id) from the local user-to-villager AntiAbuse database")]
+        public async Task RemoveAltAsync(string identity)
+        {
+            if (AntiAbuse.CurrentInstance.Remove(identity))
+                await ReplyAsync($"{identity} has been removed from the database.").ConfigureAwait(false);
+            else
+                await ReplyAsync($"{identity} is not a valid identity.").ConfigureAwait(false);
         }
 
         [Command("visitorList")]
