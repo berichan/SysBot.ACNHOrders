@@ -91,12 +91,16 @@ namespace SysBot.ACNHOrders
         /// <summary> Should we allow villager injection? </summary>
         public bool AllowVillagerInjection { get; set; } = true;
 
+        /// <summary> Should we blank out island and arrival names on the arrivals screen? </summary>
         public bool HideArrivalNames { get; set; } = false;
 
+        /// <summary> Character to use to be placed over the dodo and arrival names, written to blocker.txt and to be used as a text source in streaming software </summary>
         public string BlockerEmoji { get; set; } = "\u2764";
 
+        /// <summary> NHL directory to be used by $loadLayer </summary>
         public string FieldLayerNHLDirectory { get; set; } = "nhl";
 
+        /// <summary> Should we allow known hackers/abusers from using the order bot? (community-built list) </summary>
         public bool AllowKnownAbusers { get; set; } = false;
 
         #endregion
