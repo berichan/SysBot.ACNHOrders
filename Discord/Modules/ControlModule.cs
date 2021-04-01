@@ -58,5 +58,36 @@ namespace SysBot.ACNHOrders
             Globals.Bot.Speaks.Enqueue(new SpeakRequest(Context.User.Username, saneString));
             await ReplyAsync($"I'll say `{saneString}` shortly.").ConfigureAwait(false);
         }
+
+        [Command("setScreenOn")]
+        [Alias("screenOn", "scrOn")]
+        [Summary("Turns the screen on")]
+        [RequireSudo]
+        public async Task SetScreenOnAsync()
+        {
+            await SetScreen(true).ConfigureAwait(false);
+        }
+
+        [Command("setScreenOff")]
+        [Alias("screenOff", "scrOff")]
+        [Summary("Turns the screen off")]
+        [RequireSudo]
+        public async Task SetScreenOffAsync()
+        {
+            await SetScreen(false).ConfigureAwait(false);
+        }
+
+        private async Task SetScreen(bool on)
+        {
+            var bot = Globals.Bot;
+            if (!bot.Config.ExperimentalSleepScreenOnIdle)
+            {
+                await ReplyAsync("Sleep screen on idle is set to false.").ConfigureAwait(false);
+                return;
+            }
+                
+            await bot.SetScreen(on, CancellationToken.None).ConfigureAwait(false);
+            await ReplyAsync("Screen state set to: " + (on ? "On" : "Off")).ConfigureAwait(false);
+        }
     }
 }

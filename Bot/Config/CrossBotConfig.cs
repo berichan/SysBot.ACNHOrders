@@ -85,6 +85,9 @@ namespace SysBot.ACNHOrders
         /// <summary> Should we freeze instant text? </summary>
         public bool ExperimentalFreezeDodoCodeRetrieval { get; set; } = false;
 
+        /// <summary> Should we sleep the screen when not doing anything? (requires sys-botbase >= 1.72) </summary>
+        public bool ExperimentalSleepScreenOnIdle { get; set; } = false;
+
         /// <summary> Should we allow villager injection? </summary>
         public bool AllowVillagerInjection { get; set; } = true;
 

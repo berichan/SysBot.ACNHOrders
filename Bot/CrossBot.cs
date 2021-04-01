@@ -97,6 +97,7 @@ namespace SysBot.ACNHOrders
 
             // drawing
             await UpdateBlocker(false, token).ConfigureAwait(false);
+            await SetScreen(false, token).ConfigureAwait(false);
 
             // get version
             await Task.Delay(0_100, token).ConfigureAwait(false);
@@ -143,6 +144,7 @@ namespace SysBot.ACNHOrders
 
             // pull villager data and store it
             Villagers = await VillagerHelper.GenerateHelper(this, token).ConfigureAwait(false);
+            await SetScreen(true, token).ConfigureAwait(false);
 
             if (Config.ForceUpdateAnchors)
                 LogUtil.LogInfo("Force update anchors set to true, no functionality will activate", Config.IP);
@@ -162,6 +164,7 @@ namespace SysBot.ACNHOrders
         private async Task DodoRestoreLoop(bool immediateRestart, CancellationToken token)
         {
             await EnsureAnchorsAreInitialised(token);
+            await SetScreen(false, token).ConfigureAwait(false);
             await VisitorList.UpdateNames(token).ConfigureAwait(false);
 
             bool hardCrash = immediateRestart;
@@ -192,8 +195,14 @@ namespace SysBot.ACNHOrders
                             await ClearMapAndSpawnInternally(null, Map, Config.DodoModeConfig.RefreshTerrainData, token).ConfigureAwait(false);
 
                     if (Config.DodoModeConfig.MashB)
+                    {
+                        if (owState != OverworldState.Overworld)
+                            await SetScreen(true, token).ConfigureAwait(false);
                         for (int i = 0; i < 5; ++i)
                             await Click(SwitchButton.B, 0_200, token).ConfigureAwait(false);
+                        if (owState != OverworldState.Overworld)
+                            await SetScreen(false, token).ConfigureAwait(false);
+                    }
 
                     await DropLoop(token).ConfigureAwait(false);
 
@@ -239,6 +248,8 @@ namespace SysBot.ACNHOrders
                         await ClearMapAndSpawnInternally(null, Map, Config.DodoModeConfig.RefreshTerrainData, token, true).ConfigureAwait(false);
                     }
                 }
+
+                await SetScreen(true, token).ConfigureAwait(false);
 
                 if (Config.DodoModeConfig.EchoDodoChannels.Count > 0)
                     await AttemptEchoHook($"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] Crash detected on {TownName}. Please wait while I get a new Dodo code.", Config.DodoModeConfig.EchoDodoChannels, token).ConfigureAwait(false);
@@ -300,8 +311,11 @@ namespace SysBot.ACNHOrders
 
             await EnsureAnchorsAreInitialised(token);
 
+            await SetScreen(false, token).ConfigureAwait(false);
+
             if (Orders.TryDequeue(out var item) && !item.SkipRequested)
             {
+                await SetScreen(true, token).ConfigureAwait(false);
                 var result = await ExecuteOrder(item, token).ConfigureAwait(false);
                 
                 // Cleanup
@@ -598,6 +612,7 @@ namespace SysBot.ACNHOrders
                 return OrderResult.Success;
 
             LogUtil.LogInfo($"Waiting for arrival.", Config.IP);
+            await SetScreen(false, token).ConfigureAwait(false);
             var startTime = DateTime.Now;
             // Wait for arrival
             while (!await IsArriverNew(token).ConfigureAwait(false))
@@ -637,6 +652,7 @@ namespace SysBot.ACNHOrders
 
             OverworldState state = OverworldState.Unknown;
             bool isUserArriveLeaving = false;
+            await SetScreen(true, token).ConfigureAwait(false);
             // Ensure we're on overworld before starting timer/drop loop
             while (state != OverworldState.Overworld)
             {
@@ -986,6 +1002,8 @@ namespace SysBot.ACNHOrders
                 return;
             }
 
+            await SetScreen(true, token).ConfigureAwait(false);
+
             // speaks take priority
             if (Speaks.TryDequeue(out var chat))
             {
@@ -1015,6 +1033,8 @@ namespace SysBot.ACNHOrders
                 State.StillIdle();
                 await Task.Delay(0_300, token).ConfigureAwait(false);
             }
+
+            await SetScreen(true, token).ConfigureAwait(false);
         }
 
         private async Task Speak(string toSpeak, CancellationToken token)
@@ -1206,6 +1226,14 @@ namespace SysBot.ACNHOrders
         {
             await Connection.WriteBytesAsync(MaxTextSpeed, (int)OffsetHelper.TextSpeedAddress, token).ConfigureAwait(false);
             await Click(b, delay, token).ConfigureAwait(false);
+        }
+
+        public async Task SetScreen(bool on, CancellationToken token)
+        {
+            if (!Config.ExperimentalSleepScreenOnIdle)
+                return;
+            var screenBytes = Encoding.ASCII.GetBytes($"screen{(on ? "On" : "Off")}\r\n");
+            await SwitchConnection.SendRaw(screenBytes, token).ConfigureAwait(false);
         }
 
         public async Task UpdateBlocker(bool show, CancellationToken token) => await FileUtil.WriteBytesToFileAsync(show ? Encoding.UTF8.GetBytes(Config.BlockerEmoji) : Array.Empty<byte>(), "blocker.txt", token).ConfigureAwait(false);
