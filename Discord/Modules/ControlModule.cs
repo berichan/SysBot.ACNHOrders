@@ -86,7 +86,7 @@ namespace SysBot.ACNHOrders
                 return;
             }
                 
-            await bot.SetScreen(on, CancellationToken.None).ConfigureAwait(false);
+            await bot.SetScreenCheck(on, CancellationToken.None).ConfigureAwait(false);
             await ReplyAsync("Screen state set to: " + (on ? "On" : "Off")).ConfigureAwait(false);
         }
     }

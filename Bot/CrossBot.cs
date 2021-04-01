@@ -97,7 +97,7 @@ namespace SysBot.ACNHOrders
 
             // drawing
             await UpdateBlocker(false, token).ConfigureAwait(false);
-            await SetScreen(false, token).ConfigureAwait(false);
+            await SetScreenCheck(false, token).ConfigureAwait(false);
 
             // get version
             await Task.Delay(0_100, token).ConfigureAwait(false);
@@ -1210,12 +1210,11 @@ namespace SysBot.ACNHOrders
             await Click(b, delay, token).ConfigureAwait(false);
         }
 
-        public async Task SetScreen(bool on, CancellationToken token)
+        public async Task SetScreenCheck(bool on, CancellationToken token)
         {
             if (!Config.ExperimentalSleepScreenOnIdle)
                 return;
-            var screenBytes = SwitchCommand.SetScreen(on, Config.UseCRLF);
-            await SwitchConnection.SendRaw(screenBytes, token).ConfigureAwait(false);
+            await SetScreen(on, token).ConfigureAwait(false);
         }
 
         public async Task UpdateBlocker(bool show, CancellationToken token) => await FileUtil.WriteBytesToFileAsync(show ? Encoding.UTF8.GetBytes(Config.BlockerEmoji) : Array.Empty<byte>(), "blocker.txt", token).ConfigureAwait(false);
