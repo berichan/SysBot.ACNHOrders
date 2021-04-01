@@ -274,9 +274,11 @@ namespace SysBot.ACNHOrders
                 await DodoRestoreLoop(true, token).ConfigureAwait(false);
                 return;
             }
-            await SaveDodoCodeToFile(token).ConfigureAwait(false);
 
+            await SaveDodoCodeToFile(token).ConfigureAwait(false);
             LogUtil.LogError($"Dodo restore successful. New dodo for {TownName} is {DodoCode} and saved to {Config.DodoModeConfig.DodoRestoreFilename}.", Config.IP);
+            if (Config.DodoModeConfig.RefreshMap) // clean map
+                await ClearMapAndSpawnInternally(null, Map, Config.DodoModeConfig.RefreshTerrainData, token, true).ConfigureAwait(false); 
         }
 
         // hacked in discord forward, should really be a delegate or resusable forwarder
