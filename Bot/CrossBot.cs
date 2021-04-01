@@ -1214,7 +1214,7 @@ namespace SysBot.ACNHOrders
         {
             if (!Config.ExperimentalSleepScreenOnIdle)
                 return;
-            var screenBytes = Encoding.ASCII.GetBytes($"screen{(on ? "On" : "Off")}\r\n");
+            var screenBytes = SwitchCommand.SetScreen(on, Config.UseCRLF);
             await SwitchConnection.SendRaw(screenBytes, token).ConfigureAwait(false);
         }
 
