@@ -544,6 +544,8 @@ namespace SysBot.ACNHOrders
         private async Task<OrderResult> FetchDodoAndAwaitOrder(IACNHOrderNotifier<Item> order, bool ignoreInjection, CancellationToken token)
         {
             LogUtil.LogInfo($"Talking to Orville. Attempting to get Dodo code for {TownName}.", Config.IP);
+            if (ignoreInjection)
+                await SetScreenCheck(true, token).ConfigureAwait(false);
             await DodoPosition.GetDodoCode((uint)OffsetHelper.DodoAddress, false, token).ConfigureAwait(false);
 
             // try again if we failed to get a dodo
@@ -554,6 +556,8 @@ namespace SysBot.ACNHOrders
                     await ClickConversation(SwitchButton.B, 0_600, token).ConfigureAwait(false);
                 await DodoPosition.GetDodoCode((uint)OffsetHelper.DodoAddress, true, token).ConfigureAwait(false);
             }
+
+            await SetScreenCheck(false, token).ConfigureAwait(false);
 
             if (!DodoPosition.IsDodoValid(DodoPosition.DodoCode))
             {
