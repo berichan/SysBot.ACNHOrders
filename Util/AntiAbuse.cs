@@ -122,6 +122,13 @@ namespace SysBot.ACNHOrders
                 LoadBanList();
         }
 
+        public bool IsGlobalBanned(ulong id)
+        {
+            var idString = id.ToString();
+            var found = GlobalBanList.FirstOrDefault(x => x.Identity.EndsWith(idString));
+            return found != null;
+        }
+
         /// <summary>
         /// Test arrival of user
         /// </summary>

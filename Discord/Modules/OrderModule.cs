@@ -300,6 +300,12 @@ namespace SysBot.ACNHOrders
 
         private async Task AttemptToQueueRequest(IReadOnlyCollection<Item> items, SocketUser orderer, ISocketMessageChannel msgChannel, VillagerRequest? vr, bool catalogue = false)
         {
+            if (!Globals.Bot.Config.AllowKnownAbusers && AntiAbuse.CurrentInstance.IsGlobalBanned(orderer.Id))
+            {
+                await ReplyAsync($"{Context.User.Mention} - You are not permitted to use this bot.");
+                return;
+            }
+
             if (Globals.Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode || Globals.Bot.Config.SkipConsoleBotCreation)
             {
                 await ReplyAsync($"{Context.User.Mention} - Orders are not currently accepted.");
