@@ -103,6 +103,9 @@ namespace SysBot.ACNHOrders
         /// <summary> Should we allow known hackers/abusers from using the order bot? (community-built list) </summary>
         public bool AllowKnownAbusers { get; set; } = false;
 
+        /// <summary> Should we press up once before starting the game? Not guaranteed to avoid the update, but the bot will try its best. </summary>
+        public bool AvoidSystemUpdate { get; set; } = true;
+
         #endregion
 
         public bool CanUseCommandUser(ulong authorId) => Users.Count == 0 || Users.Contains(authorId);
