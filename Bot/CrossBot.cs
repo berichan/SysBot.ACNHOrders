@@ -735,8 +735,13 @@ namespace SysBot.ACNHOrders
             // Wait for "closing software" wheel
             await Task.Delay(1_000, token).ConfigureAwait(false);
 
+            // Click away from any system updates
+            await Click(SwitchButton.A, 1_000 + Config.RestartGameWait, token).ConfigureAwait(false);
+            await Click(SwitchButton.DUP, 0_600, token).ConfigureAwait(false);
+            await Click(SwitchButton.A, 1_000 + Config.RestartGameWait, token).ConfigureAwait(false);
+
             // Start game
-            for (int i = 0; i < 4; ++i)
+            for (int i = 0; i < 3; ++i)
                 await Click(SwitchButton.A, 1_000 + Config.RestartGameWait, token).ConfigureAwait(false);
 
             // Wait for "checking if the game can be played" wheel
