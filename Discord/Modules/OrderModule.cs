@@ -393,7 +393,7 @@ namespace SysBot.ACNHOrders
             if (!VillagerResources.IsVillagerDataKnown(internalName))
                 internalName = GameInfo.Strings.VillagerMap.FirstOrDefault(z => string.Equals(z.Value, internalName, StringComparison.InvariantCultureIgnoreCase)).Key;
 
-            if (IsUnadoptable(nameSearched))
+            if (IsUnadoptable(nameSearched) || IsUnadoptable(internalName))
             {
                 result = $"{nameSearched} is not adoptable. Order setup required for this villager is unnecessary.";
                 return VillagerRequestResult.InvalidVillagerRequested;
@@ -420,6 +420,6 @@ namespace SysBot.ACNHOrders
             "shp14"
         };
 
-        public static bool IsUnadoptable(string internalName) => UnadoptableVillagers.Contains(internalName.ToLower());
+        public static bool IsUnadoptable(string? internalName) => UnadoptableVillagers.Contains(internalName == null ? string.Empty : internalName.Trim().ToLower());
     }
 }
