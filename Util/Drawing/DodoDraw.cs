@@ -21,11 +21,11 @@ namespace SysBot.ACNHOrders
         private readonly TextOptions options;
         private readonly TextGraphicsOptions tOptions;
 
-        public DodoDraw()
+        public DodoDraw(float fontPercentage = 100)
         {
             DodoFontFamily = FontCollection.Install(FontPath);
             BaseImage = Image.Load(ImagePathTemplate);
-            DodoFont = DodoFontFamily.CreateFont(BaseImage.Height * 0.4f, FontStyle.Regular);
+            DodoFont = DodoFontFamily.CreateFont(BaseImage.Height * 0.4f * (fontPercentage/100f), FontStyle.Regular);
 
             options = new TextOptions()
             {

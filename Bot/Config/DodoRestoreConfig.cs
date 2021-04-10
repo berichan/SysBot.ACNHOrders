@@ -48,6 +48,9 @@ namespace SysBot.ACNHOrders
         /// <summary> When set to true, dodo code will become bot status </summary>
         public bool SetStatusAsDodoCode { get; set; }
 
+        /// <summary> Change the percentage of the dodo code font size if using the fancy dodo code renderer </summary>
+        public float DodoFontPercentageSize { get; set; } = 100;
+
         /// <summary> When set to true, the bot will mash B when not doing any of the other restore functionality </summary>
         public bool MashB { get; set; }
     }

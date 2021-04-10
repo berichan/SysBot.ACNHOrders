@@ -63,7 +63,7 @@ namespace SysBot.ACNHOrders
                 ssa.MaximumTransferSize = cfg.MapPullChunkSize;
 
             if (File.Exists("dodo.png") && File.Exists("dodo.ttf"))
-                DodoImageDrawer = new DodoDraw();
+                DodoImageDrawer = new DodoDraw(Config.DodoModeConfig.DodoFontPercentageSize);
 
             DodoPosition = new DodoPositionHelper(this);
             VisitorList = new VisitorListHelper(this);
