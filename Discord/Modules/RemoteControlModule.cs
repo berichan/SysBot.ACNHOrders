@@ -73,6 +73,18 @@ namespace SysBot.ACNHOrders
             await ReplyAsync("Done.").ConfigureAwait(false);
         }
 
+        [Command("readCommand")]
+        [Summary("Writes the requested command to the sysmodule and awaits a return value")]
+        [RequireSudo]
+        public async Task ReadCommandAsync(int expectedReturnSize, [Remainder]string command)
+        {
+            var b = Bot;
+            var data = System.Text.Encoding.UTF8.GetBytes(command + "\r\n");
+            await ReplyAsync($"Sending `{command}` and waiting for {expectedReturnSize}-byte result.").ConfigureAwait(false);
+            var ret = await b.SwitchConnection.ReadRaw(data, expectedReturnSize, CancellationToken.None).ConfigureAwait(false);
+            await ReplyAsync($"`{command}` returned with result: {System.Text.Encoding.UTF8.GetString(ret)}").ConfigureAwait(false);
+        }
+
         private static byte[] GetBytesFromHexString(string seed)
         {
             return Enumerable.Range(0, seed.Length)
