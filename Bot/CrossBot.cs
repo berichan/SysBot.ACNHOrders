@@ -625,7 +625,7 @@ namespace SysBot.ACNHOrders
                 if (!Config.AllowKnownAbusers)
                 {
                     LogUtil.LogInfo($"{LastArrival} from {LastArrivalIsland} is a known abuser. Starting next order...", Config.IP);
-                    order.OrderCancelled(this, $"{LastArrival} from {LastArrivalIsland} is a known abuser. You cannot use this bot.", false);
+                    order.OrderCancelled(this, $"You are a known abuser. You cannot use this bot.", false);
                     return OrderResult.NoArrival;
                 }
                 else
