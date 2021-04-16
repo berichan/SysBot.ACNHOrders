@@ -14,66 +14,93 @@ namespace SysBot.ACNHOrders
         [Command("injectVillager"), Alias("iv")]
         [Summary("Injects a villager based on the internal name.")]
         [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
-        public async Task InjectVillagerAsync(int index, string internalName)
-        {
-            if (!Globals.Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
-            {
-                await ReplyAsync($"{Context.User.Mention} - Villagers cannot be injected in order mode.");
-                return;
-            }
-
-            if (!Globals.Bot.Config.AllowVillagerInjection)
-            {
-                await ReplyAsync($"{Context.User.Mention} - Villager injection is currently disabled.");
-                return;
-            }
-
-            var bot = Globals.Bot;
-            var nameSearched = internalName;
-
-            if (!VillagerResources.IsVillagerDataKnown(internalName))
-                internalName = GameInfo.Strings.VillagerMap.FirstOrDefault(z => string.Equals(z.Value, internalName, StringComparison.InvariantCultureIgnoreCase)).Key;
-
-            if (internalName == default)
-            {
-                await ReplyAsync($"{Context.User.Mention} - {nameSearched} is not a valid internal villager name.");
-                return;
-            }
-
-            if (index > byte.MaxValue || index < 0)
-            {
-                await ReplyAsync($"{Context.User.Mention} - {index} is not a valid index");
-                return;
-            }
-
-            int slot = index;
-
-            var replace = VillagerResources.GetVillager(internalName);
-            var user = Context.User;
-            var mention = Context.User.Mention;
-            var request = new VillagerRequest(Context.User.Username, replace, (byte)index, GameInfo.Strings.GetVillager(internalName))
-            {
-                OnFinish = success =>
-                {
-                    var reply = success
-                        ? $"Villager has been injected by the bot at Index {slot}. Please go talk to them!"
-                        : "Failed to inject villager. Please tell the bot owner to look at the logs!";
-                    Task.Run(async () => await ReplyAsync($"{mention}: {reply}").ConfigureAwait(false));
-                }
-            };
-
-            bot.VillagerInjections.Enqueue(request);
-
-            var msg = $"{mention}: Villager inject request has been added to the queue and will be injected momentarily. I will reply to you once this has completed.";
-            if (VillagerOrderParser.IsUnadoptable(internalName))
-                msg += " Please note that you will not be able to adopt this villager.";
-            await ReplyAsync(msg).ConfigureAwait(false);
-        }
+        public async Task InjectVillagerAsync(int index, string internalName) => await InjectVillagers(index, new string[1] { internalName });
+        
 
         [Command("injectVillager"), Alias("iv")]
         [Summary("Injects a villager based on the internal name.")]
         [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task InjectVillagerAsync(string internalName) => await InjectVillagerAsync(0, internalName).ConfigureAwait(false);
+
+        [Command("multiVillager"), Alias("mvi", "injectVillagerMulti", "superUltraInjectionGiveMeMoreVillagers")]
+        [Summary("Injects multiple villagers based on the internal names.")]
+        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
+        public async Task InjectVillagerMultiAsync([Remainder]string names) => await InjectVillagers(0, names.Split(new string[2] { ",", " ", }, StringSplitOptions.RemoveEmptyEntries));
+
+        private async Task InjectVillagers(int startIndex, string[] villagerNames)
+        {
+            if (!Globals.Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
+            {
+                await ReplyAsync($"{Context.User.Mention} - Villagers cannot be injected in order mode.").ConfigureAwait(false);
+                return;
+            }
+
+            if (!Globals.Bot.Config.AllowVillagerInjection)
+            {
+                await ReplyAsync($"{Context.User.Mention} - Villager injection is currently disabled.").ConfigureAwait(false);
+                return;
+            }
+
+            var bot = Globals.Bot;
+            int index = startIndex;
+            int count = villagerNames.Length;
+
+            if (count < 1)
+            {
+                await ReplyAsync($"{Context.User.Mention} - No villager names in command").ConfigureAwait(false);
+                return;
+            }
+
+            foreach (var nameLookup in villagerNames)
+            {
+                var internalName = nameLookup;
+                var nameSearched = internalName;
+
+                if (!VillagerResources.IsVillagerDataKnown(internalName))
+                    internalName = GameInfo.Strings.VillagerMap.FirstOrDefault(z => string.Equals(z.Value, internalName, StringComparison.InvariantCultureIgnoreCase)).Key;
+
+                if (internalName == default)
+                {
+                    await ReplyAsync($"{Context.User.Mention} - {nameSearched} is not a valid internal villager name.");
+                    return;
+                }
+
+                if (index > byte.MaxValue || index < 0)
+                {
+                    await ReplyAsync($"{Context.User.Mention} - {index} is not a valid index");
+                    return;
+                }
+
+                int slot = index;
+
+                var replace = VillagerResources.GetVillager(internalName);
+                var user = Context.User;
+                var mention = Context.User.Mention;
+
+                var extraMsg = string.Empty;
+                if (VillagerOrderParser.IsUnadoptable(internalName))
+                    extraMsg += " Please note that you will not be able to adopt this villager.";
+
+                var request = new VillagerRequest(Context.User.Username, replace, (byte)index, GameInfo.Strings.GetVillager(internalName))
+                {
+                    OnFinish = success =>
+                    {
+                        var reply = success
+                            ? $"{nameSearched} has been injected by the bot at Index {slot}. Please go talk to them!{extraMsg}"
+                            : "Failed to inject villager. Please tell the bot owner to look at the logs!";
+                        Task.Run(async () => await ReplyAsync($"{mention}: {reply}").ConfigureAwait(false));
+                    }
+                };
+
+                bot.VillagerInjections.Enqueue(request);
+
+                index = (index + 1) % 10;
+            }
+
+            var addMsg = count > 1 ? $"Villager inject request for {count} villagers have" : "Villager inject request has";
+            var msg = $"{Context.User.Mention}: {addMsg} been added to the queue and will be injected momentarily. I will reply to you once this has completed.";
+            await ReplyAsync(msg).ConfigureAwait(false);
+        }
 
         [Command("villagers"), Alias("vl", "villagerList")]
         [Summary("Prints the list of villagers currently on the island.")]
@@ -86,7 +113,7 @@ namespace SysBot.ACNHOrders
                 return;
             }
 
-            await ReplyAsync($"The following villagers are on {Globals.Bot.TownName}: {Globals.Bot.Villagers.LastVillagers}.");
+            await ReplyAsync($"The following villagers are on {Globals.Bot.TownName}: {Globals.Bot.Villagers.LastVillagers}.").ConfigureAwait(false);
         }
         
 
