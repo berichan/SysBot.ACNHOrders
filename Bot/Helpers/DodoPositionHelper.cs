@@ -251,11 +251,11 @@ namespace SysBot.ACNHOrders
                 "A,W550," +
                 $"A,W{17_000 + Config.ExtraTimeConnectionWait}," +
                 "A,W550," +
-                "DUP,W400," +
-                "DUP,W400," +
+                "DU,W400," +
+                "DU,W400," +
                 "A,W800," +
                 "A,W550," +
-                "DUP,W400," +
+                "DU,W400," +
                 "A,W550," +
                 "A,W550," +
                 "A,W550," +
