@@ -19,6 +19,7 @@ namespace SysBot.ACNHOrders
 
         private readonly IConsoleConnectionAsync? Connection;
         private readonly CrossBot? Bot;
+        private readonly string[]? OriginalVillagers;
 
         private readonly List<VillagerHouse>? VillagerHouses;
         private readonly List<Villager2>? VillagerShells;
@@ -33,12 +34,17 @@ namespace SysBot.ACNHOrders
 
             VillagerHouses = new List<VillagerHouse>(houses);
             VillagerShells = new List<Villager2>(shells);
-            updateVillagerList();
+
+            OriginalVillagers = new string[VillagerShells.Count];
+            for (int i = 0; i < VillagerShells.Count; ++i)
+                OriginalVillagers[i] = shells[i].InternalName;
+
+            UpdateVillagerList();
         }
 
         public VillagerHelper() { }
 
-        public static VillagerHelper Empty => new VillagerHelper();
+        public static VillagerHelper Empty => new();
 
         public static async Task<VillagerHelper> GenerateHelper(CrossBot bot, CancellationToken token)
         {
@@ -71,14 +77,20 @@ namespace SysBot.ACNHOrders
             return villagers;
         }
 
-        public async Task UpdateVillagers(CancellationToken token)
+        public async Task<Dictionary<int, string>?> UpdateVillagers(CancellationToken token)
         {
-            if (Bot == null || VillagerShells == null)
-                return;
+            if (Bot == null || VillagerShells == null || OriginalVillagers == null)
+                return null;
 
             VillagerShells.Clear();
             VillagerShells.AddRange(await GetVillagerShells(Bot.Connection, false, token).ConfigureAwait(false));
-            updateVillagerList();
+            UpdateVillagerList();
+
+            var lostVillagers = new Dictionary<int, string>();
+            for (int i = 0; i < OriginalVillagers.Length; ++i)
+                if (OriginalVillagers[i] != VillagerShells[i].InternalName)
+                    lostVillagers.Add(i, OriginalVillagers[i]);
+            return lostVillagers;
         }
 
         public async Task<bool> InjectVillager(VillagerRequest vr, CancellationToken token)
@@ -147,7 +159,7 @@ namespace SysBot.ACNHOrders
             return true;
         }
 
-        private void updateVillagerList()
+        private void UpdateVillagerList()
         {
             if (VillagerShells == null)
                 return;

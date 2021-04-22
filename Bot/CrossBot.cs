@@ -225,7 +225,13 @@ namespace SysBot.ACNHOrders
 
                     if (VillagerInjections.TryDequeue(out var vil))
                         await Villagers.InjectVillager(vil, token).ConfigureAwait(false);
-                    await Villagers.UpdateVillagers(token).ConfigureAwait(false);
+                    var lostVillagers = await Villagers.UpdateVillagers(token).ConfigureAwait(false);
+                    if (Config.DodoModeConfig.ReinjectMovedOutVillagers) // reinject lost villagers if requested
+                        if (lostVillagers != null)
+                            foreach (var lv in lostVillagers)
+                                if (!lv.Value.StartsWith("non"))
+                                    VillagerInjections.Enqueue(new VillagerRequest("REINJECT", VillagerResources.GetVillager(lv.Value), (byte)lv.Key, GameInfo.Strings.GetVillager(lv.Value)));
+                    
                     await SaveVillagersToFile(token).ConfigureAwait(false);
 
                     if (MapOverrides.TryDequeue(out var mapRequest))

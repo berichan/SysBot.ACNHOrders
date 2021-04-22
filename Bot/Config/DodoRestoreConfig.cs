@@ -48,6 +48,9 @@ namespace SysBot.ACNHOrders
         /// <summary> When set to true, dodo code will become bot status </summary>
         public bool SetStatusAsDodoCode { get; set; }
 
+        /// <summary> When set to true, the bot will reinject lost villagers while running from the bot's own villager database </summary>
+        public bool ReinjectMovedOutVillagers { get; set; }
+
         /// <summary> Change the percentage of the dodo code font size if using the fancy dodo code renderer </summary>
         public float DodoFontPercentageSize { get; set; } = 100;
 
