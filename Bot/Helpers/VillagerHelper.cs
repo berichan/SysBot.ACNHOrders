@@ -88,7 +88,7 @@ namespace SysBot.ACNHOrders
 
             var lostVillagers = new Dictionary<int, string>();
             for (int i = 0; i < OriginalVillagers.Length; ++i)
-                if (OriginalVillagers[i] != VillagerShells[i].InternalName)
+                if (VillagerShells[i].Species == (byte)VillagerSpecies.non && OriginalVillagers[i] != VillagerShells[i].InternalName)
                     lostVillagers.Add(i, OriginalVillagers[i]);
             return lostVillagers;
         }
