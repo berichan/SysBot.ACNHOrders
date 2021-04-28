@@ -48,6 +48,21 @@ namespace SysBot.ACNHOrders
             await ReplyAsync($"Sending request to fetch a new dodo code.").ConfigureAwait(false);
         }
 
+        [Command("timer")]
+        [Alias("timedDodo", "delayDodo")]
+        [Summary("Tells the bot to restart the game after a delay and fetch a new dodo code. Only works in dodo restore mode.")]
+        [RequireSudo]
+        public async Task DelayFetchNewDodo(int timeDelayMinutes)
+        {
+            _ = Task.Run(async () =>
+              {
+                  await Task.Delay(timeDelayMinutes * 60_000, CancellationToken.None).ConfigureAwait(false);
+                  Globals.Bot.RestoreRestartRequested = true;
+                  await ReplyAsync($"Fetching a new dodo code shortly.").ConfigureAwait(false);
+              }, CancellationToken.None).ConfigureAwait(false);
+            await ReplyAsync($"Sending request to fetch a new dodo code after {timeDelayMinutes} minutes.").ConfigureAwait(false);
+        }
+
         [Command("speak")]
         [Alias("talk", "say")]
         [Summary("Tells the bot to speak during times when people are on the island.")]
