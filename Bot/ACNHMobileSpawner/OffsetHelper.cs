@@ -41,7 +41,7 @@
 
         public const ulong DodoAddress = 0xA98F15C;
         public const ulong OnlineSessionAddress = 0x920E740;
-        public const ulong OnlineSessionVisitorAddress = 0x9F974B8;
+        public const ulong OnlineSessionVisitorAddress = 0x9D3DFB0;
         public const ulong OnlineSessionVisitorSize = 0x448; // reverse order
 
         public const ulong TimeAddress = 0x0BAC54E8;
