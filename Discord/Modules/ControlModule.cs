@@ -95,13 +95,8 @@ namespace SysBot.ACNHOrders
         private async Task SetScreen(bool on)
         {
             var bot = Globals.Bot;
-            if (!bot.Config.ExperimentalSleepScreenOnIdle)
-            {
-                await ReplyAsync("Sleep screen on idle is set to false.").ConfigureAwait(false);
-                return;
-            }
                 
-            await bot.SetScreenCheck(on, CancellationToken.None).ConfigureAwait(false);
+            await bot.SetScreenCheck(on, CancellationToken.None, true).ConfigureAwait(false);
             await ReplyAsync("Screen state set to: " + (on ? "On" : "Off")).ConfigureAwait(false);
         }
     }

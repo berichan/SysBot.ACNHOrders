@@ -1226,9 +1226,9 @@ namespace SysBot.ACNHOrders
             await Click(b, delay, token).ConfigureAwait(false);
         }
 
-        public async Task SetScreenCheck(bool on, CancellationToken token)
+        public async Task SetScreenCheck(bool on, CancellationToken token, bool force = false)
         {
-            if (!Config.ExperimentalSleepScreenOnIdle)
+            if (!Config.ExperimentalSleepScreenOnIdle && !force)
                 return;
             await SetScreen(on, token).ConfigureAwait(false);
         }
