@@ -239,7 +239,7 @@ namespace SysBot.ACNHOrders
             await Task.Delay(0_500, token).ConfigureAwait(false);
 
             var encodedBytesSequence = Encoding.ASCII.GetBytes("clickSeq " +
-                $"A,W{(isRetry ? 1_400 : 3_100)}," +
+                $"A,W{(isRetry ? 2_000 : 3_100)}," +
                 "A,W900," +
                 "DD,W400," +
                 "A,W1000," +
