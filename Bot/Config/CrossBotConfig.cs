@@ -32,6 +32,9 @@ namespace SysBot.ACNHOrders
 
         public List<ulong> LoggingChannels { get; set; } = new();
 
+        // Should we ignore all permissions for commands and allow inter-bot talk? This should only be used for debug/apps that layer on top of the acnh bot through discord.
+        public bool IgnoreAllPermissions { get; set; } = false;
+
         #endregion
 
         #region Features

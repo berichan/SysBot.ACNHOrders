@@ -24,7 +24,7 @@ namespace SysBot.ACNHOrders
         public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
         {
             var mgr = Globals.Bot.Config;
-            if (mgr.CanUseSudo(context.User.Id) || Globals.Self.Owner == context.User.Id)
+            if (mgr.CanUseSudo(context.User.Id) || Globals.Self.Owner == context.User.Id || mgr.IgnoreAllPermissions)
                 return Task.FromResult(PreconditionResult.FromSuccess());
 
             // Check if this user is a Guild User, which is the only context where roles exist
