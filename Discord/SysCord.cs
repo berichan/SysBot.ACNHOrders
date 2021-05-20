@@ -115,6 +115,14 @@ namespace SysBot.ACNHOrders
             var app = await _client.GetApplicationInfoAsync().ConfigureAwait(false);
             Owner = app.Owner.Id;
 
+            _client.Ready += ClientReady;
+
+            // Wait infinitely so your bot actually stays connected.
+            await MonitorStatusAsync(token).ConfigureAwait(false);
+        }
+
+        private async Task ClientReady()
+        {
             // Add logging forwarders
             foreach (var cid in Bot.Config.LoggingChannels)
             {
@@ -125,8 +133,7 @@ namespace SysBot.ACNHOrders
                 LogUtil.Forwarders.Add(l);
             }
 
-            // Wait infinitely so your bot actually stays connected.
-            await MonitorStatusAsync(token).ConfigureAwait(false);
+            await Task.Delay(100, CancellationToken.None).ConfigureAwait(false);
         }
 
         public async Task InitCommands()
