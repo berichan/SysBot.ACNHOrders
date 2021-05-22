@@ -35,6 +35,7 @@ namespace SysBot.ACNHOrders
         public readonly DodoDraw? DodoImageDrawer;
 
         public MapTerrainLite Map { get; private set; } = new MapTerrainLite(new byte[MapGrid.MapTileCount32x32 * Item.SIZE]);
+        public TimeBlock LastTimeState { get; private set; } = new();
         public bool CleanRequested { private get; set; }
         public bool RestoreRestartRequested { private get; set; }
         public bool CanFollowPointers { get; private set; }
@@ -145,6 +146,11 @@ namespace SysBot.ACNHOrders
             // pull villager data and store it
             Villagers = await VillagerHelper.GenerateHelper(this, token).ConfigureAwait(false);
 
+            // pull in-game time and store it
+            var timeBytes = await Connection.ReadBytesAsync((uint)OffsetHelper.TimeAddress, TimeBlock.SIZE, token).ConfigureAwait(false);
+            LastTimeState = timeBytes.ToClass<TimeBlock>();
+            LogUtil.LogInfo("Started at in-game time: " + LastTimeState.ToString(), Config.IP);
+
             if (Config.ForceUpdateAnchors)
                 LogUtil.LogInfo("Force update anchors set to true, no functionality will activate", Config.IP);
 
@@ -195,7 +201,9 @@ namespace SysBot.ACNHOrders
                     if (Config.DodoModeConfig.MashB)
                         for (int i = 0; i < 5; ++i)
                             await Click(SwitchButton.B, 0_200, token).ConfigureAwait(false);
-                    
+
+                    var timeBytes = await Connection.ReadBytesAsync((uint)OffsetHelper.TimeAddress, TimeBlock.SIZE, token).ConfigureAwait(false);
+                    LastTimeState = timeBytes.ToClass<TimeBlock>();
 
                     await DropLoop(token).ConfigureAwait(false);
 
@@ -318,6 +326,9 @@ namespace SysBot.ACNHOrders
                 LastArrival = string.Empty;
                 CurrentUserName = string.Empty;
             }
+
+            var timeBytes = await Connection.ReadBytesAsync((uint)OffsetHelper.TimeAddress, TimeBlock.SIZE, token).ConfigureAwait(false);
+            LastTimeState = timeBytes.ToClass<TimeBlock>();
 
             await Task.Delay(1_000, token).ConfigureAwait(false);
         }

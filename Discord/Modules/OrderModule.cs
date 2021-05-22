@@ -284,7 +284,7 @@ namespace SysBot.ACNHOrders
         {
             if (Globals.Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
             {
-                await ReplyAsync("There is no queue in dodo restore mode.");
+                await ReplyAsync("There is no queue in dodo restore mode.").ConfigureAwait(false);
                 return;
             }
 
@@ -296,6 +296,32 @@ namespace SysBot.ACNHOrders
             {
                 await ReplyAsync($"{e.Message}: Are your DMs open?").ConfigureAwait(false);
             }
+        }
+
+        [Command("gameTime")]
+        [Alias("gt")]
+        [Summary("Prints the last checked (current) in-game time.")]
+        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
+        public async Task GetGameTime()
+        {
+
+            var bot = Globals.Bot;
+            var cooldown = bot.Config.OrderConfig.PositionCommandCooldown;
+            if (!CanCommand(Context.User.Id, cooldown, true))
+            {
+                await ReplyAsync($"{Context.User.Mention} - This command has a {cooldown} second cooldown. Use this bot responsibly.").ConfigureAwait(false);
+                return;
+            }
+
+            if (Globals.Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
+            {
+                var nooksMessage = (bot.LastTimeState.Hour >= 22 || bot.LastTimeState.Hour < 8) ? "Nook's Cranny is closed" : "Nook's Cranny is expected to be open.";
+                await ReplyAsync($"The current in-game time is: {bot.LastTimeState} \r\n{nooksMessage}").ConfigureAwait(false);
+                return;
+            }
+
+            await ReplyAsync($"Last order started at: {bot.LastTimeState}").ConfigureAwait(false);
+            return;
         }
 
         private async Task AttemptToQueueRequest(IReadOnlyCollection<Item> items, SocketUser orderer, ISocketMessageChannel msgChannel, VillagerRequest? vr, bool catalogue = false)
