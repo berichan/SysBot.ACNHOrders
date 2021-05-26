@@ -15,6 +15,7 @@ namespace SysBot.ACNHOrders
         private readonly DiscordSocketClient _client;
         private readonly CrossBot Bot;
         public ulong Owner = ulong.MaxValue;
+        public bool Ready = false;
 
         // Keep the CommandService and DI container around for use with commands.
         // These two types require you install the Discord.Net.Commands package.
@@ -103,6 +104,7 @@ namespace SysBot.ACNHOrders
             await InitCommands().ConfigureAwait(false);
 
             // Login and connect.
+            _client.Ready += ClientReady;
             await _client.LoginAsync(TokenType.Bot, apiToken).ConfigureAwait(false);
             await _client.StartAsync().ConfigureAwait(false);
 
@@ -115,14 +117,16 @@ namespace SysBot.ACNHOrders
             var app = await _client.GetApplicationInfoAsync().ConfigureAwait(false);
             Owner = app.Owner.Id;
 
-            _client.Ready += ClientReady;
-
             // Wait infinitely so your bot actually stays connected.
             await MonitorStatusAsync(token).ConfigureAwait(false);
         }
 
         private async Task ClientReady()
         {
+            if (Ready)
+                return;
+            Ready = true;
+
             // Add logging forwarders
             foreach (var cid in Bot.Config.LoggingChannels)
             {

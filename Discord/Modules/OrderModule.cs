@@ -304,7 +304,6 @@ namespace SysBot.ACNHOrders
         [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task GetGameTime()
         {
-
             var bot = Globals.Bot;
             var cooldown = bot.Config.OrderConfig.PositionCommandCooldown;
             if (!CanCommand(Context.User.Id, cooldown, true))
