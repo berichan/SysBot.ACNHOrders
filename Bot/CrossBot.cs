@@ -731,7 +731,10 @@ namespace SysBot.ACNHOrders
 
             // Ensure we're on overworld before exiting
             while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false) != OverworldState.Overworld)
+            {
                 await Task.Delay(1_000, token).ConfigureAwait(false);
+                await Click(SwitchButton.B, 0_300, token).ConfigureAwait(false);
+            }
 
             // finish "circle in" animation
             await Task.Delay(1_200, token).ConfigureAwait(false);
