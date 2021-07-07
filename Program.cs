@@ -14,7 +14,7 @@ namespace SysBot.ACNHOrders
         private static async Task Main(string[] args)
         {
             Console.WriteLine("Starting up...");
-            if (args.Length > 1)
+            if (args.Length > 0)
                 Console.WriteLine("This program does not support command line arguments.");
 
             if (!File.Exists(ConfigPath))
