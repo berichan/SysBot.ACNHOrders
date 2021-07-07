@@ -8,25 +8,37 @@ namespace SysBot.ACNHOrders
 {
     internal static class Program
     {
-        private const string ConfigPath = "config.json";
-        private const string TwitchPath = "twitch.json";
+        private const string DefaultConfigPath = "config.json";
+        private const string DefaultTwitchPath = "twitch.json";
 
         private static async Task Main(string[] args)
         {
-            Console.WriteLine("Starting up...");
-            if (args.Length > 1)
-                Console.WriteLine("This program does not support command line arguments.");
+            string configPath;
 
-            if (!File.Exists(ConfigPath))
+            Console.WriteLine("Starting up...");
+            if (args.Length > 0) {
+                if (args.Length > 1) {
+                    Console.WriteLine("Too many arguments supplied and will be ignored.");
+                    configPath = DefaultConfigPath;
+                }
+                else {
+                    configPath = args[0];
+                }
+            }
+            else {
+                configPath = DefaultConfigPath;
+            }
+
+            if (!File.Exists(configPath))
             {
-                CreateConfigQuit();
+                CreateConfigQuit(configPath);
                 return;
             }
 
-            if (!File.Exists(TwitchPath))
-                SaveConfig(new TwitchConfig(), TwitchPath);
+            if (!File.Exists(DefaultTwitchPath))
+                SaveConfig(new TwitchConfig(), DefaultTwitchPath);
 
-            var json = File.ReadAllText(ConfigPath);
+            var json = File.ReadAllText(configPath);
             var config = JsonSerializer.Deserialize<CrossBotConfig>(json);
             if (config == null)
             {
@@ -35,7 +47,7 @@ namespace SysBot.ACNHOrders
                 return;
             }
 
-            json = File.ReadAllText(TwitchPath);
+            json = File.ReadAllText(DefaultTwitchPath);
             var twitchConfig = JsonSerializer.Deserialize<TwitchConfig>(json);
             if (twitchConfig == null)
             {
@@ -44,8 +56,8 @@ namespace SysBot.ACNHOrders
                 return;
             }
 
-            SaveConfig(config, ConfigPath);
-            SaveConfig(twitchConfig, TwitchPath);
+            SaveConfig(config, configPath);
+            SaveConfig(twitchConfig, DefaultTwitchPath);
             await BotRunner.RunFrom(config, CancellationToken.None, twitchConfig).ConfigureAwait(false);
             WaitKeyExit();
         }
@@ -57,10 +69,9 @@ namespace SysBot.ACNHOrders
             File.WriteAllText(path, json);
         }
 
-        private static void CreateConfigQuit()
+        private static void CreateConfigQuit(string configPath)
         {
-            SaveConfig(new CrossBotConfig {IP = "192.168.0.1", Port = 6000}, ConfigPath);
-            SaveConfig(new TwitchConfig(), TwitchPath);
+            SaveConfig(new CrossBotConfig {IP = "192.168.0.1", Port = 6000}, configPath);
             Console.WriteLine("Created blank config file. Please configure it and restart the program.");
             WaitKeyExit();
         }
