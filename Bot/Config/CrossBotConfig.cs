@@ -109,6 +109,9 @@ namespace SysBot.ACNHOrders
         /// <summary> Should we press up once before starting the game? Not guaranteed to avoid the update, but the bot will try its best. </summary>
         public bool AvoidSystemUpdate { get; set; } = true;
 
+        /// <summary> Experimental SignalR functionality </summary>
+        public WebConfig SignalrConfig { get; set; } = new();
+
         #endregion
 
         public bool CanUseCommandUser(ulong authorId) => Users.Count == 0 || Users.Contains(authorId);

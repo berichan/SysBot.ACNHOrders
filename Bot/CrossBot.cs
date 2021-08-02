@@ -29,6 +29,7 @@ namespace SysBot.ACNHOrders
         public readonly VisitorListHelper VisitorList;
         public readonly DummyOrder<Item> DummyRequest = new();
         public readonly ISwitchConnectionAsync SwitchConnection;
+        public readonly ConcurrentBag<IDodoRestoreNotifier> DodoNotifiers = new();
 
         public readonly DropBotState State;
 
@@ -180,6 +181,8 @@ namespace SysBot.ACNHOrders
                 if (DodoPosition.IsDodoValid(DodoCode) && Config.DodoModeConfig.EchoDodoChannels.Count > 0)
                     await AttemptEchoHook($"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] The Dodo code for {TownName} has updated, the new Dodo code is: {DodoCode}.", Config.DodoModeConfig.EchoDodoChannels, token).ConfigureAwait(false);
 
+                NotifyDodo(DodoCode);
+
                 await SaveDodoCodeToFile(token).ConfigureAwait(false);
 
                 while (await IsNetworkSessionActive(token).ConfigureAwait(false))
@@ -192,6 +195,8 @@ namespace SysBot.ACNHOrders
                         await DodoRestoreLoop(true, token).ConfigureAwait(false);
                         return;
                     }
+
+                    NotifyState(GameState.Active);
 
                     var owState = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false);
                     if (Config.DodoModeConfig.RefreshMap)
@@ -258,6 +263,7 @@ namespace SysBot.ACNHOrders
 
                 if (Config.DodoModeConfig.EchoDodoChannels.Count > 0)
                     await AttemptEchoHook($"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] Crash detected on {TownName}. Please wait while I get a new Dodo code.", Config.DodoModeConfig.EchoDodoChannels, token).ConfigureAwait(false);
+                NotifyState(GameState.Fetching);
                 LogUtil.LogInfo($"Crash detected on {TownName}, awaiting overworld to fetch new dodo.", Config.IP);
                 await ResetFiles(token).ConfigureAwait(false);
                 await Task.Delay(5_000, token).ConfigureAwait(false);
@@ -1191,47 +1197,6 @@ namespace SysBot.ACNHOrders
             return InventoryValidator.ValidateItemBinary(data);
         }
 
-        private async Task ViewPlayerVectors(CancellationToken token)
-        {
-            //int index = 0;
-            byte[] a1 = new byte[2]; byte[] b1 = new byte[2];
-            while (!token.IsCancellationRequested)
-            {
-                ulong offset = await DodoPosition.FollowMainPointer(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false);
-                LogUtil.LogInfo($"Pointer solved: {offset}", Config.IP);
-                var bytesPos = await SwitchConnection.ReadBytesAbsoluteAsync(offset, 0xC, token).ConfigureAwait(false);
-                var bytesRot = await SwitchConnection.ReadBytesAbsoluteAsync(offset + 0x3C, 0x4, token).ConfigureAwait(false);
-                var state = await DodoPosition.GetOverworldState(offset, token).ConfigureAwait(false);
-                LogUtil.LogInfo($"State: {state}", Config.IP);
-                Console.WriteLine("Byte array 1: ");
-                foreach (var b in bytesPos)
-                    Console.Write($"{b}, ");
-                Console.WriteLine();
-                Console.WriteLine("Byte array 2: ");
-                foreach (var b in bytesRot)
-                    Console.Write($"{b}, ");
-                Console.WriteLine();
-
-                var rot = BitConverter.ToSingle(bytesRot, 0);
-                Console.WriteLine($"Parsed second value: {rot}");
-
-                await Task.Delay(0_500, token).ConfigureAwait(false);
-
-                /*if (index == 0)
-                {
-                    a1 = bytesPos;
-                    b1 = bytesRot;
-                }
-                if (index == 10)
-                {
-                    index = 0;
-                    await Connection.WriteBytesAbsoluteAsync(a1, offset, token);
-                    await Connection.WriteBytesAbsoluteAsync(b1, offset + 0x3A, token);
-                }
-                index++;*/
-            }
-        }
-
         // Additional
         private readonly byte[] MaxTextSpeed = new byte[1] { 3 };
         public async Task ClickConversation(SwitchButton b, int delay, CancellationToken token)
@@ -1248,6 +1213,18 @@ namespace SysBot.ACNHOrders
         }
 
         public async Task UpdateBlocker(bool show, CancellationToken token) => await FileUtil.WriteBytesToFileAsync(show ? Encoding.UTF8.GetBytes(Config.BlockerEmoji) : Array.Empty<byte>(), "blocker.txt", token).ConfigureAwait(false);
+
+        private void NotifyDodo(string dodo)
+        {
+            foreach (var n in DodoNotifiers)
+                n.NotifyServerOfDodoCode(dodo);
+        }
+
+        private void NotifyState(GameState st)
+        {
+            foreach (var n in DodoNotifiers)
+                n.NotifyServerOfState(st);
+        }
         
     }
 }

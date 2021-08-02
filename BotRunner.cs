@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using SysBot.Base;
 using SysBot.ACNHOrders.Twitch;
+using SysBot.ACNHOrders.Signalr;
 
 namespace SysBot.ACNHOrders
 {
@@ -34,6 +35,12 @@ namespace SysBot.ACNHOrders
             {
                 bot.Log("Starting Twitch.");
                 var _ = new TwitchCrossBot(tConfig, bot);
+            }
+
+            if (!string.IsNullOrWhiteSpace(config.SignalrConfig.URIEndpoint))
+            {
+                bot.Log("Starting Web.");
+                var _ = new SignalrCrossBot(config.SignalrConfig, bot);
             }
 
             if (config.SkipConsoleBotCreation)
