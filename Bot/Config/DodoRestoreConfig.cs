@@ -56,5 +56,8 @@ namespace SysBot.ACNHOrders
 
         /// <summary> When set to true, the bot will mash B when not doing any of the other restore functionality </summary>
         public bool MashB { get; set; }
+
+        /// <summary> When set to anything above -1, the bot will automatically fetch a new dodo every x minutes if the island is empty </summary>
+        public int AutoNewDodoTimeMinutes { get; set; } = -1;
     }
 }

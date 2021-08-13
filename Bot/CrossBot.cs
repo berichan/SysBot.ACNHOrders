@@ -49,6 +49,7 @@ namespace SysBot.ACNHOrders
         public string CurrentUserName { get; set; } = string.Empty;
         public bool GameIsDirty { get; set; } = true; // Dirty if crashed or last user didn't arrive/leave correctly
         public ulong ChatAddress { get; set; } = 0;
+        public DateTime LastDodoFetchTime { get; private set; } = DateTime.Now;
 
         public VillagerHelper Villagers { get; private set; } = VillagerHelper.Empty;
 
@@ -192,6 +193,7 @@ namespace SysBot.ACNHOrders
                     if (RestoreRestartRequested)
                     {
                         RestoreRestartRequested = false;
+                        await AttemptEchoHook($"> [{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] Please wait for the new dodo code for {TownName}.", Config.DodoModeConfig.EchoDodoChannels, token).ConfigureAwait(false);
                         await DodoRestoreLoop(true, token).ConfigureAwait(false);
                         return;
                     }
@@ -259,6 +261,10 @@ namespace SysBot.ACNHOrders
                         // Write one full map with newly loaded nhl
                         await ClearMapAndSpawnInternally(null, Map, Config.DodoModeConfig.RefreshTerrainData, token, true).ConfigureAwait(false);
                     }
+
+                    if (Config.DodoModeConfig.AutoNewDodoTimeMinutes > -1)
+                        if ((DateTime.Now - LastDodoFetchTime).TotalMinutes >= Config.DodoModeConfig.AutoNewDodoTimeMinutes && VisitorList.VisitorCount == 1) // 1 for host
+                            RestoreRestartRequested = true;
                 }
 
                 if (Config.DodoModeConfig.EchoDodoChannels.Count > 0)
@@ -300,7 +306,7 @@ namespace SysBot.ACNHOrders
             await SaveDodoCodeToFile(token).ConfigureAwait(false);
             LogUtil.LogError($"Dodo restore successful. New dodo for {TownName} is {DodoCode} and saved to {Config.DodoModeConfig.DodoRestoreFilename}.", Config.IP);
             if (Config.DodoModeConfig.RefreshMap) // clean map
-                await ClearMapAndSpawnInternally(null, Map, Config.DodoModeConfig.RefreshTerrainData, token, true).ConfigureAwait(false); 
+                await ClearMapAndSpawnInternally(null, Map, Config.DodoModeConfig.RefreshTerrainData, token, true).ConfigureAwait(false);
         }
 
         // hacked in discord forward, should really be a delegate or resusable forwarder
@@ -591,6 +597,7 @@ namespace SysBot.ACNHOrders
             }
 
             DodoCode = DodoPosition.DodoCode;
+            LastDodoFetchTime = DateTime.Now;
 
             if (!ignoreInjection)
                 order.OrderReady(this, $"You have {(int)(Config.OrderConfig.WaitForArriverTime * 0.9f)} seconds to arrive. My island name is **{TownName}**", DodoCode);
