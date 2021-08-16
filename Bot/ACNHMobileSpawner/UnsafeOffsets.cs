@@ -34,6 +34,12 @@ namespace ACNHMobileSpawner
             throw new NotImplementedException();
         }
 
+        public static async Task SetAndEncryptFloats(ISwitchConnectionAsync connection, CancellationToken token, long[] jumps, float[] values)
+        {
+            await EnsureEncryptionConstant(connection, token);
+            throw new NotImplementedException();
+        }
+
         public static float Lerp(float firstFloat, float secondFloat, float by) => firstFloat * (1 - by) + secondFloat * by;
 
         public static readonly long[] OnlinePCJumps = Array.Empty<long>();
