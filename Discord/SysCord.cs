@@ -134,7 +134,10 @@ namespace SysBot.ACNHOrders
             {
                 var c = (ISocketMessageChannel)_client.GetChannel(cid);
                 if (c == null)
-                    Console.WriteLine($"{cid} is null");
+                {
+                    Console.WriteLine($"{cid} is null or couldn't be found.");
+                    continue;
+                }
                 static string GetMessage(string msg, string identity) => $"> [{DateTime.Now:hh:mm:ss}] - {identity}: {msg}";
                 void Logger(string msg, string identity) => c.SendMessageAsync(GetMessage(msg, identity));
                 Action<string, string> l = Logger;
