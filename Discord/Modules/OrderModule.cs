@@ -238,6 +238,7 @@ namespace SysBot.ACNHOrders
         [Command("removeAlt")]
         [Alias("removeLog", "rmAlt")]
         [Summary("Removes an identity (name-id) from the local user-to-villager AntiAbuse database")]
+        [RequireSudo]
         public async Task RemoveAltAsync([Remainder]string identity)
         {
             if (AntiAbuse.CurrentInstance.Remove(identity))

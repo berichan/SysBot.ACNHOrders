@@ -104,9 +104,9 @@ namespace SysBot.ACNHOrders
             await InitCommands().ConfigureAwait(false);
 
             // Login and connect.
-            _client.Ready += ClientReady;
             await _client.LoginAsync(TokenType.Bot, apiToken).ConfigureAwait(false);
             await _client.StartAsync().ConfigureAwait(false);
+            _client.Ready += ClientReady;
 
             await Task.Delay(5_000, token).ConfigureAwait(false);
 
@@ -127,10 +127,14 @@ namespace SysBot.ACNHOrders
                 return;
             Ready = true;
 
+            await Task.Delay(1_000).ConfigureAwait(false);
+
             // Add logging forwarders
             foreach (var cid in Bot.Config.LoggingChannels)
             {
                 var c = (ISocketMessageChannel)_client.GetChannel(cid);
+                if (c == null)
+                    Console.WriteLine($"{cid} is null");
                 static string GetMessage(string msg, string identity) => $"> [{DateTime.Now:hh:mm:ss}] - {identity}: {msg}";
                 void Logger(string msg, string identity) => c.SendMessageAsync(GetMessage(msg, identity));
                 Action<string, string> l = Logger;
