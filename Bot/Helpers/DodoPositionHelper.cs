@@ -87,6 +87,9 @@ namespace SysBot.ACNHOrders
             for (int i = 0; i < 5; ++i)
                 await BotRunner.Click(SwitchButton.B, 1_000, token).ConfigureAwait(false);
 
+            if (Globals.Bot.Config.AttemptMitigateDialogueWarping)
+                await AttemptCheckForEndOfConversation(10, token).ConfigureAwait(false);
+
             await Connection.WriteBytesAsync(new byte[5], Offset, token).ConfigureAwait(false);
             DodoCode = string.Empty;
         }
@@ -142,6 +145,9 @@ namespace SysBot.ACNHOrders
             for (int i = 0; i < 4; ++i)
                 await BotRunner.ClickConversation(SwitchButton.B, 1_000, token).ConfigureAwait(false);
             await BotRunner.UpdateBlocker(false, token).ConfigureAwait(false);
+
+            if (Globals.Bot.Config.AttemptMitigateDialogueWarping)
+                await AttemptCheckForEndOfConversation(10, token).ConfigureAwait(false);
 
             // Obtain Dodo code from offset and store it.	
             byte[] bytes = await Connection.ReadBytesAsync(Offset, 0x5, token).ConfigureAwait(false);
@@ -222,6 +228,9 @@ namespace SysBot.ACNHOrders
                 await BotRunner.Click(SwitchButton.B, 1_000, token).ConfigureAwait(false);
             await BotRunner.UpdateBlocker(false, token).ConfigureAwait(false);
 
+            if (Globals.Bot.Config.AttemptMitigateDialogueWarping)
+                await AttemptCheckForEndOfConversation(10, token).ConfigureAwait(false);
+
             // Obtain Dodo code from offset and store it.	
             byte[] bytes = await Connection.ReadBytesAsync(Offset, 0x5, token).ConfigureAwait(false);
             DodoCode = Encoding.UTF8.GetString(bytes, 0, 5);
@@ -278,6 +287,9 @@ namespace SysBot.ACNHOrders
 
             await BotRunner.SwitchConnection.SendRaw(unFreezeBytes, token).ConfigureAwait(false);
 
+            if (Globals.Bot.Config.AttemptMitigateDialogueWarping)
+                await AttemptCheckForEndOfConversation(10, token).ConfigureAwait(false);
+
             // Obtain Dodo code from offset and store it.	
             byte[] bytes = await Connection.ReadBytesAsync(Offset, 0x5, token).ConfigureAwait(false);
             DodoCode = Encoding.UTF8.GetString(bytes, 0, 5);
@@ -285,6 +297,20 @@ namespace SysBot.ACNHOrders
 
             // Wait for loading screen.	
             await Task.Delay(2_000, token).ConfigureAwait(false);
+        }
+
+        private async Task AttemptCheckForEndOfConversation(int maxChecks, CancellationToken token)
+        {
+            await Connection.WriteBytesAsync(new byte[1], (uint)ACNHMobileSpawner.OffsetHelper.TextSpeedAddress, token).ConfigureAwait(false);
+            await BotRunner.Click(SwitchButton.B, 1_000, token).ConfigureAwait(false);
+
+            for (int i = 0; i < maxChecks-1; ++i)
+            {
+                var currentInstantTextState = await Connection.ReadBytesAsync((uint)ACNHMobileSpawner.OffsetHelper.TextSpeedAddress, 1, token).ConfigureAwait(false);
+                if (currentInstantTextState[0] == 0)
+                    break;
+                await BotRunner.Click(SwitchButton.B, 1_000, token).ConfigureAwait(false);
+            }
         }
     }
 }

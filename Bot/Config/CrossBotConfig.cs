@@ -82,6 +82,9 @@ namespace SysBot.ACNHOrders
         /// <summary> How much extra time, if any, should we wait while orville is connecting to the internet in milliseconds </summary>
         public int ExtraTimeConnectionWait { get; set; } = 1000;
 
+        /// <summary> Should we check instant text offset to see if we are still in dialogue, and if so should we keep mashing B? </summary>
+        public bool AttemptMitigateDialogueWarping { get; set; } = false;
+
         /// <summary> Should we not use instant text? </summary>
         public bool LegacyDodoCodeRetrieval { get; set; } = false;
 
