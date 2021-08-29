@@ -306,10 +306,10 @@ namespace SysBot.ACNHOrders
 
             for (int i = 0; i < maxChecks-1; ++i)
             {
+                await BotRunner.Click(SwitchButton.B, 1_000, token).ConfigureAwait(false);
                 var currentInstantTextState = await Connection.ReadBytesAsync((uint)ACNHMobileSpawner.OffsetHelper.TextSpeedAddress, 1, token).ConfigureAwait(false);
                 if (currentInstantTextState[0] == 0)
                     break;
-                await BotRunner.Click(SwitchButton.B, 1_000, token).ConfigureAwait(false);
             }
         }
     }
