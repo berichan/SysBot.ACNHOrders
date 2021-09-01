@@ -59,5 +59,8 @@ namespace SysBot.ACNHOrders
 
         /// <summary> When set to anything above -1, the bot will automatically fetch a new dodo every x minutes if the island is empty </summary>
         public int AutoNewDodoTimeMinutes { get; set; } = -1;
+
+        /// <summary> What, if anything, should the bot react with if someone successfully gets DMed the dodo code? </summary>
+        public string SuccessfulDodoCodeSendReaction { get; set; } = "";
     }
 }
