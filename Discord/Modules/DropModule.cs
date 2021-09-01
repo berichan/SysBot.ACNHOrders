@@ -74,7 +74,7 @@ namespace SysBot.ACNHOrders
             {
                 try
                 {
-                    IEmote emote = reaction.StartsWith('<') ? Emote.Parse(reaction) : new Emoji(reaction);
+                    IEmote emote = reaction.StartsWith("<") ? Emote.Parse(reaction) : new Emoji(reaction);
                     await Context.Message.AddReactionAsync(emote);
                 }
                 catch 
