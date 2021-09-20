@@ -25,3 +25,5 @@ Nara,Nagome,naraNagome-874757702784540703
 Nara,Nagome,tuputifavorita-874756324578185246
 Ted,Sugar MiNT,bertpatz-259537956312711168
 Bert,Moonshine,bertpatz-259537956312711168
+Fxxr,FrankeeDIS,frankee-417356750975533057
+Ayase,Gerkung,Ayase-458932954794688512
