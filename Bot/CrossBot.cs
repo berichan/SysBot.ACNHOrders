@@ -656,7 +656,9 @@ namespace SysBot.ACNHOrders
             {
                 var newnid = BitConverter.ToUInt64(nid, 0);
                 var newnislid = BitConverter.ToUInt32(islandId, 0);
-                IsSafeNewAbuse = NewAntiAbuse.Instance.LogUser(newnislid, newnid, order.UserGuid.ToString(), $"Name and ID: {order.VillagerName}-{order.UserGuid}, Villager name and town: {LastArrival}-{LastArrivalIsland}");
+                var plaintext = $"Name and ID: {order.VillagerName}-{order.UserGuid}, Villager name and town: {LastArrival}-{LastArrivalIsland}";
+                IsSafeNewAbuse = NewAntiAbuse.Instance.LogUser(newnislid, newnid, order.UserGuid.ToString(), plaintext);
+                LogUtil.LogInfo($"Arrival logged: NID={newnid} TownID={newnid} Order details={plaintext}", Config.IP);
             }
             catch { }
 
