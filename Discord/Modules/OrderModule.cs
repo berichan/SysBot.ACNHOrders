@@ -247,6 +247,18 @@ namespace SysBot.ACNHOrders
                 await ReplyAsync($"{identity} is not a valid identity.").ConfigureAwait(false);
         }
 
+        [Command("removeAltLegacy")]
+        [Alias("removeLogLegacy", "rmAltLegacy")]
+        [Summary("(Uses legacy database) Removes an identity (name-id) from the local user-to-villager AntiAbuse database")]
+        [RequireSudo]
+        public async Task RemoveLegacyAltAsync([Remainder] string identity)
+        {
+            if (LegacyAntiAbuse.CurrentInstance.Remove(identity))
+                await ReplyAsync($"{identity} has been removed from the database.").ConfigureAwait(false);
+            else
+                await ReplyAsync($"{identity} is not a valid identity.").ConfigureAwait(false);
+        }
+
         [Command("visitorList")]
         [Alias("visitors")]
         [Summary("Print the list of visitors on the island (dodo restore mode only).")]

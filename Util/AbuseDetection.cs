@@ -144,11 +144,11 @@ namespace SysBot.ACNHOrders
             return banned == null;
         }
 
-        public bool Remove(string plaintext)
+        public bool Remove(string identity)
         {
-            if (string.IsNullOrWhiteSpace(plaintext))
+            if (string.IsNullOrWhiteSpace(identity))
                 return false;
-            var exists = UserInfoList.FirstOrDefault(x => x.PlaintextName.StartsWith(plaintext));
+            var exists = UserInfoList.FirstOrDefault(x => x.Identity.StartsWith(identity));
             if (exists == default)
                 return false;
 
