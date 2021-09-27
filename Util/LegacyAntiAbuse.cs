@@ -7,13 +7,13 @@ using SysBot.Base;
 
 namespace SysBot.ACNHOrders
 {
-    public class Identifier
+    public class LegacyIdentifier
     {
         public readonly string VillagerName;
         public readonly string TownName;
         public readonly string Identity;
 
-        public Identifier(string vName, string tName, string id)
+        public LegacyIdentifier(string vName, string tName, string id)
         {
             VillagerName = vName;
             TownName = tName;
@@ -25,7 +25,7 @@ namespace SysBot.ACNHOrders
             return $"{VillagerName},{TownName},{Identity}";
         }
 
-        public static Identifier? FromString(string s)
+        public static LegacyIdentifier? FromString(string s)
         {
             if (string.IsNullOrWhiteSpace(s))
                 return null;
@@ -34,24 +34,23 @@ namespace SysBot.ACNHOrders
             if (splits.Length != 3)
                 return null;
 
-            return new Identifier(splits[0], splits[1], splits[2]);
+            return new LegacyIdentifier(splits[0], splits[1], splits[2]);
         }
-
     }
 
-    public class AntiAbuse
+    public class LegacyAntiAbuse
     {
         private const string BanListUri = "https://raw.githubusercontent.com/berichan/SysBot.ACNHOrders/main/Resources/AbuseList.txt";
 
         private const string PathInfo = "userinfo.txt";
         private const string PathBans = "globalban.txt";
 
-        public List<Identifier> UserInfoList { get; private set; } = new();
-        public List<Identifier> GlobalBanList { get; private set; } = new();
+        public List<LegacyIdentifier> UserInfoList { get; private set; } = new();
+        public List<LegacyIdentifier> GlobalBanList { get; private set; } = new();
 
-        public static AntiAbuse CurrentInstance = new();
+        public static LegacyAntiAbuse CurrentInstance = new();
 
-        public AntiAbuse()
+        public LegacyAntiAbuse()
         {
             if (!File.Exists(PathInfo))
             {
@@ -77,7 +76,7 @@ namespace SysBot.ACNHOrders
             var infos = txt.Split(new string[1] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
             foreach (var inf in infos)
             {
-                var ident = Identifier.FromString(inf);
+                var ident = LegacyIdentifier.FromString(inf);
                 if (ident != null)
                     UserInfoList.Add(ident);
             }
@@ -93,7 +92,7 @@ namespace SysBot.ACNHOrders
                 var infos = bans.Split(new string[3] { "\r\n", "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries);
                 foreach (var inf in infos)
                 {
-                    var ident = Identifier.FromString(inf);
+                    var ident = LegacyIdentifier.FromString(inf);
                     if (ident != null)
                         GlobalBanList.Add(ident);
                 }
@@ -135,14 +134,7 @@ namespace SysBot.ACNHOrders
         /// <returns>true:safe, false:abuser</returns>
         public bool LogUser(string user, string town, string id)
         {
-            var exists = UserInfoList.FirstOrDefault(x => x.VillagerName == user && x.TownName == town && x.Identity == id);
-            if (exists == default)
-            {
-                UserInfoList.Add(new Identifier(user, town, id));
-                SaveAllUserInfo();
-            }
-
-            exists = UserInfoList.FirstOrDefault(x => x.VillagerName == user && x.TownName == town && x.Identity != id);
+            var exists = UserInfoList.FirstOrDefault(x => x.VillagerName == user && x.TownName == town && x.Identity != id);
             if (exists != default && exists.Identity != id)
             {
                 LogUtil.LogInfo((Globals.Bot.Config.OrderConfig.PingOnAbuseDetection ? $"Pinging <@{Globals.Self.Owner}>: " : string.Empty) + $"{user} from {town} ({id}) exists with at least one previous identity: {exists.Identity}", Globals.Bot.Config.IP);
@@ -150,7 +142,6 @@ namespace SysBot.ACNHOrders
 
             try { UpdateGlobalBanList(); } catch (Exception e) { LogUtil.LogInfo($"Unable to load banlist: {e.Message}", Globals.Bot.Config.IP); }
             
-
             var banned = GlobalBanList.FirstOrDefault(x => x.VillagerName == user && x.TownName == town);
             return banned == null;
         }

@@ -648,8 +648,20 @@ namespace SysBot.ACNHOrders
                 }
             }
 
+            var nid = await Connection.ReadBytesAsync((uint)OffsetHelper.ArriverNID, 8, token).ConfigureAwait(false);
+            var islandId = await Connection.ReadBytesAsync((uint)OffsetHelper.ArriverVillageId, 4, token).ConfigureAwait(false);
+
+            bool IsSafeNewAbuse = true;
+            try
+            {
+                var newnid = BitConverter.ToUInt64(nid, 0);
+                var newnislid = BitConverter.ToUInt32(islandId, 0);
+                IsSafeNewAbuse = NewAntiAbuse.Instance.LogUser(newnislid, newnid, order.UserGuid.ToString(), $"Name and ID: {order.VillagerName}-{order.UserGuid}, Villager name and town: {LastArrival}-{LastArrivalIsland}");
+            }
+            catch { }
+
             // Check the user against known abusers
-            var IsSafe = AntiAbuse.CurrentInstance.LogUser(LastArrival, LastArrivalIsland, $"{order.VillagerName}-{order.UserGuid}");
+            var IsSafe = LegacyAntiAbuse.CurrentInstance.LogUser(LastArrival, LastArrivalIsland, $"{order.VillagerName}-{order.UserGuid}") && IsSafeNewAbuse;
             if (!IsSafe)
             {
                 if (!Config.AllowKnownAbusers)

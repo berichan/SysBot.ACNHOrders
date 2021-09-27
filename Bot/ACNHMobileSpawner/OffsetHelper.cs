@@ -35,6 +35,8 @@
         // other addresses
         public const ulong ArriverNameLocAddress = 0xB67D67B8;
         public const ulong ArriverVillageLocAddress = ArriverNameLocAddress - 0x1C;
+        public const ulong ArriverVillageId = ArriverVillageLocAddress - 0x4;
+        public const ulong ArriverNID = ArriverNameLocAddress - 0x3E8;
 
         public const ulong TextSpeedAddress = 0xBACF20C;
         public const ulong ChatBufferSize = 0x1E;
