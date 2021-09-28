@@ -258,7 +258,7 @@ namespace SysBot.ACNHOrders
                     await msg.Channel.SendMessageAsync("You are not permitted to use this command.").ConfigureAwait(false);
                     return true;
                 }
-                if (!mgr.CanUseCommandChannel(msg.Channel.Id) && msg.Author.Id != Owner)
+                if (!mgr.CanUseCommandChannel(msg.Channel.Id) && msg.Author.Id != Owner && !mgr.CanUseSudo(msg.Author.Id))
                 {
                     await msg.Channel.SendMessageAsync("You can't use that command here.").ConfigureAwait(false);
                     return true;
