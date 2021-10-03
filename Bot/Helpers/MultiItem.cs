@@ -84,8 +84,8 @@ namespace SysBot.ACNHOrders
             var len = itemsToAdd.Length;
             if (len < MaxOrder && fillToMax)
             {
-                // repeat last item 
-                Item toDupe = itemsToAdd[len - 1];
+                // repeat last item in the original order
+                Item toDupe = items[items.Length - 1];
                 var dupes = DeepDuplicateItem(toDupe, MaxOrder - len);
                 itemsToAdd = itemsToAdd.Concat(dupes).ToArray();
 

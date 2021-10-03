@@ -12,6 +12,7 @@ namespace SysBot.ACNHOrders.Tests
         [InlineData("lucky cat", 131)]
         [InlineData("(DIY recipe)", 0x00000295000016A2)]
         [InlineData("Aran-knit sweater (White)", 7672)]
+        [InlineData("impish wings (Black)", 0x3464)]
         public static void TestDuplicateVariation(string name, ulong itemValueParse)
         {
             var items = ItemParser.GetItemsFromUserInput(itemValueParse.ToString("X"), new DropBotConfig(), ItemDestination.PlayerDropped);
@@ -34,8 +35,10 @@ namespace SysBot.ACNHOrders.Tests
                 if (!bodyVariations[0].StartsWith("0"))
                     varCount++;
 
-                multiItem.ItemArray.Items[varCount].ItemId.Should().Be(Item.NONE);
-                multiItem.ItemArray.Items[varCount+1].ItemId.Should().Be(currentItem.ItemId);
+                multiItem.ItemArray.Items[0].ItemId.Should().Be(currentItem.ItemId);
+                multiItem.ItemArray.Items[1].Count.Should().Be(1);
+                multiItem.ItemArray.Items[varCount].ItemId.Should().Be(currentItem.ItemId);
+                multiItem.ItemArray.Items[varCount].Count.Should().Be(0);
 
                 foreach (var itm in multiItem.ItemArray.Items)
                 {
