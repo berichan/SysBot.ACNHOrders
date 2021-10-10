@@ -667,7 +667,10 @@ namespace SysBot.ACNHOrders
                 IsSafeNewAbuse = NewAntiAbuse.Instance.LogUser(newnislid, newnid, order.UserGuid.ToString(), plaintext);
                 LogUtil.LogInfo($"Arrival logged: NID={newnid} TownID={newnislid} Order details={plaintext}", Config.IP);
             }
-            catch { }
+            catch(Exception e) 
+            {
+                LogUtil.LogInfo(e.Message + "\r\n" + e.StackTrace, Config.IP);
+            }
 
             // Check the user against known abusers
             var IsSafe = LegacyAntiAbuse.CurrentInstance.LogUser(LastArrival, LastArrivalIsland, $"{order.VillagerName}-{order.UserGuid}") && IsSafeNewAbuse;
