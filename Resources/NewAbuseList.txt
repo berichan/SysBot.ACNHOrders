@@ -1,2 +1,6 @@
 {"HashIdentifier":2289252745,"NIDIdentifier":16669298524797868867,"Identity":"417356750975533057","PlaintextName":"FrankeeDIS-Fxxr"}
 {"HashIdentifier":2574451012,"NIDIdentifier":4979409814224718873,"Identity":"889948829019947079","PlaintextName":"Zeon-Tomoe"}
+{"HashIdentifier":4191420637,"NIDIdentifier":1003515944195829291,"Identity":"884704180336480306","PlaintextName":"Dorami-Reth"}
+{"HashIdentifier":3284780305,"NIDIdentifier":15311842240049599173,"Identity":"258350439605600260","PlaintextName":"Sakurachan-Draconis"}
+{"HashIdentifier":3685806636,"NIDIdentifier":10200660478763512549,"Identity":"839114112550174761","PlaintextName":"Venus-Draconis"}
+{"HashIdentifier":2833446239,"NIDIdentifier":6347948029643714157,"Identity":"597261101171736591","PlaintextName":"Kokoa-Itsuki"}

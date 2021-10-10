@@ -70,7 +70,7 @@ namespace SysBot.ACNHOrders
         {
             UserInfoList.Clear();
             var txt = File.ReadAllText(PathInfo);
-            var infos = txt.Split(new string[1] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+            var infos = txt.Split(new string[3] { "\r\n", "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries);
             foreach (var inf in infos)
             {
                 var ident = HashNIDIdentifier<T>.FromString(inf);
@@ -125,7 +125,7 @@ namespace SysBot.ACNHOrders
             if (!string.IsNullOrWhiteSpace(id))
             {
                 var exists = UserInfoList.FirstOrDefault(x => x.HashIdentifier != null && x.HashIdentifier.Equals(hashid) && x.NIDIdentifier.Equals(nid) && x.Identity.Equals(id));
-                if (exists == default)
+                if (exists == null)
                 {
                     UserInfoList.Add(new HashNIDIdentifier<T>(hashid, nid, id, plaintext));
                     SaveAllUserInfo();
@@ -160,7 +160,16 @@ namespace SysBot.ACNHOrders
 
     public class NewAntiAbuse : AbuseDetection<uint>
     {
-        public static NewAntiAbuse Instance = new();
+        private static NewAntiAbuse? instance = null;
+        public static NewAntiAbuse Instance
+        {
+            get
+            {
+                if (instance == null)
+                    instance = new();
+                return instance;
+            }
+        }
 
         public NewAntiAbuse():base(){}
     } 
