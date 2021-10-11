@@ -250,14 +250,14 @@ namespace SysBot.ACNHOrders.Twitch
             if (Globals.Bot.CurrentUserId == callerId)
                 return true;
 
-            if (!cfg.DodoModeConfig.LimitedDodoRestoreOnlyMode)
+            if (!cfg.AllowDrop)
             {
-                error = $"You are only permitted to use this command while on the island during your order, and only if you have forgotten something in your order.";
+                error = $"AllowDrop is currently set to false in the main config.";
                 return false;
             }
-            else if (!cfg.DodoModeConfig.AllowDrop)
+            else if (!cfg.DodoModeConfig.LimitedDodoRestoreOnlyMode)
             {
-                error = $"AllowDrop is currently set to false is the discord configuration.";
+                error = $"You are only permitted to use this command while on the island during your order, and only if you have forgotten something in your order.";
                 return false;
             }
 

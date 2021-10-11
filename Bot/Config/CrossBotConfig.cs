@@ -46,6 +46,9 @@ namespace SysBot.ACNHOrders
         /// <remarks> Only disable this as a last resort, and you have corrupted your item metadata through other means. </remarks>
         public bool RequireValidInventoryMetadata { get; set; } = true;
 
+        /// <summary> When enabled, players will be allowed to use the drop command in dodorestore mode, or while on the island in order mode </summary>
+        public bool AllowDrop { get; set; } = true;
+
         public DropBotConfig DropConfig { get; set; } = new();
 
         public OrderBotConfig OrderConfig { get; set; } = new();

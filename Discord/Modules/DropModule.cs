@@ -178,14 +178,14 @@ namespace SysBot.ACNHOrders
             if (Globals.Bot.CurrentUserId == Context.User.Id)
                 return true;
 
-            if (!cfg.DodoModeConfig.LimitedDodoRestoreOnlyMode)
-            {
-                await ReplyAsync($"{Context.User.Mention} - You are only permitted to use this command while on the island during your order, and only if you have forgotten something in your order.");
-                return false;
-            }
-            else if (!cfg.DodoModeConfig.AllowDrop)
+            if (!cfg.AllowDrop)
             {
                 await ReplyAsync($"AllowDrop is currently set to false.");
+                return false;
+            }
+            else if (!cfg.DodoModeConfig.LimitedDodoRestoreOnlyMode)
+            {
+                await ReplyAsync($"{Context.User.Mention} - You are only permitted to use this command while on the island during your order, and only if you have forgotten something in your order.");
                 return false;
             }
 
