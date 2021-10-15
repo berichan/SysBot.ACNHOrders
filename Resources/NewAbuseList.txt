@@ -4,3 +4,4 @@
 {"HashIdentifier":3284780305,"NIDIdentifier":15311842240049599173,"Identity":"258350439605600260","PlaintextName":"Sakurachan-Draconis"}
 {"HashIdentifier":3685806636,"NIDIdentifier":10200660478763512549,"Identity":"839114112550174761","PlaintextName":"Venus-Draconis"}
 {"HashIdentifier":2833446239,"NIDIdentifier":6347948029643714157,"Identity":"597261101171736591","PlaintextName":"Kokoa-Itsuki"}
+{"HashIdentifier":4033142112,"NIDIdentifier":17154453989627296505,"Identity":"844294401399324713","PlaintextName":"GhibliLand-Maï"}
