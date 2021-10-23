@@ -12,3 +12,6 @@
 {"HashIdentifier":3064822967,"NIDIdentifier":10834493992831266514,"Identity":"725774958625816708","PlaintextName":"Estasia-Davide"}
 {"HashIdentifier":4092871234,"NIDIdentifier":16501618458145762084,"Identity":"697125413192990821","PlaintextName":"Bali-Alina"}
 {"HashIdentifier":3119244434,"NIDIdentifier":9351068193876536993,"Identity":"528213243689172994","PlaintextName":"Bum2Night-Andy"}
+{"HashIdentifier":3015908455,"NIDIdentifier":13892902403276612819,"Identity":"688523347608338437","PlaintextName":"Oikawa-Alphonse"}
+{"HashIdentifier":2779901646,"NIDIdentifier":13507162323169459495,"Identity":"901466342635487262","PlaintextName":"Kokoa-Itsuki"}
+{"HashIdentifier":2732165857,"NIDIdentifier":7298903797700034428,"Identity":"754291773244702741","PlaintextName":"GreenHills-Tesa"}
