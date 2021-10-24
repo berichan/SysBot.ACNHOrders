@@ -18,3 +18,6 @@
 {"HashIdentifier":2737657094,"NIDIdentifier":4695427044181069448,"Identity":"897667893762879558","PlaintextName":"TinyVille-Chasmer"}
 {"HashIdentifier":4221525832,"NIDIdentifier":4695427044181069448,"Identity":"901807274098577460","PlaintextName":"TinyVille-Chasmer"}
 {"HashIdentifier":3795475563,"NIDIdentifier":8521354518901435411,"Identity":"154783304590163968","PlaintextName":"Unknown-Unknown"}
+{"HashIdentifier":3759583274,"NIDIdentifier":15606567014191391698,"Identity":"687354948832460808","PlaintextName":"Unknown-Unknown"}
+{"HashIdentifier":2477780325,"NIDIdentifier":8748939303646414398,"Identity":"901568291963822150","PlaintextName":"k^valley-gisselle"}
+{"HashIdentifier":2885580644,"NIDIdentifier":12866524745426620640,"Identity":"839209782820732938","PlaintextName":"M'Shuga-DefianT"}
