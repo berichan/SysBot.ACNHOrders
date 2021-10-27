@@ -192,6 +192,8 @@ namespace SysBot.ACNHOrders
             var message = $"{Context.User.Mention} - You are in the order queue. Position: {position}.";
             if (position > 1)
                 message += $" Your predicted ETA is {QueueExtensions.GetETA(position)}.";
+            else
+                message += " Your order will start after the current order is complete!";
 
             await ReplyAsync(message).ConfigureAwait(false);
         }

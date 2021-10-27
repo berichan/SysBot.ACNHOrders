@@ -88,6 +88,8 @@ namespace SysBot.ACNHOrders
 
             if (position > 1)
                 msg += $" Your predicted ETA is {GetETA(position)}";
+            else
+                msg += " Your order will start after the current order is complete!";
 
             if (itemReq.VillagerOrder != null)
                 msg += $". {GameInfo.Strings.GetVillager(itemReq.VillagerOrder.GameName)} will be waiting for you on the island. Ensure you can collect them within the order timeframe.";

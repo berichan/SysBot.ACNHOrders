@@ -21,3 +21,5 @@
 {"HashIdentifier":3759583274,"NIDIdentifier":15606567014191391698,"Identity":"687354948832460808","PlaintextName":"Unknown-Unknown"}
 {"HashIdentifier":2477780325,"NIDIdentifier":8748939303646414398,"Identity":"901568291963822150","PlaintextName":"k^valley-gisselle"}
 {"HashIdentifier":2885580644,"NIDIdentifier":12866524745426620640,"Identity":"839209782820732938","PlaintextName":"M'Shuga-DefianT"}
+{"HashIdentifier":4042650505,"NIDIdentifier":5548289637658104906,"Identity":"215764514606415872","PlaintextName":"Neko-World-Link_Darck"}
+{"HashIdentifier":3440486191,"NIDIdentifier":10301633077734263101,"Identity":"463527810284388353","PlaintextName":"Unknown-Unknown"}
