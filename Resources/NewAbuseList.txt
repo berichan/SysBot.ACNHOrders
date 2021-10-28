@@ -24,3 +24,4 @@
 {"HashIdentifier":4042650505,"NIDIdentifier":5548289637658104906,"Identity":"215764514606415872","PlaintextName":"Neko-World-Link_Darck"}
 {"HashIdentifier":3440486191,"NIDIdentifier":10301633077734263101,"Identity":"463527810284388353","PlaintextName":"Unknown-Unknown"}
 {"HashIdentifier":3685117146,"NIDIdentifier":1575990158328671098,"Identity":"833043897214697513","PlaintextName":"Unknown-Unknown"}
+{"HashIdentifier":2824144214,"NIDIdentifier":17939663247232144788,"Identity":"818163567957114880","PlaintextName":"Japan-James"}
