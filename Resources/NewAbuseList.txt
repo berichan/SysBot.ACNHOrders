@@ -19,9 +19,12 @@
 {"HashIdentifier":4221525832,"NIDIdentifier":4695427044181069448,"Identity":"901807274098577460","PlaintextName":"TinyVille-Chasmer"}
 {"HashIdentifier":3795475563,"NIDIdentifier":8521354518901435411,"Identity":"154783304590163968","PlaintextName":"Unknown-Unknown"}
 {"HashIdentifier":3759583274,"NIDIdentifier":15606567014191391698,"Identity":"687354948832460808","PlaintextName":"Unknown-Unknown"}
+{"HashIdentifier":4195247366,"NIDIdentifier":1481562641226905129,"Identity":"687354948832460808","PlaintextName":"Unknown-Unknown"}
 {"HashIdentifier":2477780325,"NIDIdentifier":8748939303646414398,"Identity":"901568291963822150","PlaintextName":"k^valley-gisselle"}
 {"HashIdentifier":2885580644,"NIDIdentifier":12866524745426620640,"Identity":"839209782820732938","PlaintextName":"M'Shuga-DefianT"}
 {"HashIdentifier":4042650505,"NIDIdentifier":5548289637658104906,"Identity":"215764514606415872","PlaintextName":"Neko-World-Link_Darck"}
 {"HashIdentifier":3440486191,"NIDIdentifier":10301633077734263101,"Identity":"463527810284388353","PlaintextName":"Unknown-Unknown"}
 {"HashIdentifier":3685117146,"NIDIdentifier":1575990158328671098,"Identity":"833043897214697513","PlaintextName":"Unknown-Unknown"}
 {"HashIdentifier":2824144214,"NIDIdentifier":17939663247232144788,"Identity":"818163567957114880","PlaintextName":"Japan-James"}
+{"HashIdentifier":4036003042,"NIDIdentifier":6121688859617185136,"Identity":"855671720974876672","PlaintextName":"A-Town-Jay"}
+{"HashIdentifier":3757027981,"NIDIdentifier":10993192396584178056,"Identity":"815893192138424430","PlaintextName":"Chloe's-Chloe"}
