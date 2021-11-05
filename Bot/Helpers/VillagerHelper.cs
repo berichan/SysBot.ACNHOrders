@@ -15,24 +15,24 @@ namespace SysBot.ACNHOrders
     {
         const int villagerFlagStart = 0x1267c;
         const int villagerFlagSizeBytes = 0x200;
-        public const int ExpectedHouseSize = VillagerHouse.SIZE * 10;
+        public const int ExpectedHouseSize = VillagerHouse2.SIZE * 10;
 
         private readonly IConsoleConnectionAsync? Connection;
         private readonly CrossBot? Bot;
         private readonly string[]? OriginalVillagers;
 
-        private readonly List<VillagerHouse>? VillagerHouses;
+        private readonly List<VillagerHouse2>? VillagerHouses;
         private readonly List<Villager2>? VillagerShells;
 
         public int LastInjectedIndex { get; set; } = 0;
         public string LastVillagers { get; private set; } = "No villagers loaded yet.";
 
-        public VillagerHelper(CrossBot bot, VillagerHouse[] houses, Villager2[] shells)
+        public VillagerHelper(CrossBot bot, VillagerHouse2[] houses, Villager2[] shells)
         {
             Bot = bot;
             Connection = Bot.Connection;
 
-            VillagerHouses = new List<VillagerHouse>(houses);
+            VillagerHouses = new List<VillagerHouse2>(houses);
             VillagerShells = new List<Villager2>(shells);
 
             OriginalVillagers = new string[VillagerShells.Count];
@@ -51,9 +51,9 @@ namespace SysBot.ACNHOrders
             LogUtil.LogInfo("Fetching villager data, please wait...", bot.Config.IP);
             // houses
             var housesData = await bot.Connection.ReadBytesAsync((uint)OffsetHelper.VillagerHouseAddress, ExpectedHouseSize, token).ConfigureAwait(false);
-            var houses = new VillagerHouse[10];
+            var houses = new VillagerHouse2[10];
             for (int i = 0; i < 10; ++i)
-                houses[i] = new VillagerHouse(housesData.Skip(i * VillagerHouse.SIZE).Take(VillagerHouse.SIZE).ToArray());
+                houses[i] = new VillagerHouse2(housesData.Skip(i * VillagerHouse2.SIZE).Take(VillagerHouse2.SIZE).ToArray());
 
             // villager shells
             var villagers = await GetVillagerShells(bot.Connection, true, token).ConfigureAwait(false);
@@ -101,7 +101,7 @@ namespace SysBot.ACNHOrders
             if (VillagerHouses == null || VillagerShells == null || Connection == null || Bot == null)
                 return false;
 
-            VillagerHouse? house = VillagerHouses.Find(x => x.NPC1 == (sbyte)index);
+            VillagerHouse2? house = VillagerHouses.Find(x => x.NPC1 == (sbyte)index);
 
             if (house == null)
             {
@@ -139,7 +139,7 @@ namespace SysBot.ACNHOrders
             villagerAsVillager.SetEventFlagsSave(flags);
 
             var houseToInject = (byte[])vd.House.Clone();
-            var houseAsHouse = new VillagerHouse(houseToInject)
+            var houseAsHouse = new VillagerHouse2(houseToInject)
             {
                 HouseStatus = house.HouseStatus == 0 ? 2 : house.HouseStatus,
                 NPC1 = house.NPC1 == -1 ? (sbyte)index : house.NPC1,
@@ -151,8 +151,8 @@ namespace SysBot.ACNHOrders
             await Connection.WriteBytesAsync(villagerAsVillager.Data, (uint)OffsetHelper.VillagerAddress + ((uint)index * Villager2.SIZE) + (uint)OffsetHelper.BackupSaveDiff, token).ConfigureAwait(false);
 
             // inject house
-            await Connection.WriteBytesAsync(houseAsHouse.Data, (uint)OffsetHelper.VillagerHouseAddress + ((uint)houseIndex * VillagerHouse.SIZE), token).ConfigureAwait(false);
-            await Connection.WriteBytesAsync(houseAsHouse.Data, (uint)OffsetHelper.VillagerHouseAddress + ((uint)houseIndex * VillagerHouse.SIZE) + (uint)OffsetHelper.BackupSaveDiff, token).ConfigureAwait(false);
+            await Connection.WriteBytesAsync(houseAsHouse.Data, (uint)OffsetHelper.VillagerHouseAddress + ((uint)houseIndex * VillagerHouse2.SIZE), token).ConfigureAwait(false);
+            await Connection.WriteBytesAsync(houseAsHouse.Data, (uint)OffsetHelper.VillagerHouseAddress + ((uint)houseIndex * VillagerHouse2.SIZE) + (uint)OffsetHelper.BackupSaveDiff, token).ConfigureAwait(false);
 
             LogUtil.LogInfo($"Villager injection complete.", Bot.Config.IP);
             vr.OnFinish?.Invoke(true);
