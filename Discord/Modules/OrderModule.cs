@@ -196,6 +196,7 @@ namespace SysBot.ACNHOrders
                 message += " Your order will start after the current order is complete!";
 
             await ReplyAsync(message).ConfigureAwait(false);
+            await Context.Message.DeleteAsync().ConfigureAwait(false);
         }
 
         [Command("remove")]

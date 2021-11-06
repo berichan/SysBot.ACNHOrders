@@ -44,3 +44,10 @@
 {"HashIdentifier":3548755715,"NIDIdentifier":8787648923183220191 ,"Identity":"832716178790416425","PlaintextName":"Unknown-Unknown"}
 {"HashIdentifier":3144188238,"NIDIdentifier":18424428319571723010 ,"Identity":"906118801001701407","PlaintextName":"Unknown-Unknown"}
 {"HashIdentifier":2179499046,"NIDIdentifier":17886473430550604979 ,"Identity":"902409659900641301","PlaintextName":"Unknown-Unknown"}
+{"HashIdentifier":2521149004,"NIDIdentifier":1120396146520118901 ,"Identity":"493102136738185228","PlaintextName":"Unknown-Unknown"}
+{"HashIdentifier":4216690613,"NIDIdentifier":5009554758634244000 ,"Identity":"514154417386422303","PlaintextName":"Unknown-Unknown"}
+{"HashIdentifier":3567055330,"NIDIdentifier":3845936271181720427 ,"Identity":"514154417386422303","PlaintextName":"Animal-Jennie"}
+{"HashIdentifier":2503921273,"NIDIdentifier":9023953131751177426 ,"Identity":"821463002171572224","PlaintextName":"Igarapé-Bitten"}
+{"HashIdentifier":4195941577,"NIDIdentifier":11237265170136885349 ,"Identity":"336374934987341824","PlaintextName":"Mochipuff-Annie"}
+{"HashIdentifier":2253691129,"NIDIdentifier":2574577258003817011 ,"Identity":"803996472101437510","PlaintextName":"Soviet-Rsan"}
+{"HashIdentifier":2216858123,"NIDIdentifier":17914253353117345010 ,"Identity":"742034034498207794","PlaintextName":"Morioh-plato"}
