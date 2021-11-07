@@ -36,7 +36,7 @@
 {"HashIdentifier":4026494913,"NIDIdentifier":14840866257316940669 ,"Identity":"711787444630061148","PlaintextName":"Omochi.-omochi"}
 {"HashIdentifier":3347300360,"NIDIdentifier":13410321053154756401 ,"Identity":"304985026238349325","PlaintextName":"Radz-Miss LP"}
 {"HashIdentifier":3371187831,"NIDIdentifier":8396038839530952148 ,"Identity":"497761003451449364","PlaintextName":"Butyke-bosstyke"}
-{"HashIdentifier":2708354275,"NIDIdentifier":5009554758634244000 ,"Identity":"514154417386422303","PlaintextName":"Diamond-Eevee"}
+{"HashIdentifier":2528755452,"NIDIdentifier":15896640938216695912 ,"Identity":"514154417386422303","PlaintextName":"Diamond-Eevee"}
 {"HashIdentifier":1637443990,"NIDIdentifier":12666560179397235598 ,"Identity":"895058249596960768","PlaintextName":"Unknown-Unknown"}
 {"HashIdentifier":2802625539,"NIDIdentifier":13355776770419603765 ,"Identity":"905110663972667533","PlaintextName":"Unknown-Unknown"}
 {"HashIdentifier":4171584271,"NIDIdentifier":9918841955520398981 ,"Identity":"581990885282283531","PlaintextName":"Unknown-Unknown"}
@@ -51,3 +51,6 @@
 {"HashIdentifier":4195941577,"NIDIdentifier":11237265170136885349 ,"Identity":"336374934987341824","PlaintextName":"Mochipuff-Annie"}
 {"HashIdentifier":2253691129,"NIDIdentifier":2574577258003817011 ,"Identity":"803996472101437510","PlaintextName":"Soviet-Rsan"}
 {"HashIdentifier":2216858123,"NIDIdentifier":17914253353117345010 ,"Identity":"742034034498207794","PlaintextName":"Morioh-plato"}
+{"HashIdentifier":2991593074,"NIDIdentifier":8328031865639559258 ,"Identity":"395729029254348800","PlaintextName":"Doom-Shimey"}
+{"HashIdentifier":3801267424,"NIDIdentifier":1635713206635869936 ,"Identity":"905896190401474561","PlaintextName":"Islend-tomy"}
+{"HashIdentifier":3896901650,"NIDIdentifier":8097235805519172036 ,"Identity":"859450830205485068","PlaintextName":"Kumori-Temmy"}
