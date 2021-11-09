@@ -46,7 +46,7 @@ namespace SysBot.ACNHOrders
         public bool SetStatusAsDodoCode { get; set; }
 
         /// <summary> When set to false, senddodo will not work (for anyone) </summary>
-        public bool AllowSendDodo { get; set; } = true
+        public bool AllowSendDodo { get; set; } = true;
 
         /// <summary> When set to true, the bot will reinject lost villagers while running from the bot's own villager database </summary>
         public bool ReinjectMovedOutVillagers { get; set; }
