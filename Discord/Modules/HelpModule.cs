@@ -18,6 +18,7 @@ namespace SysBot.ACNHOrders
 
         [Command("help")]
         [Summary("Lists available commands.")]
+        [RequireSudo]
         public async Task HelpAsync()
         {
             var builder = new EmbedBuilder
