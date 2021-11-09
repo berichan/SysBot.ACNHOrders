@@ -32,6 +32,7 @@ namespace SysBot.ACNHOrders
                     var currentItem = items[i];
                     var remake = ItemRemakeUtil.GetRemakeIndex(currentItem.ItemId);
                     var associated = GameInfo.Strings.GetAssociatedItems(currentItem.ItemId, out _);
+                    getMaxStack(currentItem, out var stackedMax);
                     if (remake > 0 && currentItem.Count == 0) // ItemRemake: only do this if they've asked for the base count of an item!
                     {
                         var info = ItemRemakeInfoData.List[remake];
@@ -54,7 +55,7 @@ namespace SysBot.ACNHOrders
                             newItems.Add(itemToAdd);
                         }
                     }
-                    else if (associated.Count > 1 && currentItem.ItemId != Item.DIYRecipe) // clothing with parenthesised versions
+                    else if (stackedMax < 2 && associated.Count > 1 && currentItem.ItemId != Item.DIYRecipe) // clothing with parenthesised versions
                     {
                         for (int j = 0; j < associated.Count; ++j)
                         {
