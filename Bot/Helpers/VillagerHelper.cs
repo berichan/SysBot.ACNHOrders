@@ -137,6 +137,7 @@ namespace SysBot.ACNHOrders
             flags[09] = 0; // flag 9 = AbandonedHouse
             flags[24] = 0; // flag 24 = ForceMoveOut
             villagerAsVillager.SetEventFlagsSave(flags);
+            villagerAsVillager.CatchPhrase = GameInfo.Strings.GetVillagerDefaultPhrase(villagerAsVillager.InternalName);
 
             var houseToInject = (byte[])vd.House.Clone();
             var houseAsHouse = new VillagerHouse2(houseToInject)
