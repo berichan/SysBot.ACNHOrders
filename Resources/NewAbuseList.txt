@@ -66,3 +66,5 @@
 {"HashIdentifier":2292991341 ,"NIDIdentifier":13826278331067715541,"Identity":"585004444652142621","PlaintextName":"Unknown-Unknown"}
 {"HashIdentifier":2296815054 ,"NIDIdentifier":45929290950065228,"Identity":"393183579892482069","PlaintextName":"Unknown-Unknown"}
 {"HashIdentifier":2997290081 ,"NIDIdentifier":3094331720296619212,"Identity":"393183579892482069","PlaintextName":"Unknown-Unknown"}
+{"HashIdentifier":2497544228 ,"NIDIdentifier":7740405680820659595,"Identity":"908808682404466708","PlaintextName":"Catmis-Ivan"}
+{"HashIdentifier":4119908429 ,"NIDIdentifier":17226378875474818148,"Identity":"352492003008970752","PlaintextName":"Ellcrys-Valerie"}
