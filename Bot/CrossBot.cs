@@ -347,7 +347,10 @@ namespace SysBot.ACNHOrders
             }
 
             var timeBytes = await Connection.ReadBytesAsync((uint)OffsetHelper.TimeAddress, TimeBlock.SIZE, token).ConfigureAwait(false);
-            LastTimeState = timeBytes.ToClass<TimeBlock>();
+            var newTimeState = timeBytes.ToClass<TimeBlock>();
+            if (LastTimeState.Hour == 4 && newTimeState.Hour == 5)
+                GameIsDirty = true;
+            LastTimeState = newTimeState;
 
             await Task.Delay(1_000, token).ConfigureAwait(false);
         }
