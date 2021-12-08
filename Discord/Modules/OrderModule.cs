@@ -502,7 +502,7 @@ namespace SysBot.ACNHOrders
             "ows",
             "pck",
             "pge",
-            "pge",
+            "pgeB",
             "pkn",
             "plk",
             "plm",
