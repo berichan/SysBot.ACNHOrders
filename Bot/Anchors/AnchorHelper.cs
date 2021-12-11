@@ -90,5 +90,20 @@ namespace SysBot.ACNHOrders
                 AirportExitAnchor
             };
         }
+
+        public static bool DoAnchorsMatch(PosRotAnchor anchor1, PosRotAnchor anchor2, float maxBuffer = 1)
+        {
+            // ignore elevation
+            float anchor1X = BitConverter.ToSingle(anchor1.Anchor1, 0);
+            float anchor1Z = BitConverter.ToSingle(anchor1.Anchor1, 8);
+            float anchor2X = BitConverter.ToSingle(anchor2.Anchor1, 0);
+            float anchor2Z = BitConverter.ToSingle(anchor2.Anchor1, 8);
+
+            if (anchor1X > (anchor2X + maxBuffer) || anchor1X < (anchor2X - maxBuffer))
+                return false;
+            if (anchor1Z > (anchor2Z + maxBuffer) || anchor1Z < (anchor2Z - maxBuffer))
+                return false;
+            return true;
+        }
     }
 }
