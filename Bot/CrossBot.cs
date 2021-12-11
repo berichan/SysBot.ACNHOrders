@@ -548,10 +548,11 @@ namespace SysBot.ACNHOrders
             LogUtil.LogInfo($"Attempting to warp to dodo counter...", Config.IP);
             while (!AnchorHelper.DoAnchorsMatch(await ReadAnchor(token).ConfigureAwait(false), Anchors.Anchors[3]))
             {
-                await Task.Delay(0_500, token).ConfigureAwait(false);
                 await SendAnchorBytes(3, token).ConfigureAwait(false);
                 if (numChecks-- < 0)
                     return OrderResult.Faulted;
+
+                await Task.Delay(0_500, token).ConfigureAwait(false);
             }
 
             return await FetchDodoAndAwaitOrder(order, ignoreInjection, token).ConfigureAwait(false);
