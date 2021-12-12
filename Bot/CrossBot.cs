@@ -840,7 +840,7 @@ namespace SysBot.ACNHOrders
         {
             // Pause any freezers to account for loading screen lag
             await SwitchConnection.SetFreezePauseState(true, token).ConfigureAwait(false);
-            await Task.Delay(0_200, token).ConfigureAwait(false);
+            await Task.Delay(0_200 + Config.ExtraTimeEnterAirportWait, token).ConfigureAwait(false);
 
             int tries = 0;
             var state = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false);
@@ -851,7 +851,7 @@ namespace SysBot.ACNHOrders
                 await SetStick(SwitchStick.LEFT, 20_000, 20_000, 0_400, token).ConfigureAwait(false);
                 await Task.Delay(0_500, token).ConfigureAwait(false);
                 await SetStick(SwitchStick.LEFT, 0, 0, 1_500, token).ConfigureAwait(false);
-                await Task.Delay(1_000, token).ConfigureAwait(false);
+                await Task.Delay(1_000 + Config.ExtraTimeEnterAirportWait, token).ConfigureAwait(false);
 
                 state = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false);
 
