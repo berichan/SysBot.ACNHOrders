@@ -33,6 +33,12 @@ namespace SysBot.ACNHOrders
             return version;
         }
 
+        public static async Task SetFreezePauseState(this ISwitchConnectionAsync connection, bool pause, CancellationToken token)
+        {
+            var cmd = Encoding.ASCII.GetBytes(pause ? "freezePause\r\n" : "freezeUnpause\r\n");
+            await connection.SendRaw(cmd, token).ConfigureAwait(false);
+        }
+
         private static T[] SubArray<T>(T[] data, int index, int length)
         {
             if (index + length > data.Length)

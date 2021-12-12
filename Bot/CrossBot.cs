@@ -551,7 +551,7 @@ namespace SysBot.ACNHOrders
                 await SendAnchorBytes(3, token).ConfigureAwait(false);
                 if (numChecks-- < 0)
                     return OrderResult.Faulted;
-
+                
                 await Task.Delay(0_500, token).ConfigureAwait(false);
             }
 
@@ -838,6 +838,8 @@ namespace SysBot.ACNHOrders
 
         private async Task EnterAirport(CancellationToken token)
         {
+            // Pause any freezers to account for loading screen lag
+            await SwitchConnection.SetFreezePauseState(true, token).ConfigureAwait(false);
             await Task.Delay(0_200, token).ConfigureAwait(false);
 
             int tries = 0;
@@ -870,6 +872,7 @@ namespace SysBot.ACNHOrders
 
             // Delay for animation
             await Task.Delay(1_200, token).ConfigureAwait(false);
+            await SwitchConnection.SetFreezePauseState(false, token).ConfigureAwait(false);
         }
 
         private async Task InjectOrder(MapTerrainLite updatedMap, CancellationToken token)
