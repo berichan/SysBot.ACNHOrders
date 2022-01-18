@@ -105,3 +105,5 @@
 {"HashIdentifier":3341898369,"NIDIdentifier":5588849979637853501,"Identity":"499808163604987914","PlaintextName":"Estella-Claire"}
 {"HashIdentifier":3835271712,"NIDIdentifier":3851802033264405070,"Identity":"676546008963874861","PlaintextName":"Unknown-Unknown"}
 {"HashIdentifier":3266568144,"NIDIdentifier":6408046339042277836,"Identity":"931321823382110219","PlaintextName":"Unknown-Unknown"}
+{"HashIdentifier":3337868005,"NIDIdentifier":10505391728692540189,"Identity":"439098965036892161","PlaintextName":"B"}
+{"HashIdentifier":2186687470,"NIDIdentifier":11211746637964988718,"Identity":"665981556967473172","PlaintextName":"A"}
