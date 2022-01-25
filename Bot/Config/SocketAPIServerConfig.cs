@@ -18,6 +18,6 @@ namespace SocketAPI
 		/// <summary>
 		/// The network port on which the socket server listens for incoming connections.
 		/// </summary>
-		public ushort Port { get; set; }
+		public ushort Port { get; set; } = 5201;
 	}
 }
