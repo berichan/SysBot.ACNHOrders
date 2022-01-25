@@ -1,6 +1,6 @@
 using System;
 
-namespace SysBot.ACNHOrders
+namespace SocketAPI
 {
 	public class Logger
 	{
@@ -38,7 +38,7 @@ namespace SysBot.ACNHOrders
 				return;
 
 			ConsoleColor def = Console.ForegroundColor;
-			Console.ForegroundColor = ConsoleColor.DarkYellow;
+			Console.ForegroundColor = ConsoleColor.DarkRed;
 			Console.WriteLine($"[SocketAPIServer] {message}");
 			Console.ForegroundColor = def;
 		}

@@ -1,6 +1,6 @@
 using System;
 
-namespace SysBot.ACNHOrders
+namespace SocketAPI
 {
 	[Serializable]
 	public class SocketAPIServerConfig

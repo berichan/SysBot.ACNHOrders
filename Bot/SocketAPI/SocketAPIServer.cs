@@ -6,9 +6,10 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Text.Json;
+using System.Text;
+using System.Text.RegularExpressions;
 
-namespace SysBot.ACNHOrders {
+namespace SocketAPI {
 	/// <summary>
 	/// Acts as an API server, accepting requests and replying over TCP/IP.
 	/// </summary>
@@ -17,12 +18,12 @@ namespace SysBot.ACNHOrders {
 		/// <summary>
 		/// Useful for TcpListener's graceful shutdown.
 		/// </summary>
-		private static CancellationTokenSource tcpListenerCancellationSource = new();
+		private CancellationTokenSource tcpListenerCancellationSource = new();
 
 		/// <summary>
 		/// Provides an alias to the cancellation token.
 		/// </summary>
-		private static CancellationToken tcpListenerCancellationToken 
+		private CancellationToken tcpListenerCancellationToken 
 		{ 
 			get { return tcpListenerCancellationSource.Token; }
 			set { }
@@ -31,24 +32,24 @@ namespace SysBot.ACNHOrders {
 		/// <summary>
 		/// The TCP listener used to listen for incoming connections.
 		/// </summary>
-		private static TcpListener? listener;
+		private TcpListener? listener;
 
 		/// <summary>
 		/// Keeps a list of callable endpoints.
 		/// </summary>
-		private static Dictionary<string, Delegate> apiEndpoints = new();
+		private Dictionary<string, Delegate> apiEndpoints = new();
 
 		/// <summary>
 		/// Keeps the list of connected clients to broadcast events to.
 		/// </summary>
-		private static ConcurrentBag<TcpClient> clients = new();
+		private ConcurrentBag<TcpClient> clients = new();
 
 		public SocketAPIServer() {}
 
 		/// <summary>
 		/// Starts listening for incoming connections on the configured port.
 		/// </summary>
-		public static async Task Start(SocketAPIServerConfig config)
+		public async Task Start(SocketAPIServerConfig config)
 		{
 			if (!config.Enabled)
 				return;
@@ -58,9 +59,6 @@ namespace SysBot.ACNHOrders {
 
 			int eps = RegisterEndpoints();
 			Logger.LogInfo($"n. of registered endpoints: {eps}");
-
-			string? res = (string?)InvokeEndpoint("dummyEP", "myArg1");
-			Console.WriteLine(res);
 
 			string hostname = Dns.GetHostName();
 			if (!config.AllowRemoteClients)
@@ -80,26 +78,17 @@ namespace SysBot.ACNHOrders {
 				try
 				{
 					TcpClient client = await listener.AcceptTcpClientAsync();
+					clients.Add(client);
+
 					IPEndPoint? clientEP = client.Client.RemoteEndPoint as IPEndPoint;
 					Logger.LogInfo($"A client connected! IP: {clientEP?.Address}, on port: {clientEP?.Port}");
 
-					NetworkStream stream = client.GetStream();
-
-					while(client.Connected)
-					{
-						byte[] buffer = new byte[client.Available];
-						await stream.ReadAsync(buffer, 0, client.Available, tcpListenerCancellationToken);
-						string message = System.Text.Encoding.UTF8.GetString(buffer).Replace("\n", "").Replace("\r", "");
-						
-						if (message == "quit")
-						{
-							client.Close();
-						}
-					}
+					HandleTcpClient(client);
 				}
 				catch(OperationCanceledException) when (tcpListenerCancellationToken.IsCancellationRequested)
 				{
 					Logger.LogInfo("The socket API server was closed.", true);
+					clients.Clear();
 				}
 				catch(Exception ex)
 				{
@@ -109,9 +98,70 @@ namespace SysBot.ACNHOrders {
 		}
 
 		/// <summary>
+		/// Given a connected TcpClient, this callback handles communication & graceful shutdown.
+		/// </summary>
+		private async void HandleTcpClient(TcpClient client)
+		{
+			NetworkStream stream = client.GetStream();
+
+			while (true)
+			{
+				byte[] buffer = new byte[client.ReceiveBufferSize];
+				int bytesRead = await stream.ReadAsync(buffer, 0, client.ReceiveBufferSize, tcpListenerCancellationToken);
+
+				if (bytesRead == 0)
+				{
+					Logger.LogInfo("A remote client closed the connection.");
+					break;
+				}
+
+				string rawMessage = Encoding.UTF8.GetString(buffer);
+				rawMessage = Regex.Replace(rawMessage, @"\r\n?|\n|\0", "");
+				
+				SocketAPIRequest? request = SocketAPIProtocol.DecodeMessage(rawMessage);
+
+				if (request == null)
+				{
+					this.SendMessage(client, SocketAPIMessage.FromError("There was an error while JSON-parsing the provided request."));
+					continue;
+				}
+
+				SocketAPIMessage? message = this.InvokeEndpoint(request!.endpoint!, request?.args);
+
+				if (message == null)
+					message = SocketAPIMessage.FromError("The supplied endpoint was not found.");
+
+				message.id = request!.id;
+
+				this.SendMessage(client, message);
+			}
+		}
+
+		/// <summary>
+		/// Given a message, this method sends it to all currently connected clients in parallel encoded as an event.
+		/// </summary>
+		public async void BroadcastMessage(SocketAPIMessage message)
+		{
+			foreach(TcpClient client in clients)
+			{
+				if (client.Connected)
+					await Task.Run(() => SendMessage(client, message));
+			}
+		}
+
+		/// <summary>
+		/// Encodes a message and sends it to a client.
+		/// </summary>
+		private async void SendMessage(TcpClient toClient, SocketAPIMessage message)
+		{
+			byte[] wBuff = Encoding.UTF8.GetBytes(SocketAPIProtocol.EncodeMessage(message)!);
+			await toClient.GetStream().WriteAsync(wBuff, 0, wBuff.Length, tcpListenerCancellationToken);
+		}
+
+		/// <summary>
 		/// Stops the execution of the server.
 		/// </summary>
-		public static void Stop()
+		public void Stop()
 		{
 			listener?.Server.Close();
 			tcpListenerCancellationSource.Cancel();
@@ -123,7 +173,7 @@ namespace SysBot.ACNHOrders {
 		/// <param name="name">The name of the endpoint used to invoke the provided handler.</param>
 		/// <param name="handler">The handler responsible for generating a response.</param>
 		/// <returns></returns>
-		private static bool RegisterEndpoint(string name, Func<string, object?> handler)
+		private bool RegisterEndpoint(string name, Func<string, object?> handler)
 		{
 			if (apiEndpoints.ContainsKey(name))
 				return false;
@@ -134,13 +184,13 @@ namespace SysBot.ACNHOrders {
 		}
 
 		/// <summary>
-		/// Loads all the classes marked as `SocketAPIController` and respective `SocketAPIEndpoint`-marked static methods.
+		/// Loads all the classes marked as `SocketAPIController` and respective `SocketAPIEndpoint`-marked methods.
 		/// </summary>
 		/// <remarks>
 		/// The SocketAPIEndpoint marked methods 
 		/// </remarks>
-		/// <returns>The number of static methods successfully registered.</returns>
-		private static int RegisterEndpoints()
+		/// <returns>The number of methods successfully registered.</returns>
+		private int RegisterEndpoints()
 		{
 			var endpoints = AppDomain.CurrentDomain.GetAssemblies()
 										.Where(a => a.FullName?.Contains("SysBot.ACNHOrders") ?? false)
@@ -165,36 +215,20 @@ namespace SysBot.ACNHOrders {
 		/// <param name="endpointName">The name of the registered endpoint. Case-sensitive!</param>
 		/// <param name="jsonArgs">The arguments to provide to the endpoint, encoded in JSON format.</param>
 		/// <returns>A JSON-formatted response. `null` if the endpoint was not found.</returns>
-		private static string? InvokeEndpoint(string endpointName, string jsonArgs)
+		private SocketAPIMessage? InvokeEndpoint(string endpointName, string? jsonArgs)
 		{
 			if (!apiEndpoints.ContainsKey(endpointName))
-				return RespondWithError("The supplied endpoint was not found.").Serialize();
+				return SocketAPIMessage.FromError("The supplied endpoint was not found.");
 
 			try
 			{
 				object? rawResponse = (object?)apiEndpoints[endpointName].Method.Invoke(null, new[] { jsonArgs });
-				return RespondWithValue(rawResponse).Serialize();
+				return SocketAPIMessage.FromValue(rawResponse);
 			}
 			catch(Exception ex)
 			{
-				return RespondWithError(ex.InnerException?.Message ?? "A generic exception was thrown.").Serialize();
+				return SocketAPIMessage.FromError(ex.InnerException?.Message ?? "A generic exception was thrown.");
 			}
-		}
-
-		/// <summary>
-		/// Creates a `SocketAPIResponse` populated with the supplied value object.
-		/// </summary>
-		private static SocketAPIResponse RespondWithValue(object? value)
-		{
-			return new(value, null);
-		}
-
-		/// <summary>
-		/// Creates a `SocketAPIResponse` populated with the supplied error message.
-		/// </summary>
-		private static SocketAPIResponse RespondWithError(string errorMessage)
-		{
-			return new(null, errorMessage);
 		}
 	}
 }
