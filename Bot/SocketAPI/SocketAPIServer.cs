@@ -193,15 +193,15 @@ namespace SocketAPI {
 		private int RegisterEndpoints()
 		{
 			var endpoints = AppDomain.CurrentDomain.GetAssemblies()
-										.Where(a => a.FullName?.Contains("SysBot.ACNHOrders") ?? false)
-										.SelectMany(a => a.GetTypes())
-										.Where(t => t.IsClass && t.GetCustomAttributes(typeof(SocketAPIController), true).Count() > 0)
-										.SelectMany(c => c.GetMethods())
-										.Where(m => m.GetCustomAttributes(typeof(SocketAPIEndpoint), true).Count() > 0)
-										.Where(m => m.GetParameters().Count() == 1 &&
-													m.IsStatic &&
-													m.GetParameters()[0].ParameterType == typeof(string) &&
-													m.ReturnType == typeof(object));
+								.Where(a => a.FullName?.Contains("SysBot.ACNHOrders") ?? false)
+								.SelectMany(a => a.GetTypes())
+								.Where(t => t.IsClass && t.GetCustomAttributes(typeof(SocketAPIController), true).Count() > 0)
+								.SelectMany(c => c.GetMethods())
+								.Where(m => m.GetCustomAttributes(typeof(SocketAPIEndpoint), true).Count() > 0)
+								.Where(m => m.GetParameters().Count() == 1 &&
+											m.IsStatic &&
+											m.GetParameters()[0].ParameterType == typeof(string) &&
+											m.ReturnType == typeof(object));
 
 			foreach (var endpoint in endpoints)
 				RegisterEndpoint(endpoint.Name, endpoint.CreateDelegate<Func<string, object?>>());
