@@ -60,12 +60,7 @@ namespace SocketAPI {
 			int eps = RegisterEndpoints();
 			Logger.LogInfo($"n. of registered endpoints: {eps}");
 
-			string hostname = Dns.GetHostName();
-			if (!config.AllowRemoteClients)
-				hostname = "localhost";
-
-			IPAddress ip = Dns.GetHostEntry(hostname).AddressList[0];
-			listener = new(ip, config.Port);
+			listener = new(IPAddress.Any, config.Port);
 			listener.Start();
 
 			Logger.LogInfo($"Socket API server listening on port {config.Port}.");

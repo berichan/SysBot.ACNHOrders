@@ -11,11 +11,6 @@ namespace SocketAPI
 		public bool Enabled { get; set; } = false;
 
 		/// <summary>
-		/// Whether the server should also accept connections outside the local area network.
-		/// </summary>
-		public bool AllowRemoteClients { get; set; } = false;
-
-		/// <summary>
 		/// Whether logs relative to the socket API server should be written out to console.
 		/// </summary>
 		public bool LogsEnabled { get; set; } = true;
