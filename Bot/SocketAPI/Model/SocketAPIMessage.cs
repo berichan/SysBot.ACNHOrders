@@ -39,7 +39,7 @@ namespace SocketAPI
 		/// </summary>
 		public string? _type 
 		{ 
-			get { return this.type?.ToString(); }
+			get { return this.type?.ToString().ToLower(); }
 			private set {}
 		}
 
