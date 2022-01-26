@@ -133,14 +133,32 @@ namespace SocketAPI {
 		}
 
 		/// <summary>
+		/// Sends to the supplied client the given message of type `Response`.
+		/// </summary>
+		public void SendResponse(TcpClient client, SocketAPIMessage message)
+		{
+			message.type = SocketAPIMessageType.Response;
+			this.SendMessage(client, message);
+		}
+
+		/// <summary>
+		/// Sends to the supplied client the given message of type `Event`.
+		/// </summary>
+		public void SendEvent(TcpClient client, SocketAPIMessage message)
+		{
+			message.type = SocketAPIMessageType.Event;
+			this.SendMessage(client, message);
+		}
+
+		/// <summary>
 		/// Given a message, this method sends it to all currently connected clients in parallel encoded as an event.
 		/// </summary>
-		public async void BroadcastMessage(SocketAPIMessage message)
+		public async void BroadcastEvent(SocketAPIMessage message)
 		{
 			foreach(TcpClient client in clients)
 			{
 				if (client.Connected)
-					await Task.Run(() => SendMessage(client, message));
+					await Task.Run(() => SendEvent(client, message));
 			}
 		}
 
