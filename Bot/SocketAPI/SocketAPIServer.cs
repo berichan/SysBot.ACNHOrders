@@ -83,7 +83,8 @@ namespace SocketAPI {
 				catch(OperationCanceledException) when (tcpListenerCancellationToken.IsCancellationRequested)
 				{
 					Logger.LogInfo("The socket API server was closed.", true);
-					clients.Clear();
+					while(!clients.IsEmpty)
+						clients.TryTake(out _);
 				}
 				catch(Exception ex)
 				{
@@ -217,7 +218,7 @@ namespace SocketAPI {
 											m.ReturnType == typeof(object));
 
 			foreach (var endpoint in endpoints)
-				RegisterEndpoint(endpoint.Name, endpoint.CreateDelegate<Func<string, object?>>());
+				RegisterEndpoint(endpoint.Name, (Func<string, object?>)endpoint.CreateDelegate(typeof(Func<string, object?>)));
 
 			return endpoints.Count();
 		}

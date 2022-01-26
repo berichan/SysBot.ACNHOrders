@@ -50,7 +50,7 @@ namespace SocketAPI
 		/// </summary>
 		private static SocketAPIMessageType GetMessageTypeFromMessage(string type)
 		{
-			return (SocketAPIMessageType)System.Enum.Parse<SocketAPIMessageType>(type, true);
+			return (SocketAPIMessageType)System.Enum.Parse(typeof(SocketAPIMessageType), type, true);
 		}
 	}
 }
