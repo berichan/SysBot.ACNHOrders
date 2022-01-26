@@ -12,13 +12,15 @@ namespace SysBot.ACNHOrders
         private const string DefaultTwitchPath = "twitch.json";
 		private const string DefaultSocketServerAPIPath = "server.json";
 
-		private static async Task Main(string[] args)
+        private static async Task Main(string[] args)
         {
             string configPath;
 
 			Console.WriteLine("Starting up...");
-            if (args.Length > 0) {
-                if (args.Length > 1) {
+            if (args.Length > 0) 
+            {
+                if (args.Length > 1) 
+                {
                     Console.WriteLine("Too many arguments supplied and will be ignored.");
                     configPath = DefaultConfigPath;
                 }

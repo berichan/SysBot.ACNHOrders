@@ -1,4 +1,5 @@
 using System;
+using SysBot.Base;
 
 namespace SocketAPI
 {
@@ -14,11 +15,7 @@ namespace SocketAPI
 			if (!logsEnabled && !ignoreDisabled)
 				return;
 
-			ConsoleColor def = Console.ForegroundColor;
-			Console.ForegroundColor = ConsoleColor.Cyan;
-			Console.Write("[SocketAPIServer] ");
-			Console.ForegroundColor = def;
-			Console.Write(message + "\n");
+			LogUtil.LogInfo(message, nameof(SocketAPI));
 		}
 
 		public static void LogWarning(string message, bool ignoreDisabled = false)
@@ -26,10 +23,7 @@ namespace SocketAPI
 			if (!logsEnabled && !ignoreDisabled)
 				return;
 
-			ConsoleColor def = Console.ForegroundColor;
-			Console.ForegroundColor = ConsoleColor.DarkYellow;
-			Console.WriteLine($"[SocketAPIServer] {message}");
-			Console.ForegroundColor = def;
+			LogUtil.LogInfo(message, nameof(SocketAPI) + "Warning");
 		}
 
 		public static void LogError(string message, bool ignoreDisabled = false)
@@ -37,10 +31,7 @@ namespace SocketAPI
 			if (!logsEnabled && !ignoreDisabled)
 				return;
 
-			ConsoleColor def = Console.ForegroundColor;
-			Console.ForegroundColor = ConsoleColor.DarkRed;
-			Console.WriteLine($"[SocketAPIServer] {message}");
-			Console.ForegroundColor = def;
+			LogUtil.LogError(message, nameof(SocketAPI));
 		}
 
 		public static void disableLogs()
