@@ -31,12 +31,14 @@ namespace SocketAPI
 
 		/// <summary>
 		/// Given the message type and input string, this method returns an encoded message ready to be sent to a client.
+		/// The JSON-encoded message is terminated by "\0\0".
+		/// Do not send messages of length > 2^16 bytes (or your OS's default TCP buffer size)! The messages would get TCP-fragmented.
 		/// </summary>
 		public static string? EncodeMessage(SocketAPIMessage message)
 		{
 			try
 			{
-				return JsonSerializer.Serialize(message);
+				return JsonSerializer.Serialize(message) + "\0\0";
 			}
 			catch (System.Exception ex)
 			{
