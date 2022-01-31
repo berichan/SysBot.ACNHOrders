@@ -78,7 +78,16 @@ namespace SocketAPI {
 			Logger.LogInfo($"n. of registered endpoints: {eps}");
 
 			listener = new(IPAddress.Any, config.Port);
-			listener.Start();
+
+			try 
+			{
+				listener.Start();
+			}
+			catch(SocketException ex)
+			{
+				Logger.LogError($"Socket API server failed to start: {ex.Message}");
+				return;
+			}
 
 			Logger.LogInfo($"Socket API server listening on port {config.Port}.");
 
