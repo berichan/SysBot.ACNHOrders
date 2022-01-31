@@ -44,7 +44,24 @@ namespace SocketAPI {
 		/// </summary>
 		private ConcurrentBag<TcpClient> clients = new();
 
-		public SocketAPIServer() {}
+		private SocketAPIServer() {}
+
+
+		private static SocketAPIServer? _shared;
+
+		/// <summary>
+		///	The singleton instance of the `SocketAPIServer`.
+		/// </summary>
+		public static SocketAPIServer shared
+		{
+			get 
+			{  
+				if (_shared == null)
+					_shared = new();
+				return _shared;
+			}
+			private set { }
+		}
 
 		/// <summary>
 		/// Starts listening for incoming connections on the configured port.
@@ -118,7 +135,7 @@ namespace SocketAPI {
 
 				if (request == null)
 				{
-					this.SendMessage(client, SocketAPIMessage.FromError("There was an error while JSON-parsing the provided request."));
+					this.SendResponse(client, SocketAPIMessage.FromError("There was an error while JSON-parsing the provided request."));
 					continue;
 				}
 
@@ -129,7 +146,7 @@ namespace SocketAPI {
 
 				message.id = request!.id;
 
-				this.SendMessage(client, message);
+				this.SendResponse(client, message);
 			}
 		}
 
@@ -169,7 +186,15 @@ namespace SocketAPI {
 		private async void SendMessage(TcpClient toClient, SocketAPIMessage message)
 		{
 			byte[] wBuff = Encoding.UTF8.GetBytes(SocketAPIProtocol.EncodeMessage(message)!);
-			await toClient.GetStream().WriteAsync(wBuff, 0, wBuff.Length, tcpListenerCancellationToken);
+			try
+			{
+				await toClient.GetStream().WriteAsync(wBuff, 0, wBuff.Length, tcpListenerCancellationToken);
+			}
+			catch(Exception ex)
+			{
+				Logger.LogError($"There was an error while sending a message to a client: {ex.Message}");
+				toClient.Close();
+			}
 		}
 
 		/// <summary>
