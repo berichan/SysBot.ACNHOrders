@@ -55,3 +55,7 @@ A client request string is pre-validated by `SocketAPIProtocol.DecodeMessage`. T
 ```json
 "args":"{\"myArg\":123}"
 ```
+
+## Client implementations
+
+- TypeScript, NodeJS: [Fehniix/sysbot-net-api](https://github.com/Fehniix/sysbot-net-api)
