@@ -76,7 +76,7 @@ namespace SysBot.ACNHOrders
 			SaveConfig(serverConfig, DefaultSocketServerAPIPath);
             
 			SocketAPI.SocketAPIServer server = SocketAPI.SocketAPIServer.shared;
-			await server.Start(serverConfig);
+			_ = server.Start(serverConfig);
 
 			await BotRunner.RunFrom(config, CancellationToken.None, twitchConfig).ConfigureAwait(false);
 
