@@ -111,3 +111,5 @@
 {"HashIdentifier":3132719388,"NIDIdentifier":15966911993480654198,"Identity":"820909917917413416","PlaintextName":"Narnia-Dootalooty"}
 {"HashIdentifier":2169936935,"NIDIdentifier":5595551189858041253,"Identity":"743268511396266045","PlaintextName":"Solace"}
 {"HashIdentifier":3953653412,"NIDIdentifier":8757288754025262647,"Identity":"465958626557952011","PlaintextName":"Farmud"}
+{"HashIdentifier":363498261,"NIDIdentifier":5672142846695277971,"Identity":"699584991406981160","PlaintextName":"Araluis"}
+{"HashIdentifier":667097299,"NIDIdentifier":5820921897428835018,"Identity":"807145386287431680","PlaintextName":"RootPrB"}
