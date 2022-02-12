@@ -113,3 +113,5 @@
 {"HashIdentifier":3953653412,"NIDIdentifier":8757288754025262647,"Identity":"465958626557952011","PlaintextName":"Farmud"}
 {"HashIdentifier":363498261,"NIDIdentifier":5672142846695277971,"Identity":"699584991406981160","PlaintextName":"Araluis"}
 {"HashIdentifier":667097299,"NIDIdentifier":5820921897428835018,"Identity":"807145386287431680","PlaintextName":"RootPrB"}
+{"HashIdentifier":2482321796,"NIDIdentifier":13300550037091805233,"Identity":"783370202426507294","PlaintextName":"Star-Darkrai"}
+{"HashIdentifier":835859902,"NIDIdentifier":16201195581393265724,"Identity":"829501075421396993","PlaintextName":"die-Angus"}
