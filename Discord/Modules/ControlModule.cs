@@ -92,6 +92,16 @@ namespace SysBot.ACNHOrders
             await SetScreen(false).ConfigureAwait(false);
         }
 
+        [Command("kill")]
+        [Alias("sudoku", "exit")]
+        [Summary("Kills the bot")]
+        [RequireSudo]
+        public async Task KillBotAsync()
+        {
+            await ReplyAsync($"Goodbye {Context.User.Mention}, remember me.").ConfigureAwait(false);
+            Environment.Exit(0);
+        }
+
         private async Task SetScreen(bool on)
         {
             var bot = Globals.Bot;
