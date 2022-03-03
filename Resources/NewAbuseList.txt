@@ -115,3 +115,10 @@
 {"HashIdentifier":667097299,"NIDIdentifier":5820921897428835018,"Identity":"807145386287431680","PlaintextName":"RootPrB"}
 {"HashIdentifier":2482321796,"NIDIdentifier":13300550037091805233,"Identity":"783370202426507294","PlaintextName":"Star-Darkrai"}
 {"HashIdentifier":835859902,"NIDIdentifier":16201195581393265724,"Identity":"829501075421396993","PlaintextName":"die-Angus"}
+{"HashIdentifier":2261471442,"NIDIdentifier":4031599663307380695,"Identity":"632647901159489536","PlaintextName":"Fantasia-Achille"}
+{"HashIdentifier":3655436553,"NIDIdentifier":14719447040940639497,"Identity":"759031604500234250","PlaintextName":"EL-Mago"}
+{"HashIdentifier":2633393041,"NIDIdentifier":11460748608084684737,"Identity":"759031604500234250","PlaintextName":"La-Lampara"}
+{"HashIdentifier":2633393041,"NIDIdentifier":5032764788567114425,"Identity":"759031604500234250","PlaintextName":"La-Lampara"}
+{"HashIdentifier":2633393041,"NIDIdentifier":17524988969503775020,"Identity":"759031604500234250","PlaintextName":"La-Lampara"}
+{"HashIdentifier":2633393041,"NIDIdentifier":12514749987852694330,"Identity":"759031604500234250","PlaintextName":"La-Lampara"}
+{"HashIdentifier":2633393041,"NIDIdentifier":9782560940007597031,"Identity":"759031604500234250","PlaintextName":"La-Lampara"}
