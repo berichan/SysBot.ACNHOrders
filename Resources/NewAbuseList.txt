@@ -125,3 +125,5 @@
 {"HashIdentifier":3014539578,"NIDIdentifier":1003515944195829291,"Identity":"884704180336480306","PlaintextName":"twisted-kai"}
 {"HashIdentifier":4111911760,"NIDIdentifier":10213300017487973166,"Identity":"298193786516013058","PlaintextName":"Pawville-Alec"}
 {"HashIdentifier":2174284449,"NIDIdentifier":11279269436714762858,"Identity":"274593112498765827","PlaintextName":"Bearadise-Alvin"}
+{"HashIdentifier":2296121316,"NIDIdentifier":2719014011535608582,"Identity":"293064483839148033","PlaintextName":"Coco-Mahe}
+{"HashIdentifier":4237320117,"NIDIdentifier":317651574259168940,"Identity":"895414760760303668","PlaintextName":"Moonshine-Niuyou}
