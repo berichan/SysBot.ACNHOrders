@@ -127,3 +127,6 @@
 {"HashIdentifier":2174284449,"NIDIdentifier":11279269436714762858,"Identity":"274593112498765827","PlaintextName":"Bearadise-Alvin"}
 {"HashIdentifier":2296121316,"NIDIdentifier":2719014011535608582,"Identity":"293064483839148033","PlaintextName":"Coco-Mahe"}
 {"HashIdentifier":4237320117,"NIDIdentifier":317651574259168940,"Identity":"895414760760303668","PlaintextName":"Moonshine-Niuyou"}
+{"HashIdentifier":1592513975,"NIDIdentifier":14823552608820987048,"Identity":"832910345689235496","PlaintextName":"Unknown-Unknown"}
+{"HashIdentifier":3379374573,"NIDIdentifier":15943164577678552688,"Identity":"255938921324609536","PlaintextName":"Bundle-Zekai"}
+{"HashIdentifier":4127066099,"NIDIdentifier":2196515611809883576,"Identity":"952916262445518899","PlaintextName":"TakiTaki-Selenuki"}
