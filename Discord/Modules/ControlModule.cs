@@ -38,6 +38,14 @@ namespace SysBot.ACNHOrders
             await ReplyAsync($"Mash B set to: {Globals.Bot.Config.DodoModeConfig.MashB}.").ConfigureAwait(false);
         }
 
+        [Command("toggleRefresh")]
+        [Summary("Toggle whether or not the bot should refresh the map. Only works in dodo restore mode.")]
+        public async Task ToggleRefresh()
+        {
+            Globals.Bot.Config.DodoModeConfig.RefreshMap = !Globals.Bot.Config.DodoModeConfig.RefreshMap;
+            await ReplyAsync($"RefreshMap set to: {Globals.Bot.Config.DodoModeConfig.RefreshMap}.").ConfigureAwait(false);
+        }
+
         [Command("newDodo")]
         [Alias("restartGame", "restart")]
         [Summary("Tells the bot to restart the game and fetch a new dodo code. Only works in dodo restore mode.")]
