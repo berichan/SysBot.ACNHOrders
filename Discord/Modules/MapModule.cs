@@ -20,16 +20,14 @@ namespace SysBot.ACNHOrders
                 return;
             }
 
-            if (!filename.ToLower().EndsWith(".nhl"))
-                filename += ".nhl";
-            filename = Path.Combine(bot.Config.FieldLayerNHLDirectory, filename);
-            if (!File.Exists(filename))
+            var bytes = bot.ExternalMap.GetNHL(filename);
+
+            if (bytes == null)
             {
                 await ReplyAsync($"File {filename} does not exist or does not have the correct .nhl extension.").ConfigureAwait(false);
                 return;
             }
 
-            var bytes = File.ReadAllBytes(filename);
             var req = new MapOverrideRequest(Context.User.Username, bytes);
             bot.MapOverrides.Enqueue(req);
 

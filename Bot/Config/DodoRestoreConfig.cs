@@ -36,6 +36,9 @@ namespace SysBot.ACNHOrders
         /// <summary> When set to true, restore mode will also regen the map. </summary>
         public bool RefreshMap { get; set; } = false;
 
+        /// <summary> When set to true, restore mode will also freeze the map. </summary>
+        public bool FreezeMap { get; set; } = false;
+
         /// <summary> When set to true, restore mode will also refresh the terrain + elevation. (requires refresh map to be set to true) </summary>
         public bool RefreshTerrainData { get; set; } = false;
 
@@ -62,5 +65,11 @@ namespace SysBot.ACNHOrders
 
         /// <summary> What, if anything, should the bot react with if someone successfully gets DMed the dodo code? </summary>
         public string SuccessfulDodoCodeSendReaction { get; set; } = "";
+
+        /// <summary> Should we cycle through NHLs in the NHL directory? </summary>
+        public bool CycleNHLs { get; set; } = false;
+
+        /// <summary> If the above is set to true, how often should we cycle through them? </summary>
+        public int CycleNHLMinutes { get; set; } = 1440;
     }
 }

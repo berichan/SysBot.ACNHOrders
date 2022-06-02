@@ -31,6 +31,8 @@ namespace SysBot.ACNHOrders
         public readonly ISwitchConnectionAsync SwitchConnection;
         public readonly ConcurrentBag<IDodoRestoreNotifier> DodoNotifiers = new();
 
+        public readonly ExternalMapHelper ExternalMap;
+
         public readonly DropBotState State;
 
         public readonly DodoDraw? DodoImageDrawer;
@@ -70,6 +72,7 @@ namespace SysBot.ACNHOrders
             DodoPosition = new DodoPositionHelper(this);
             VisitorList = new VisitorListHelper(this);
             PocketInjector = new PocketInjectorAsync(SwitchConnection, InventoryOffset);
+            ExternalMap = new ExternalMapHelper(cfg);
         }
 
         public override void SoftStop() => Config.AcceptingCommands = false;
@@ -153,7 +156,19 @@ namespace SysBot.ACNHOrders
             LogUtil.LogInfo("Successfully connected to bot. Starting main loop!", Config.IP);
             if (Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
             {
-                LogUtil.LogInfo("Orders not accepted in dodo restore mode! Please ensure all joy-cons and controllers are docked!", Config.IP);
+                if (Config.DodoModeConfig.FreezeMap)
+                {
+                    if (Config.DodoModeConfig.RefreshMap)
+                    {
+                        LogUtil.LogInfo("You cannot freeze and refresh the map at the same time. Pick one or the other in the config file. Exiting...", Config.IP);
+                        return;
+                    }
+
+                    LogUtil.LogInfo("Freezing map, please wait...", Config.IP);
+                    await SwitchConnection.FreezeValues((uint)OffsetHelper.FieldItemStart, Map.StartupBytes, ConnectionHelper.MapChunkCount, token).ConfigureAwait(false);
+                }
+
+                LogUtil.LogInfo("Orders not accepted in dodo restore mode! Please ensure all joy-cons and controllers are docked! Starting dodo restore loop...", Config.IP);
                 while (!token.IsCancellationRequested)
                     await DodoRestoreLoop(false, token).ConfigureAwait(false);
             }
@@ -259,7 +274,8 @@ namespace SysBot.ACNHOrders
                     
                     await SaveVillagersToFile(token).ConfigureAwait(false);
 
-                    if (MapOverrides.TryDequeue(out var mapRequest))
+                    MapOverrideRequest? mapRequest;
+                    if ((MapOverrides.TryDequeue(out mapRequest) || ExternalMap.CheckForCycle(out mapRequest)) && mapRequest != null)
                     {
                         var tempMap = new MapTerrainLite(mapRequest.Item, Map.StartupTerrain, Map.StartupAcreParams)
                         {
@@ -268,8 +284,11 @@ namespace SysBot.ACNHOrders
                         };
                         Map = tempMap;
 
-                        // Write one full map with newly loaded nhl
-                        await ClearMapAndSpawnInternally(null, Map, Config.DodoModeConfig.RefreshTerrainData, token, true).ConfigureAwait(false);
+                        // Write one full map with newly loaded nhl or freeze
+                        if (!Config.DodoModeConfig.FreezeMap)
+                            await ClearMapAndSpawnInternally(null, Map, Config.DodoModeConfig.RefreshTerrainData, token, true).ConfigureAwait(false);
+                        else
+                            await SwitchConnection.FreezeValues((uint)OffsetHelper.FieldItemStart, Map.StartupBytes, ConnectionHelper.MapChunkCount, token).ConfigureAwait(false);
                     }
 
                     if (Config.DodoModeConfig.AutoNewDodoTimeMinutes > -1)
