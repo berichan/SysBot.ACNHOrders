@@ -85,6 +85,16 @@ namespace SysBot.ACNHOrders
             await ReplyAsync($"`{command}` returned with result: {System.Text.Encoding.UTF8.GetString(ret)}").ConfigureAwait(false);
         }
 
+        [Command("unfreezeAll")]
+        [Summary("Unfreezes everything")]
+        [RequireSudo]
+        public async Task UnfreezeAll()
+        {
+            var data = System.Text.Encoding.ASCII.GetBytes($"freezeClear\r\n");
+            await Bot.SwitchConnection.SendRaw(data, CancellationToken.None).ConfigureAwait(false);
+            await ReplyAsync("Unfrozen all previously frozen values").ConfigureAwait(false);
+        }
+
         private static byte[] GetBytesFromHexString(string seed)
         {
             return Enumerable.Range(0, seed.Length)
