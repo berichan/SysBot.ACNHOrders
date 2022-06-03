@@ -24,6 +24,9 @@ namespace SysBot.ACNHOrders
             RootPathNHL = cfg.FieldLayerNHLDirectory;
             LoadedNHLs = new Dictionary<string, byte[]>();
 
+            if (!Directory.Exists(RootPathNHL))
+                Directory.CreateDirectory(RootPathNHL);
+
             var files = Directory.EnumerateFiles(RootPathNHL);
 
             foreach (var file in files)
