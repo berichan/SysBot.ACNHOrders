@@ -69,11 +69,13 @@ namespace SysBot.ACNHOrders
                 return false;
 
             var now = DateTime.Now;
-            if ((now - LastCycleTime).TotalMinutes >= CycleTime)
+            bool cycle = CycleTime == -1 ? LastCycleTime.Date != now.Date : (now - LastCycleTime).TotalMinutes >= CycleTime;
+            if (cycle)
             {
                 LastCycleTime = now;
                 LastCycledIndex = (LastCycledIndex + 1) % LoadedNHLs.Count;
-                request = new MapOverrideRequest(nameof(ExternalMapHelper), LoadedNHLs.ElementAt(LastCycledIndex).Value);
+                var nhl = LoadedNHLs.ElementAt(LastCycledIndex);
+                request = new MapOverrideRequest(nameof(ExternalMapHelper), nhl.Value, nhl.Key);
                 return true;
             }
 

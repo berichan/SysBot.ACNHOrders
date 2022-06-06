@@ -28,7 +28,7 @@ namespace SysBot.ACNHOrders
                 return;
             }
 
-            var req = new MapOverrideRequest(Context.User.Username, bytes);
+            var req = new MapOverrideRequest(Context.User.Username, bytes, filename);
             bot.MapOverrides.Enqueue(req);
 
             await ReplyAsync($"Map refresh layer set to: {Path.GetFileNameWithoutExtension(filename)}.").ConfigureAwait(false);

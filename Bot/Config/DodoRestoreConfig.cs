@@ -33,6 +33,9 @@ namespace SysBot.ACNHOrders
         /// <summary> Channels where new arrivals will be posted </summary>
         public List<ulong> EchoArrivalChannels { get; set; } = new();
 
+        /// <summary> Channels where island updates (such as NHL cycles) will be posted </summary>
+        public List<ulong> EchoIslandUpdateChannels { get; set; } = new();
+
         /// <summary> When set to true, restore mode will also regen the map. </summary>
         public bool RefreshMap { get; set; } = false;
 

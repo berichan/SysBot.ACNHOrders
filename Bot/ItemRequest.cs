@@ -42,10 +42,12 @@ namespace SysBot.ACNHOrders
 
     public sealed class MapOverrideRequest : Request<byte[]>
     {
-        public MapOverrideRequest(string user, byte[] fieldLayerBytes) : base(user, fieldLayerBytes) 
+        public readonly string OverrideLayerName;
+        public MapOverrideRequest(string user, byte[] fieldLayerBytes, string layerName) : base(user, fieldLayerBytes) 
         {
             if (fieldLayerBytes.Length != ACNHMobileSpawner.MapTerrainLite.ByteSize)
                 throw new Exception("Attempting to inject mapdata of the incorrect size.");
+            OverrideLayerName = layerName;
         }
     }
 
