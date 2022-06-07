@@ -95,6 +95,23 @@ namespace SysBot.ACNHOrders
             await ReplyAsync("Unfrozen all previously frozen values").ConfigureAwait(false);
         }
 
+        [Command("setFreezeDelay")]
+        [Alias("setFreezeRate")]
+        [Summary("Configured the freeze delay in milliseconds between 3 and 10000")]
+        [RequireSudo]
+        public async Task SetFreezeDelay(int ms)
+        {
+            if (ms < 3 || ms > 10000)
+            {
+                await ReplyAsync($"Error! Freeze rate must be between 3 and 10000!").ConfigureAwait(false);
+                return;
+            }
+
+            var data = System.Text.Encoding.ASCII.GetBytes($"configure freezeRate {ms}\r\n");
+            await Bot.SwitchConnection.SendRaw(data, CancellationToken.None).ConfigureAwait(false);
+            await ReplyAsync($"Set freeze rate to: {ms}").ConfigureAwait(false);
+        }
+
         private static byte[] GetBytesFromHexString(string seed)
         {
             return Enumerable.Range(0, seed.Length)
