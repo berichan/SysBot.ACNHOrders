@@ -290,7 +290,7 @@ namespace SysBot.ACNHOrders
                         else
                             await SwitchConnection.FreezeValues((uint)OffsetHelper.FieldItemStart, Map.StartupBytes, ConnectionHelper.MapChunkCount, token).ConfigureAwait(false);
 
-                        await AttemptEchoHook($"{TownName} has switched to item layer: {mapRequest.User}", Config.DodoModeConfig.EchoIslandUpdateChannels, token).ConfigureAwait(false);
+                        await AttemptEchoHook($"{TownName} has switched to item layer: {mapRequest.OverrideLayerName}", Config.DodoModeConfig.EchoIslandUpdateChannels, token).ConfigureAwait(false);
                     }
 
                     if (Config.DodoModeConfig.AutoNewDodoTimeMinutes > -1)
