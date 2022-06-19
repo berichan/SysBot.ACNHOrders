@@ -165,3 +165,5 @@
 {"HashIdentifier":2345299124,"NIDIdentifier":7502423167466201346,"Identity":"841764105748611082","PlaintextName":"unknown-unknown"}
 {"HashIdentifier":2552800474,"NIDIdentifier":10937437638057101904,"Identity":"512429380308434955","PlaintextName":"Velocity-Gabe"}
 {"HashIdentifier":3492988658,"NIDIdentifier":9632570765607086789,"Identity":"802370935","PlaintextName":"sky"}
+{"HashIdentifier":3510960533,"NIDIdentifier":1285145568104445994,"Identity":"985180423950852151","PlaintextName":"Evermore-Luna"}
+{"HashIdentifier":3510960533,"NIDIdentifier":14300216052471423362,"Identity":"985180423950852151","PlaintextName":"Evermore-Willow"}
