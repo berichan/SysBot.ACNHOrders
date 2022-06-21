@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -156,13 +157,21 @@ namespace SysBot.ACNHOrders
             _client.MessageReceived += HandleMessageAsync;
         }
 
-        public async Task<bool> TrySpeakMessage(ulong id, string message)
+        public async Task<bool> TrySpeakMessage(ulong id, string message, bool noDoublePost = false)
         {
             try
             {
                 if (_client.ConnectionState != ConnectionState.Connected)
                     return false;
                 var channel = _client.GetChannel(id);
+                if (noDoublePost && channel is IMessageChannel msgChannel)
+                {
+                    var lastMsg = await msgChannel.GetMessagesAsync(1).FlattenAsync();
+                    if (lastMsg != null && lastMsg.Any())
+                        if (lastMsg.ElementAt(0).Content == message)
+                            return true; // exists
+                }
+
                 if (channel is IMessageChannel textChannel)
                     await textChannel.SendMessageAsync(message).ConfigureAwait(false);
                 return true;
