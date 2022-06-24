@@ -112,6 +112,26 @@ namespace SysBot.ACNHOrders
             await ReplyAsync($"Set freeze rate to: {ms}").ConfigureAwait(false);
         }
 
+        [Command("pauseFreeze")]
+        [Alias("frzOff")]
+        [Summary("Pauses all freeze values until unpause is called")]
+        [RequireSudo]
+        public async Task FreezePause()
+        {
+            await Bot.SwitchConnection.SetFreezePauseState(true, CancellationToken.None).ConfigureAwait(false);
+            await ReplyAsync($"Freeze has been paused.").ConfigureAwait(false);
+        }
+
+        [Command("pauseUnfreeze")]
+        [Alias("frzOn")]
+        [Summary("Unpauses all freeze values")]
+        [RequireSudo]
+        public async Task FreezeUnpause()
+        {
+            await Bot.SwitchConnection.SetFreezePauseState(false, CancellationToken.None).ConfigureAwait(false);
+            await ReplyAsync($"Freeze has been unpaused.").ConfigureAwait(false);
+        }
+
         private static byte[] GetBytesFromHexString(string seed)
         {
             return Enumerable.Range(0, seed.Length)
