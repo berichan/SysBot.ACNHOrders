@@ -19,7 +19,7 @@ namespace SysBot.ACNHOrders
         private DateTime LastCycleTime;
         private int LastCycledIndex = 0;
 
-        public ExternalMapHelper(CrossBotConfig cfg)
+        public ExternalMapHelper(CrossBotConfig cfg, string lastFileLoaded)
         {
             RootPathNHL = cfg.FieldLayerNHLDirectory;
             LoadedNHLs = new Dictionary<string, byte[]>();
@@ -39,6 +39,10 @@ namespace SysBot.ACNHOrders
             CycleMap = cfg.DodoModeConfig.CycleNHLs;
             CycleTime = cfg.DodoModeConfig.CycleNHLMinutes;
             LastCycleTime = DateTime.Now;
+
+            var existingKey = LoadedNHLs.Keys.FirstOrDefault(x => x.Equals(lastFileLoaded, StringComparison.InvariantCultureIgnoreCase));
+            if (existingKey != null)
+                LastCycledIndex = LoadedNHLs.Keys.ToList().IndexOf(lastFileLoaded);
         }
 
         public byte[]? GetNHL(string filename)

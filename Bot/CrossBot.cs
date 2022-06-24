@@ -72,7 +72,9 @@ namespace SysBot.ACNHOrders
             DodoPosition = new DodoPositionHelper(this);
             VisitorList = new VisitorListHelper(this);
             PocketInjector = new PocketInjectorAsync(SwitchConnection, InventoryOffset);
-            ExternalMap = new ExternalMapHelper(cfg);
+
+            var fileName = File.Exists(Config.DodoModeConfig.LoadedNHLFilename) ? File.ReadAllText(Config.DodoModeConfig.LoadedNHLFilename) + ".nhl" : string.Empty;
+            ExternalMap = new ExternalMapHelper(cfg, fileName);
         }
 
         public override void SoftStop() => Config.AcceptingCommands = false;
@@ -182,7 +184,7 @@ namespace SysBot.ACNHOrders
             await EnsureAnchorsAreInitialised(token);
             await VisitorList.UpdateNames(token).ConfigureAwait(false);
             if (File.Exists(Config.DodoModeConfig.LoadedNHLFilename))
-                await AttemptEchoHook($"{TownName} was last loaded with layer: {File.ReadAllText(Config.DodoModeConfig.LoadedNHLFilename)}.nhl", Config.DodoModeConfig.EchoIslandUpdateChannels, token, true).ConfigureAwait(false);
+                await AttemptEchoHook($"[Restarted] {TownName} was last loaded with layer: {File.ReadAllText(Config.DodoModeConfig.LoadedNHLFilename)}.nhl", Config.DodoModeConfig.EchoIslandUpdateChannels, token, true).ConfigureAwait(false);
 
             bool hardCrash = immediateRestart;
             if (!immediateRestart)
