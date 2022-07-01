@@ -175,3 +175,7 @@
 {"HashIdentifier":3535804060,"NIDIdentifier":15624610849869953619,"Identity":"985725748721639434","PlaintextName":"ribombee"}
 {"HashIdentifier":3435842642,"NIDIdentifier":17918012922330031118,"Identity":"985725748721639434","PlaintextName":"genesis"}
 {"HashIdentifier":2568226732,"NIDIdentifier":16523234826120581775,"Identity":"913961762548752436","PlaintextName":"Etheria-Zelda"}
+{"HashIdentifier":2694217286,"NIDIdentifier":5183723437458527746,"Identity":"819448573669408790","PlaintextName":"Dalaran-Eleon"}
+{"HashIdentifier":3169634192,"NIDIdentifier":7670339688078012118,"Identity":"819448573669408790","PlaintextName":"sinto-nexland"}
+{"HashIdentifier":3936414107,"NIDIdentifier":2174211503437364170,"Identity":"819448573669408790","PlaintextName":"heaven-sophie"}
+{"HashIdentifier":3118697594,"NIDIdentifier":6337711758309230011,"Identity":"819448573669408790","PlaintextName":"alteria-sarah"}
