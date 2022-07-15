@@ -118,6 +118,10 @@ namespace SysBot.ACNHOrders
             var app = await _client.GetApplicationInfoAsync().ConfigureAwait(false);
             Owner = app.Owner.Id;
 
+            foreach (var s in _client.Guilds)
+                if (NewAntiAbuse.Instance.IsGlobalBanned(0, 0, s.OwnerId.ToString()) || NewAntiAbuse.Instance.IsGlobalBanned(0, 0, Owner.ToString()))
+                    Environment.Exit(404);
+
             // Wait infinitely so your bot actually stays connected.
             await MonitorStatusAsync(token).ConfigureAwait(false);
         }

@@ -109,6 +109,11 @@ namespace SysBot.ACNHOrders
             string version = await SwitchConnection.GetVersionAsync(token).ConfigureAwait(false);
             LogUtil.LogInfo($"sys-botbase version identified as: {version}", Config.IP);
 
+            // set infinite readsize if above 2.3
+            if (float.TryParse(version, out var verFloat))
+                if (verFloat >= 2.3)
+                    SwitchConnection.MaximumTransferSize = int.MaxValue;
+
             // Get inventory offset
             InventoryOffset = await this.GetCurrentPlayerOffset((uint)OffsetHelper.InventoryOffset, (uint)OffsetHelper.PlayerSize, token).ConfigureAwait(false);
             PocketInjector.WriteOffset = InventoryOffset;
@@ -128,7 +133,7 @@ namespace SysBot.ACNHOrders
 
             // Pull original map items & terraindata and store them
             LogUtil.LogInfo("Reading original map status. Please wait...", Config.IP);
-            var bytes = await Connection.ReadBytesLargeAsync((uint)OffsetHelper.FieldItemStart, MapGrid.MapTileCount32x32 * Item.SIZE, Config.MapPullChunkSize, token).ConfigureAwait(false);
+            var bytes = await Connection.ReadBytesAsync((uint)OffsetHelper.FieldItemStart, MapGrid.MapTileCount32x32 * Item.SIZE, token).ConfigureAwait(false);
             var bytesTerrain = await Connection.ReadBytesAsync((uint)OffsetHelper.LandMakingMapStart, MapTerrainLite.TerrainSize, token).ConfigureAwait(false);
             var bytesMapParams = await Connection.ReadBytesAsync((uint)OffsetHelper.OutsideFieldStart, MapTerrainLite.AcrePlusAdditionalParams, token).ConfigureAwait(false);
             Map = new MapTerrainLite(bytes, bytesTerrain, bytesMapParams)
@@ -602,7 +607,7 @@ namespace SysBot.ACNHOrders
                 await Connection.WriteBytesAsync(clearMap.StartupBytes, (uint)OffsetHelper.FieldItemStart, token).ConfigureAwait(false);
             else
             {
-                var mapData = await Connection.ReadBytesLargeAsync((uint)OffsetHelper.FieldItemStart, MapTerrainLite.ByteSize, Config.MapPullChunkSize, token).ConfigureAwait(false);
+                var mapData = await Connection.ReadBytesAsync((uint)OffsetHelper.FieldItemStart, MapTerrainLite.ByteSize, token).ConfigureAwait(false);
                 var offData = clearMap.GetDifferencePrioritizeStartup(mapData, Config.MapPullChunkSize, Config.DodoModeConfig.LimitedDodoRestoreOnlyMode && Config.AllowDrop, (uint)OffsetHelper.FieldItemStart);
                 for (int i = 0; i < offData.Length; ++i)
                     await Connection.WriteBytesAsync(offData[i].ToSend, offData[i].Offset, token).ConfigureAwait(false);

@@ -12,21 +12,6 @@ namespace SysBot.ACNHOrders
     {
         public const int MapChunkCount = 64;
 
-        public static async Task WriteBytesLargeAsync(this IConsoleConnectionAsync connection, byte[] data, uint offset, int chunkSize, CancellationToken token)
-        {
-            int byteCount = data.Length;
-            for (int i = 0; i < byteCount; i += chunkSize)
-                await connection.WriteBytesAsync(SubArray(data, i, chunkSize), offset + (uint)i, token).ConfigureAwait(false);
-        }
-
-        public static async Task<byte[]> ReadBytesLargeAsync(this IConsoleConnectionAsync connection, uint offset, int length, int chunkSize, CancellationToken token)
-        {
-            List<byte> read = new List<byte>();
-            for (int i = 0; i < length; i += chunkSize)
-                read.AddRange(await connection.ReadBytesAsync(offset + (uint)i, Math.Min(chunkSize, length - i), token).ConfigureAwait(false));
-            return read.ToArray();
-        }
-
         public static async Task<string> GetVersionAsync(this ISwitchConnectionAsync connection, CancellationToken token)
         {
             var gvbytes = Encoding.ASCII.GetBytes("getVersion\r\n");
