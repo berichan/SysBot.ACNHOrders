@@ -211,6 +211,7 @@ namespace SysBot.ACNHOrders
                     if (RestoreRestartRequested)
                     {
                         RestoreRestartRequested = false;
+                        await ResetFiles(token).ConfigureAwait(false);
                         await AttemptEchoHook($"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] Please wait for the new dodo code for {TownName}.", Config.DodoModeConfig.EchoDodoChannels, token).ConfigureAwait(false);
                         await DodoRestoreLoop(true, token).ConfigureAwait(false);
                         return;
@@ -1083,6 +1084,7 @@ namespace SysBot.ACNHOrders
         private async Task ResetFiles(CancellationToken token)
         {
             string DodoDetails = Config.DodoModeConfig.MinimizeDetails ? "FETCHING" : $"{TownName}: FETCHING";
+            DodoCode = DodoDetails;
             byte[] encodedText = Encoding.ASCII.GetBytes(DodoDetails);
             await FileUtil.WriteBytesToFileAsync(encodedText, Config.DodoModeConfig.DodoRestoreFilename, token).ConfigureAwait(false);
 
