@@ -100,6 +100,15 @@ namespace SysBot.ACNHOrders
             await SetScreen(false).ConfigureAwait(false);
         }
 
+        [Command("charge")]
+        [Alias("getCharge", "chg")]
+        [Summary("Prints the current battery percent of host console")]
+        [RequireSudo]
+        public async Task GetChargeAsync()
+        {
+            await ReplyAsync($"Last captured charge: {Globals.Bot.ChargePercent}%");
+        }
+
         [Command("kill")]
         [Alias("sudoku", "exit")]
         [Summary("Kills the bot")]

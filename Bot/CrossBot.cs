@@ -50,6 +50,7 @@ namespace SysBot.ACNHOrders
         public string CurrentUserName { get; set; } = string.Empty;
         public bool GameIsDirty { get; set; } = true; // Dirty if crashed or last user didn't arrive/leave correctly
         public ulong ChatAddress { get; set; } = 0;
+        public int ChargePercent { get; set; } = 100;
         public DateTime LastDodoFetchTime { get; private set; } = DateTime.Now;
 
         public VillagerHelper Villagers { get; private set; } = VillagerHelper.Empty;
@@ -207,6 +208,8 @@ namespace SysBot.ACNHOrders
                 while (await IsNetworkSessionActive(token).ConfigureAwait(false))
                 {
                     await Task.Delay(2_000, token).ConfigureAwait(false);
+
+                    ChargePercent = await SwitchConnection.GetChargePercentAsync(token).ConfigureAwait(false);
 
                     if (RestoreRestartRequested)
                     {
@@ -386,6 +389,8 @@ namespace SysBot.ACNHOrders
             if (LastTimeState.Hour < 5 && newTimeState.Hour == 5)
                 GameIsDirty = true;
             LastTimeState = newTimeState;
+
+            ChargePercent = await SwitchConnection.GetChargePercentAsync(token).ConfigureAwait(false);
 
             await Task.Delay(1_000, token).ConfigureAwait(false);
         }

@@ -20,6 +20,14 @@ namespace SysBot.ACNHOrders
             return version;
         }
 
+        public static async Task<int> GetChargePercentAsync(this ISwitchConnectionAsync connection, CancellationToken token)
+        {
+            var gvbytes = Encoding.ASCII.GetBytes("charge\r\n");
+            byte[] socketReturn = await connection.ReadRaw(gvbytes, 9, token).ConfigureAwait(false);
+            string chargepc = Encoding.UTF8.GetString(socketReturn).TrimEnd('\0').TrimEnd('\n');
+            return int.Parse(chargepc);
+        }
+
         private static T[] SubArray<T>(T[] data, int index, int length)
         {
             if (index + length > data.Length)
