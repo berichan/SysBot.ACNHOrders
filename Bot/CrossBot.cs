@@ -110,11 +110,6 @@ namespace SysBot.ACNHOrders
             string version = await SwitchConnection.GetVersionAsync(token).ConfigureAwait(false);
             LogUtil.LogInfo($"sys-botbase version identified as: {version}", Config.IP);
 
-            // set infinite readsize if above 2.3
-            if (float.TryParse(version, out var verFloat))
-                if (verFloat >= 2.3)
-                    SwitchConnection.MaximumTransferSize = int.MaxValue;
-
             // Get inventory offset
             InventoryOffset = await this.GetCurrentPlayerOffset((uint)OffsetHelper.InventoryOffset, (uint)OffsetHelper.PlayerSize, token).ConfigureAwait(false);
             PocketInjector.WriteOffset = InventoryOffset;
