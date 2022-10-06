@@ -273,3 +273,5 @@
 {"HashIdentifier":2984796510,"NIDIdentifier":12997305037007499029,"Identity":"122230870","PlaintextName":"cultemanga"}
 {"HashIdentifier":952418800,"NIDIdentifier":1326633892981425835,"Identity":"677613374","PlaintextName":"odin13013"}
 {"HashIdentifier":3204676930,"NIDIdentifier":1130088205896631713,"Identity":"773684145","PlaintextName":"alpha_zen_"}
+{"HashIdentifier":2626802104,"NIDIdentifier":11574088157073884097,"Identity":"697882223289958540","PlaintextName":"Verstagoat"}
+{"HashIdentifier":353204863,"NIDIdentifier":5941658278430618535,"Identity":"125886823","PlaintextName":"HirysTV"}
