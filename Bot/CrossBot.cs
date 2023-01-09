@@ -172,12 +172,28 @@ namespace SysBot.ACNHOrders
                 }
 
                 LogUtil.LogInfo("Orders not accepted in dodo restore mode! Please ensure all joy-cons and controllers are docked! Starting dodo restore loop...", Config.IP);
-                while (!token.IsCancellationRequested)
-                    await DodoRestoreLoop(false, token).ConfigureAwait(false);
+                try
+                {
+                    while (!token.IsCancellationRequested)
+                        await DodoRestoreLoop(false, token).ConfigureAwait(false);
+                }
+                catch (Exception e) 
+                {
+                    LogUtil.LogError($"Dodo restore loop ended with error: {e.Message}\r\n{e.StackTrace}", Config.IP);
+                    return;
+                }
             }
 
-            while (!token.IsCancellationRequested)
-                await OrderLoop(token).ConfigureAwait(false);
+            try
+            { 
+                while (!token.IsCancellationRequested)
+                    await OrderLoop(token).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                LogUtil.LogError($"Order loop ended with error: {e.Message}\r\n{e.StackTrace}", Config.IP);
+                return;
+            }
         }
 
         private async Task DodoRestoreLoop(bool immediateRestart, CancellationToken token)
@@ -344,7 +360,7 @@ namespace SysBot.ACNHOrders
             }
 
             await SaveDodoCodeToFile(token).ConfigureAwait(false);
-            LogUtil.LogError($"Dodo restore successful. New dodo for {TownName} is {DodoCode} and saved to {Config.DodoModeConfig.DodoRestoreFilename}.", Config.IP);
+            LogUtil.LogInfo($"Dodo restore successful. New dodo for {TownName} is {DodoCode} and saved to {Config.DodoModeConfig.DodoRestoreFilename}.", Config.IP);
             if (Config.DodoModeConfig.RefreshMap) // clean map
                 await ClearMapAndSpawnInternally(null, Map, Config.DodoModeConfig.RefreshTerrainData, token, true).ConfigureAwait(false);
         }
