@@ -355,6 +355,8 @@ namespace SysBot.ACNHOrders
             foreach (var msgChannel in channels)
                 if (!await Globals.Self.TrySpeakMessage(msgChannel, message, checkForDoublePosts).ConfigureAwait(false))
                     LogUtil.LogError($"Unable to post into channels: {msgChannel}.", Config.IP);
+
+            LogUtil.LogText($"Echo: {message}");
         }
 
         private async Task OrderLoop(CancellationToken token)
@@ -973,8 +975,16 @@ namespace SysBot.ACNHOrders
 
         private async Task EnsureAnchorsAreInitialised(CancellationToken token)
         {
+            bool loggedBadAnchors = false;
             while (Config.ForceUpdateAnchors || Anchors.IsOneEmpty(out _))
+            {
                 await Task.Delay(1_000, token).ConfigureAwait(false);
+                if (!loggedBadAnchors)
+                {
+                    LogUtil.LogInfo("Anchors are not initialised.", Config.IP);
+                    loggedBadAnchors = true;
+                }
+            }
         }
 
         public async Task<bool> UpdateAnchor(int index, CancellationToken token)
