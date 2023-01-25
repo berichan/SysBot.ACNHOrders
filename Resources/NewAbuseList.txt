@@ -308,3 +308,5 @@
 {"HashIdentifier":3044791714,"NIDIdentifier":17572864928836093443,"Identity":"925202746846621716","PlaintextName":"Nostalgia-Frankie"}
 {"HashIdentifier":2868211657,"NIDIdentifier":12721286390912790675,"Identity":"906889665494274079","PlaintextName":"BunnyBay-Alex"}
 {"HashIdentifier":3340859380,"NIDIdentifier":9562671713162987545,"Identity":"839153229","PlaintextName":"dodotokyo"}
+{"HashIdentifier":2287520633,"NIDIdentifier":12611590840414727540,"Identity":"934871433195184169","PlaintextName":"Pataya-Jordan"}
+{"HashIdentifier":2833698704,"NIDIdentifier":7247303341844584708,"Identity":"934871433195184169","PlaintextName":"Pataya-Jordan"}
