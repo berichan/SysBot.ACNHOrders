@@ -44,6 +44,8 @@ namespace SysBot.ACNHOrders
         public string DodoCode { get; set; } = "No code set yet.";
         public string VisitorInfo { get; set; } = "No visitor info yet.";
         public string TownName { get; set; } = "No town name yet.";
+        public string CLayer { get; set; } = "No layer set yet.";
+        public string DisUserID { get; set; } = string.Empty;
         public string LastArrival { get; private set; } = string.Empty;
         public string LastArrivalIsland { get; private set; } = string.Empty;
         public ulong CurrentUserId { get; set; } = default!;
@@ -126,7 +128,35 @@ namespace SysBot.ACNHOrders
                     return;
                 }
             }
+            // Creat folder for last order if folder does not valid
+            if (!Directory.Exists("UserOrder"))
+            {
+                Directory.CreateDirectory("UserOrder");
+            }
+            // Load layer on bot boot
+            var filename = Config.FieldLayerName;
+            var filenameNoExt = Config.FieldLayerName;
+            filename += ".nhl";
+            filename = Path.Combine(Config.FieldLayerNHLDirectory, filename);
+            if (!File.Exists(filename))
+            {
+                LogUtil.LogInfo($"Could not load {filename}.", Config.IP);
 
+            }
+            else
+            {
+
+                CLayer = filenameNoExt;
+                var bytes1 = File.ReadAllBytes(filename);
+                LogUtil.LogInfo($"Layer {filename} loaded.", Config.IP);
+                var bytesTerrain1 = await Connection.ReadBytesAsync((uint)OffsetHelper.LandMakingMapStart, MapTerrainLite.TerrainSize, token).ConfigureAwait(false);
+                var bytesMapParams1 = await Connection.ReadBytesAsync((uint)OffsetHelper.OutsideFieldStart, MapTerrainLite.AcrePlusAdditionalParams, token).ConfigureAwait(false);
+                Map = new MapTerrainLite(bytes1, bytesTerrain1, bytesMapParams1)
+                {
+                    SpawnX = Config.MapPlaceX,
+                    SpawnY = Config.MapPlaceY
+                };
+            }
             // Pull original map items & terraindata and store them
             LogUtil.LogInfo("Reading original map status. Please wait...", Config.IP);
             var bytes = await Connection.ReadBytesAsync((uint)OffsetHelper.FieldItemStart, MapGrid.MapTileCount32x32 * Item.SIZE, token).ConfigureAwait(false);
@@ -213,6 +243,12 @@ namespace SysBot.ACNHOrders
                     await AttemptEchoHook($"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] The Dodo code for {TownName} has updated, the new Dodo code is: {DodoCode}.", Config.DodoModeConfig.EchoDodoChannels, token).ConfigureAwait(false);
 
                 NotifyDodo(DodoCode);
+                if (Config.DodoModeConfig.MaxBells)
+                {
+                    var bot = Globals.Bot;
+                    bot.StonkRequests.Enqueue(new TurnipRequest("null", 999999999));
+                    await AttemptEchoHook($"All turnip values successfully set to Max Bells!", Config.DodoModeConfig.EchoDodoChannels, token).ConfigureAwait(false);
+                }
 
                 await SaveDodoCodeToFile(token).ConfigureAwait(false);
 

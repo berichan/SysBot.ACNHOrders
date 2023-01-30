@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -57,13 +60,30 @@ namespace SysBot.ACNHOrders
         [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task RequestRestoreLoopDodoAsync()
         {
+            var MesUser = Context.User.Username;
+            Globals.Bot.DisUserID = ($"{Context.User.Id}");
             if (!Globals.Bot.Config.DodoModeConfig.AllowSendDodo && !Globals.Bot.Config.CanUseSudo(Context.User.Id) && Globals.Self.Owner != Context.User.Id)
                 return;
             if (!Globals.Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
                 return;
+            //Check ban list to send dodo code.
+            string[] Checklist = File.ReadAllLines("banlist.txt", Encoding.UTF8);
+            int indexS = Array.FindIndex(Checklist, row => row.Contains(Context.User.Id.ToString()));
+            if (indexS != -1)
+            {
+                await ReplyAsync($"{Context.User.Mention} - You are currently not allowed to use the bot. Dodo code will not be sent.");
+                return;
+            }
             try
             {
-                await Context.User.SendMessageAsync($"Dodo Code for {Globals.Bot.TownName}: {Globals.Bot.DodoCode}.").ConfigureAwait(false);
+                var MapFile = ($"{Globals.Bot.Config.FieldLayerNHLDirectory}/{Globals.Bot.CLayer}.png");
+                await Context.User.SendMessageAsync($"Dodo Code for {Globals.Bot.TownName}: {Globals.Bot.DodoCode}.\n{Globals.Bot.TownName} is currently set to the following layer: {Globals.Bot.CLayer}.").ConfigureAwait(false);
+                if (File.Exists($"{MapFile}"))
+                {
+                    await Context.User.SendFileAsync($"{MapFile}");
+                }
+                await ReplyAsync($"`{MesUser}`: Sent you the dodo code via DM");
+                await Globals.Self.TrySpeakMessage(Globals.Bot.Config.DodoModeConfig.SentDodoChannels, $"[{DateTime.Now:MM-dd hh:mm:ss tt}] The Dodo code was sent to <@{Context.User.Id}> - {Context.User.Id}  from `{Context.Guild.Name}` server.").ConfigureAwait(false);
             }
             catch (HttpException ex)
             {

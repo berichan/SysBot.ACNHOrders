@@ -112,6 +112,9 @@ namespace SysBot.ACNHOrders
         /// <summary> NHL directory to be used by $loadLayer </summary>
         public string FieldLayerNHLDirectory { get; set; } = "nhl";
 
+        /// <summary> NHL file to be used on bot startup </summary>
+        public string FieldLayerName { get; set; } = "name";
+
         /// <summary> Should we allow known hackers/abusers from using the order bot? (community-built list) </summary>
         public bool AllowKnownAbusers { get; set; } = false;
 
