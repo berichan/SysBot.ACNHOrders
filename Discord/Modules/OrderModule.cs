@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -129,6 +131,113 @@ namespace SysBot.ACNHOrders
             await AttemptToQueueRequest(items, Context.User, Context.Channel, null, true).ConfigureAwait(false);
         }
 
+
+        [Command("lastorder")]
+        [Alias("lo", "lasto", "lorder")]
+        [Summary("LastOrderItemSummary")]
+        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
+        public async Task RequestLastOrderAsync()
+        {
+            var cfg = Globals.Bot.Config;
+            string path = ("UserOrder\\" + $"{Context.User.Id}.txt");
+            if (File.Exists(path))
+            {
+                string request = File.ReadAllText(path);
+                ;
+                VillagerRequest? vr = null;
+
+                // try get villager
+                var result = VillagerOrderParser.ExtractVillagerName(request, out var res, out var san);
+                if (result == VillagerOrderParser.VillagerRequestResult.InvalidVillagerRequested)
+                {
+                    await ReplyAsync($"{Context.User.Mention} - {res} Order has not been accepted.");
+                    return;
+                }
+
+                if (result == VillagerOrderParser.VillagerRequestResult.Success)
+                {
+                    if (!cfg.AllowVillagerInjection)
+                    {
+                        await ReplyAsync($"{Context.User.Mention} - Villager injection is currently disabled.");
+                        return;
+                    }
+
+                    request = san;
+                    var replace = VillagerResources.GetVillager(res);
+                    vr = new VillagerRequest(Context.User.Username, replace, 0, GameInfo.Strings.GetVillager(res));
+                }
+
+                Item[]? items = null;
+
+                var attachment = Context.Message.Attachments.FirstOrDefault();
+                if (attachment != default)
+                {
+                    var att = await NetUtil.DownloadNHIAsync(attachment).ConfigureAwait(false);
+                    if (!att.Success || !(att.Data is Item[] itemData))
+                    {
+                        await ReplyAsync("No NHI attachment provided!").ConfigureAwait(false);
+                        return;
+                    }
+                    else
+                    {
+                        items = itemData;
+                    }
+                }
+
+                if (items == null)
+                    items = string.IsNullOrWhiteSpace(request) ? new Item[1] { new Item(Item.NONE) } : ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, ItemDestination.FieldItemDropped).ToArray();
+
+                await AttemptToQueueRequest(items, Context.User, Context.Channel, vr).ConfigureAwait(false);
+            }
+            else
+            {
+                await ReplyAsync($"<@{Context.User.Id}>, We do not have your last order logged, place an order and then you can use this command.").ConfigureAwait(false);
+                return;
+            }
+        }
+
+        [Command("checkitems")]
+        [Alias("checkitem")]
+        [Summary("Check the item ids to find item id's that will not let order happen.")]
+        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
+        public async Task CheckItemAsync([Summary(OrderItemSummary)][Remainder] string request)
+        {
+            var cfg = Globals.Bot.Config;
+            var BadItemsList = "";
+            var CheckItemN = "";
+            Item[]? items = null;
+            items = string.IsNullOrWhiteSpace(request) ? new Item[1] { new Item(Item.NONE) } : ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, ItemDestination.FieldItemDropped).ToArray();
+            {
+                var Bitems = FileUtil.GetEmbeddedResource("SysBot.ACNHOrders.Resources", "InternalHexList.txt");
+                string[] CheckItems = request.Split(' ');
+
+                foreach (var CheckItem in CheckItems)
+                    if (Bitems.Contains(CheckItem))
+                    {
+                        ushort itemID = ItemParser.GetID(CheckItem);
+                        if (itemID == Item.NONE)
+                        {
+
+                        }
+                        else
+                        {
+                            var name = GameInfo.Strings.GetItemName(itemID);
+                            CheckItemN = name + ": " + CheckItem;
+                        }
+                        BadItemsList = BadItemsList + CheckItemN + "\n";
+                    }
+
+                if (BadItemsList == "")
+                {
+                    await ReplyAsync($"All items are safe to order.");
+                }
+                else
+                {
+                    await ReplyAsync($"The following items are not safe to order:\n`{BadItemsList}`");
+                }
+            }
+        }
+
         [Command("preset")]
         [Summary("Requests the bot an order of a preset created by the bot host.")]
         [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
@@ -167,6 +276,44 @@ namespace SysBot.ACNHOrders
             }
 
             await AttemptToQueueRequest(preset, Context.User, Context.Channel, vr, true).ConfigureAwait(false);
+        }
+
+        [Command("ListPresets")]
+        [Alias("LP")]
+        [Summary("Lists all the presets.")]
+        public async Task RequestListPresetsAsync()
+        {
+            var bot = Globals.Bot;
+
+            DirectoryInfo dir = new DirectoryInfo(bot.Config.OrderConfig.NHIPresetsDirectory);
+            FileInfo[] files = dir.GetFiles("*.nhi");
+            string listnhi = "";
+            foreach (FileInfo file in files)
+            {
+                listnhi = listnhi + "\n " + Path.GetFileNameWithoutExtension(file.Name);
+            }
+            await ReplyAsync($"**Presets available are the following:** {listnhi}.").ConfigureAwait(false);
+        }
+
+        [Command("uploadpreset")]
+        [Alias("UpPre", "UP")]
+        [Summary("Uploads file to add to preset folder.")]
+        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
+        [RequireSudo]
+        public async Task RequestUploadPresetAsync()
+        {
+            var cfg = Globals.Bot.Config;
+            var attachments = Context.Message.Attachments;
+
+            string file = attachments.ElementAt(0).Filename;
+            string url = attachments.ElementAt(0).Url;
+
+            using (WebClient myWebClient = new WebClient())
+            {
+                var file1 = cfg.OrderConfig.NHIPresetsDirectory + "/" + file;
+                myWebClient.DownloadFile(url, file1);
+            }
+            await ReplyAsync("Received attachment!\n\n" + "The following file has been added to presets folder: " + file);
         }
 
         [Command("queue")]

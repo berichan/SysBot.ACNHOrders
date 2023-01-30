@@ -39,6 +39,9 @@ namespace SysBot.ACNHOrders
         /// <summary> Channels where island updates (such as NHL cycles) will be posted </summary>
         public List<ulong> EchoIslandUpdateChannels { get; set; } = new();
 
+        /// <summary> Channels where the sent dodo will be logged </summary>
+        public ulong SentDodoChannels { get; set; } = new();
+
         /// <summary> When set to true, restore mode will also regen the map. </summary>
         public bool RefreshMap { get; set; } = false;
 
@@ -47,6 +50,9 @@ namespace SysBot.ACNHOrders
 
         /// <summary> When set to true, restore mode will also refresh the terrain + elevation. (requires refresh map to be set to true) </summary>
         public bool RefreshTerrainData { get; set; } = false;
+
+        /// <summary> When set to true, Max bells set </summary>
+        public bool MaxBells { get; set; } = false;
 
         /// <summary> When set to true, new arrivals will be posted in all channels in restore mode. </summary>
         public bool PostDodoCodeWithNewArrivals { get; set; } 

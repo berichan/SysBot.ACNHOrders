@@ -32,6 +32,8 @@ namespace SysBot.ACNHOrders
             bot.MapOverrides.Enqueue(req);
 
             await ReplyAsync($"Map refresh layer set to: {Path.GetFileNameWithoutExtension(filename)}.").ConfigureAwait(false);
+            Globals.Bot.CLayer = ($"{Path.GetFileNameWithoutExtension(filename)}");
+
         }
     }
 }

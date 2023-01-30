@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using NHSE.Core;
 using NHSE.Villagers;
 
@@ -48,6 +49,7 @@ namespace SysBot.ACNHOrders
             if (fieldLayerBytes.Length != ACNHMobileSpawner.MapTerrainLite.ByteSize)
                 throw new Exception("Attempting to inject mapdata of the incorrect size.");
             OverrideLayerName = layerName;
+            Globals.Bot.CLayer = ($"{Path.GetFileNameWithoutExtension(layerName)}");
         }
     }
 
