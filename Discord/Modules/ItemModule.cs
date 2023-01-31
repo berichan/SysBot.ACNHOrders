@@ -54,6 +54,14 @@ namespace SysBot.ACNHOrders
             if (!exact.IsNone)
             {
                 var msg = $"{exact.ItemId:X4} {itemName}";
+                if (msg == "02F8 vine")
+                {
+                    msg = "3107 vine";
+                }
+                if (msg == "02F7 glowing moss")
+                {
+                    msg = "3106 glowing moss";
+                }
                 await ReplyAsync(Format.Code(msg)).ConfigureAwait(false);
                 return;
             }
