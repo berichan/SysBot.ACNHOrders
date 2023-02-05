@@ -90,7 +90,7 @@ namespace SysBot.ACNHOrders
                 }
                 else
                 {
-                    await Context.User.SendMessageAsync($"Dodo Code for {Globals.Bot.TownName}: {Globals.Bot.DodoCode}.").ConfigureAwait(false)
+                    await Context.User.SendMessageAsync($"Dodo Code for {Globals.Bot.TownName}: {Globals.Bot.DodoCode}.").ConfigureAwait(false);
                 }
             }
             catch (HttpException ex)
