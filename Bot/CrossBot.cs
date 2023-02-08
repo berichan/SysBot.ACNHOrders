@@ -140,8 +140,7 @@ namespace SysBot.ACNHOrders
             filename = Path.Combine(Config.FieldLayerNHLDirectory, filename);
             if (!File.Exists(filename))
             {
-                LogUtil.LogInfo($"Could not load {filename}.", Config.IP);
-
+                //LogUtil.LogInfo($"Could not load {filename}.", Config.IP);
             }
             else
             {
@@ -172,6 +171,10 @@ namespace SysBot.ACNHOrders
             LogUtil.LogInfo("Reading Town Name. Please wait...", Config.IP);
             bytes = await Connection.ReadBytesAsync((uint)OffsetHelper.getTownNameAddress(InventoryOffset), 0x14, token).ConfigureAwait(false);
             TownName = Encoding.Unicode.GetString(bytes).TrimEnd('\0');
+            if (Globals.Bot.Config.FieldLayerName == "name")
+            {
+                CLayer = TownName;
+            }
             VisitorList.SetTownName(TownName);
             LogUtil.LogInfo("Town name set to " + TownName, Config.IP);
 
