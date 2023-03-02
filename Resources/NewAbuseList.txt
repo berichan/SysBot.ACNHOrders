@@ -329,3 +329,6 @@
 {"HashIdentifier":2905359913,"NIDIdentifier":15410188552553734919,"Identity":"997057286927294565","PlaintextName":"MoonFox-Vixy"}
 {"HashIdentifier":4151608876,"NIDIdentifier":6045758865399090471,"Identity":"473594289872437279","PlaintextName":"Octopoint-Ryan"}
 {"HashIdentifier":3799979745,"NIDIdentifier":2852314789751422392,"Identity":"252785312659537923","PlaintextName":"Khazad-Dum"}
+{"HashIdentifier":2721754110,"NIDIdentifier":15615108003745738940,"Identity":"1075220715567067167","PlaintextName":"ra0228"}
+{"HashIdentifier":334606823,"NIDIdentifier":13285143634596539427,"Identity":"882947288","PlaintextName":"mrsnipe010"}
+{"HashIdentifier":3168999978,"NIDIdentifier":10641926697068281635,"Identity":"475592298","PlaintextName":"necromancerluv"}
