@@ -335,3 +335,5 @@
 {"HashIdentifier":2943992117,"NIDIdentifier":6197344726935762125,"Identity":"827695143783890944","PlaintextName":"Clover"}
 {"HashIdentifier":2457086178,"NIDIdentifier":9857930329353805786,"Identity":"662063279581167637","PlaintextName":"Tashaun"}
 {"HashIdentifier":2897803670,"NIDIdentifier":17013223670453133504,"Identity":"837107015218233344","PlaintextName":"DocNuke"}
+{"HashIdentifier":2546444492,"NIDIdentifier":11668355914769048497,"Identity":"809890839777640510","PlaintextName":"Markus"}
+{"HashIdentifier":3627987638,"NIDIdentifier":3757774635752605725,"Identity":"853594376747352084","PlaintextName":"Kaiyo-Courtney"}
