@@ -349,3 +349,5 @@
 {"HashIdentifier":1916745762,"NIDIdentifier":11176729214589406492,"Identity":"836782834","PlaintextName":"LogicGamingX"}
 {"HashIdentifier":2875639910,"NIDIdentifier":3362299096465745246,"Identity":"760450261","PlaintextName":"lanereinstra537"}
 {"HashIdentifier":3196523935,"NIDIdentifier":9366088608191249059,"Identity":"758743564879659069","PlaintextName":"Estrella-Carolina"}
+{"HashIdentifier":3206452298,"NIDIdentifier":1562391440766633329,"Identity":"435830519549263874","PlaintextName":"Kiwidust-Cassie"}
+{"HashIdentifier":3429646137,"NIDIdentifier":11467137367223374447,"Identity":"932040251789148180","PlaintextName":"Lumina-Matteo"}
