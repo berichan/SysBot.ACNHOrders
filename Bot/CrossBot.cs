@@ -933,19 +933,21 @@ namespace SysBot.ACNHOrders
 
             int tries = 0;
             var state = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false);
-            while (state == OverworldState.Overworld || state == OverworldState.Null)
+            var baseState = state;
+            while (baseState == state)
             {
                 // Go into airport
-                LogUtil.LogInfo($"Attempting to enter airport. Try: {tries+1}", Config.IP);
+                LogUtil.LogInfo($"Attempting to enter airport. Try: {tries + 1}", Config.IP);
                 await SetStick(SwitchStick.LEFT, 20_000, 20_000, 0_400, token).ConfigureAwait(false);
                 await Task.Delay(0_500, token).ConfigureAwait(false);
-                await SetStick(SwitchStick.LEFT, 0, 0, 1_500, token).ConfigureAwait(false);
-                await Task.Delay(1_000 + Config.ExtraTimeEnterAirportWait, token).ConfigureAwait(false);
 
                 state = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false);
 
+                await SetStick(SwitchStick.LEFT, 0, 0, 0_600, token).ConfigureAwait(false);
+                await Task.Delay(1_000, token).ConfigureAwait(false);
+
                 tries++;
-                if (tries > 5)
+                if (tries > 6)
                     break;
             }
 
@@ -960,7 +962,7 @@ namespace SysBot.ACNHOrders
             }
 
             // Delay for animation
-            await Task.Delay(1_200, token).ConfigureAwait(false);
+            await Task.Delay(1_500, token).ConfigureAwait(false);
             await SwitchConnection.SetFreezePauseState(false, token).ConfigureAwait(false);
         }
 

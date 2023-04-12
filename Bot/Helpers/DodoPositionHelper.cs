@@ -155,6 +155,8 @@ namespace SysBot.ACNHOrders
             0xC0066666 => OverworldState.Overworld,
             0xBE200000 => OverworldState.UserArriveLeaving,
             _ when (val & 0xFFFF) == 0xC906 => OverworldState.Loading,
+            _ when (val & 0xFFFF) == 0xAC10 => OverworldState.Loading,
+            _ when (val & 0xFFFF) == 0x6B48 => OverworldState.Loading,
             _ => OverworldState.Unknown,
         };
 
