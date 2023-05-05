@@ -957,7 +957,7 @@ namespace SysBot.ACNHOrders
                 await Task.Delay(1_000, token).ConfigureAwait(false);
                 state = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false);
                 tries++;
-                if (tries > 5)
+                if (tries > 12)
                     break;
             }
 
