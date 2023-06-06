@@ -392,3 +392,5 @@
 {"HashIdentifier":1732102611,"NIDIdentifier":15827641996347437732,"Identity":"805826178","PlaintextName":"Akame"}
 {"HashIdentifier":1992403071,"NIDIdentifier":6686905743947361790,"Identity":"896984360","PlaintextName":"JW4LD"}
 {"HashIdentifier":2925737233,"NIDIdentifier":7235193608455843904,"Identity":"979457839166816276","PlaintextName":"Slothville-Callum"}
+{"HashIdentifier":1875243709,"NIDIdentifier":1721231365712591749,"Identity":"494214209","PlaintextName":"sophieshusband"}
+{"HashIdentifier":1455282771,"NIDIdentifier":11132063072368317844,"Identity":"120938757","PlaintextName":"Secretive"}
