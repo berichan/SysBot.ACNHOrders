@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using ACNHMobileSpawner;
 using Discord.Commands;
+using Discord.WebSocket;
 using SysBot.Base;
 
 namespace SysBot.ACNHOrders
@@ -78,7 +80,7 @@ namespace SysBot.ACNHOrders
         public async Task SpeakAsync([Remainder] string request)
         {
             var saneString = request.Length > (int)OffsetHelper.ChatBufferSize ? request.Substring(0, (int)OffsetHelper.ChatBufferSize) : request;
-            Globals.Bot.Speaks.Enqueue(new SpeakRequest(Context.User.Username, saneString));
+            Globals.Bot.Speaks.Enqueue(new SpeakRequest(Context.User is SocketGuildUser guildUser ? guildUser.Nickname : Context.User.Username, saneString));
             await ReplyAsync($"I'll say `{saneString}` shortly.").ConfigureAwait(false);
         }
 
