@@ -1,3 +1,10 @@
+Added modules include:
+Broadcast: Sends a message to all channels registered in config.json
+Ping: Simply responds that the bot is online.
+
+Other changes:
+Some existing modules create an embeded message now. I just think it looks cleaner :)
+
 # SysBot.ACNHOrders
 Designed as a fully automated queue-based order bot that injects item orders directly onto your island's map and lets the player that queued pick them up, then leave. All dodo fetching, gate opening & closing, movement and dialoguing (including Tom Nook's or Isabelle's morning announcement progression) is automated.
 
@@ -23,7 +30,7 @@ Resources:
 
 ## Support Discord:
 
-[<img src="https://canary.discordapp.com/api/guilds/771477382409879602/widget.png?style=banner2">](https://discord.gg/5bT8XK8dYe)
+Message _hedge for support regarding added modules.
 
 [sys-botbase](https://github.com/olliz0r/sys-botbase) client for remote control automation of Nintendo Switch consoles.
 
