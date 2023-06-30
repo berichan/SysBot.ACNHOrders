@@ -213,7 +213,7 @@
 {"HashIdentifier":4088991724,"NIDIdentifier":17279714585095897309,"Identity":"201105672996126720","PlaintextName":"KOMIDITA-USDMAMI"}
 {"HashIdentifier":2992753847,"NIDIdentifier":13159290236111254075,"Identity":"201105672996126720","PlaintextName":"KOMIDITA-USDMAMI-Alt"}
 {"HashIdentifier":4062190465,"NIDIdentifier":409977622943182606,"Identity":"769673204875657247","PlaintextName":"Chase"}
-{"HashIdentifier":2950721233,"NIDIdentifier":8204617020571979377,"Identity":"769673204875657247","PlaintextName":"Chase"}
+{"HashIdentifier":2676791597,"NIDIdentifier":8204617020571979377,"Identity":"769673204875657247","PlaintextName":"Chase"}
 {"HashIdentifier":4284958928,"NIDIdentifier":6824164002909936415,"Identity":"843330059010834444","PlaintextName":"Windfall-Maddox"}
 {"HashIdentifier":3874024947,"NIDIdentifier":6441499581946189497,"Identity":"406850668716883978","PlaintextName":"Hyrule-Terry"}
 {"HashIdentifier":2323454751,"NIDIdentifier":12983288826404330823,"Identity":"762445973786984448","PlaintextName":"SunCoast-kira"}
@@ -396,5 +396,8 @@
 {"HashIdentifier":1455282771,"NIDIdentifier":11132063072368317844,"Identity":"120938757","PlaintextName":"Secretive"}
 {"HashIdentifier":1509415004,"NIDIdentifier":1966124332199186309,"Identity":"867136608322977814","PlaintextName":"Raloff"}
 {"HashIdentifier":2153220131,"NIDIdentifier":10801070389062230123,"Identity":"67367887","PlaintextName":"Jordanchu_-Raloff"}
-{"HashIdentifier":3353857979,"NIDIdentifier":8177104241025201015,"Identity":"961362571103977523","PlaintextName":"Inkopolis-Julian"}
+{"HashIdentifier":3479649371,"NIDIdentifier":8177104241025201015,"Identity":"961362571103977523","PlaintextName":"Inkopolis-Julian"}
 {"HashIdentifier":2540054624,"NIDIdentifier":353460269226261915,"Identity":"853332787321765909","PlaintextName":"othello-kfc"}
+{"HashIdentifier":3978704342,"NIDIdentifier":5746795811444764186,"Identity":"832101575525793793","PlaintextName":"Malibu"}
+{"HashIdentifier":4293408379,"NIDIdentifier":2676001713080930940,"Identity":"1121725670582648863","PlaintextName":"podel-pico"}
+{"HashIdentifier":3690030760,"NIDIdentifier":2138117924292355512,"Identity":"1005923355435733143","PlaintextName":"PokeWorld-Nick"}
