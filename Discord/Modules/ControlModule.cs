@@ -123,7 +123,6 @@ namespace SysBot.ACNHOrders
 
         [Command("ping")]
         [Summary("Replies with pong if alive")]
-        [RequireSudo]
         public async Task PingAsync()
         {
             await ReplyAsync($"Pong!").ConfigureAwait(false);
