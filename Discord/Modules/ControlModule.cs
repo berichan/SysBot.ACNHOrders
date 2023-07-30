@@ -121,6 +121,14 @@ namespace SysBot.ACNHOrders
             Environment.Exit(0);
         }
 
+        [Command("ping")]
+        [Summary("Replies with pong if alive")]
+        [RequireSudo]
+        public async Task PingAsync()
+        {
+            await ReplyAsync($"Pong!").ConfigureAwait(false);
+        }
+
         private async Task SetScreen(bool on)
         {
             var bot = Globals.Bot;

@@ -1,22 +1,28 @@
 ﻿using Discord;
 using NHSE.Core;
+using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace SysBot.ACNHOrders
 {
     public static class NetUtil
     {
-        private static readonly WebClient webClient = new WebClient();
+        private static readonly HttpClient httpClient = new HttpClient();
 
         public static async Task<byte[]> DownloadFromUrlAsync(string url)
         {
-            return await webClient.DownloadDataTaskAsync(url).ConfigureAwait(false);
+            HttpResponseMessage response = await httpClient.GetAsync(url).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
         }
 
         public static byte[] DownloadFromUrlSync(string url)
         {
-            return webClient.DownloadData(url);
+            HttpResponseMessage response = httpClient.GetAsync(url).ConfigureAwait(false).GetAwaiter().GetResult();
+            response.EnsureSuccessStatusCode();
+            return response.Content.ReadAsByteArrayAsync().ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         public static async Task<Download<Item[]>> DownloadNHIAsync(IAttachment att)
@@ -42,6 +48,25 @@ namespace SysBot.ACNHOrders
             result.Data = items;
             result.Success = true;
             return result;
+        }
+
+        public static async Task DownloadFileAsync(string url, string destinationFilePath)
+        {
+            using (HttpClient httpClient = new HttpClient())
+            {
+                using (HttpResponseMessage response = await httpClient.GetAsync(url))
+                {
+                    response.EnsureSuccessStatusCode();
+
+                    using (Stream contentStream = await response.Content.ReadAsStreamAsync())
+                    {
+                        using (FileStream fileStream = new FileStream(destinationFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true))
+                        {
+                            await contentStream.CopyToAsync(fileStream);
+                        }
+                    }
+                }
+            }
         }
     }
 

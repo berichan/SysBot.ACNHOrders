@@ -313,11 +313,9 @@ namespace SysBot.ACNHOrders
             string file = attachments.ElementAt(0).Filename;
             string url = attachments.ElementAt(0).Url;
 
-            using (WebClient myWebClient = new WebClient())
-            {
-                var file1 = cfg.OrderConfig.NHIPresetsDirectory + "/" + file;
-                myWebClient.DownloadFile(url, file1);
-            }
+            var file1 = cfg.OrderConfig.NHIPresetsDirectory + "/" + file;
+            await NetUtil.DownloadFileAsync(url, file1).ConfigureAwait(false);
+
             await ReplyAsync("Received attachment!\n\n" + "The following file has been added to presets folder: " + file);
         }
 
