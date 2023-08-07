@@ -28,7 +28,7 @@ namespace SysBot.ACNHOrders
             Trader = trader;
             CommandSentChannel = commandSentChannel;
             Order = order;
-            VillagerName = trader is SocketGuildUser guildUser ? guildUser.Nickname : trader.Username;
+            VillagerName = trader.Username;
             VillagerOrder = vil;
         }
 
@@ -47,7 +47,7 @@ namespace SysBot.ACNHOrders
 
         public void OrderReady(CrossBot routine, string msg, string dodo)
         {
-            Trader.SendMessageAsync($"I'm waiting for you {(Trader is SocketGuildUser guildUser ? guildUser.Nickname : Trader.Username)}! {msg}. Your Dodo code is **{dodo}**");
+            Trader.SendMessageAsync($"I'm waiting for you {Trader.GlobalName}! {msg}. Your Dodo code is **{dodo}**");
         }
 
         public void OrderFinished(CrossBot routine, string msg)

@@ -32,7 +32,7 @@ namespace SysBot.ACNHOrders
             }
 
             // Try adding
-            var result = AttemptAddToQueue(itemReq, trader.Mention, trader is SocketGuildUser guildUser ? guildUser.Nickname : trader.Username, out var msg);
+            var result = AttemptAddToQueue(itemReq, trader.Mention, trader.Username, out var msg);
 
             // Notify in channel
             await Context.Channel.SendMessageAsync(msg).ConfigureAwait(false);

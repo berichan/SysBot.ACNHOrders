@@ -82,7 +82,7 @@ namespace SysBot.ACNHOrders
                 if (VillagerOrderParser.IsUnadoptable(internalName))
                     extraMsg += " Please note that you will not be able to adopt this villager.";
 
-                var request = new VillagerRequest(Context.User is SocketGuildUser guildUser ? guildUser.Nickname : Context.User.Username, replace, (byte)index, GameInfo.Strings.GetVillager(internalName))
+                var request = new VillagerRequest(Context.User.Username, replace, (byte)index, GameInfo.Strings.GetVillager(internalName))
                 {
                     OnFinish = success =>
                     {

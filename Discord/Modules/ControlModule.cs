@@ -80,7 +80,7 @@ namespace SysBot.ACNHOrders
         public async Task SpeakAsync([Remainder] string request)
         {
             var saneString = request.Length > (int)OffsetHelper.ChatBufferSize ? request.Substring(0, (int)OffsetHelper.ChatBufferSize) : request;
-            Globals.Bot.Speaks.Enqueue(new SpeakRequest(Context.User is SocketGuildUser guildUser ? guildUser.Nickname : Context.User.Username, saneString));
+            Globals.Bot.Speaks.Enqueue(new SpeakRequest(Context.User.Username, saneString));
             await ReplyAsync($"I'll say `{saneString}` shortly.").ConfigureAwait(false);
         }
 
@@ -125,7 +125,7 @@ namespace SysBot.ACNHOrders
         [Summary("Replies with pong if alive")]
         public async Task PingAsync()
         {
-            await ReplyAsync($"Pong!").ConfigureAwait(false);
+            await ReplyAsync($"Hi {Context.User.Mention}, Pong!").ConfigureAwait(false);
         }
 
         private async Task SetScreen(bool on)

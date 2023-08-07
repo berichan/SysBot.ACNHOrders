@@ -62,7 +62,7 @@ namespace SysBot.ACNHOrders
         public async Task RequestRestoreLoopDodoAsync()
         {
             var cfg = Globals.Bot.Config;
-            var MesUser = Context.User is SocketGuildUser guildUser ? guildUser.Nickname : Context.User.Username;
+            var MesUser = Context.User.Username;
             Globals.Bot.DisUserID = ($"{Context.User.Id}");
             if (!Globals.Bot.Config.DodoModeConfig.AllowSendDodo && !Globals.Bot.Config.CanUseSudo(Context.User.Id) && Globals.Self.Owner != Context.User.Id)
                 return;
@@ -155,7 +155,7 @@ namespace SysBot.ACNHOrders
         public async Task RequestTurnipSetAsync(int value)
         {
             var bot = Globals.Bot;
-            bot.StonkRequests.Enqueue(new TurnipRequest(Context.User is SocketGuildUser guildUser ? guildUser.Nickname : Context.User.Username, value)
+            bot.StonkRequests.Enqueue(new TurnipRequest(Context.User.Username, value)
             {
                 OnFinish = success =>
                 {
@@ -192,7 +192,7 @@ namespace SysBot.ACNHOrders
                 items = items.Take(MaxRequestCount).ToArray();
             }
 
-            var requestInfo = new ItemRequest(Context.User is SocketGuildUser guildUser ? guildUser.Nickname : Context.User.Username, items);
+            var requestInfo = new ItemRequest(Context.User.Username, items);
             Globals.Bot.Injections.Enqueue(requestInfo);
 
             var msg = $"Item drop request{(requestInfo.Item.Count > 1 ? "s" : string.Empty)} will be executed momentarily.";

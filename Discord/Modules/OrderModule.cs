@@ -53,7 +53,7 @@ namespace SysBot.ACNHOrders
 
                 request = san;
                 var replace = VillagerResources.GetVillager(res);
-                vr = new VillagerRequest(Context.User is SocketGuildUser guildUser ? guildUser.Nickname : Context.User.Username, replace, 0, GameInfo.Strings.GetVillager(res));
+                vr = new VillagerRequest(Context.User.Username, replace, 0, GameInfo.Strings.GetVillager(res));
             }
 
             Item[]? items = null;
@@ -107,7 +107,7 @@ namespace SysBot.ACNHOrders
 
                 request = san;
                 var replace = VillagerResources.GetVillager(res);
-                vr = new VillagerRequest(Context.User is SocketGuildUser guildUser ? guildUser.Nickname : Context.User.Username, replace, 0, GameInfo.Strings.GetVillager(res));
+                vr = new VillagerRequest(Context.User.Username, replace, 0, GameInfo.Strings.GetVillager(res));
             }
 
             var items = string.IsNullOrWhiteSpace(request) ? new Item[1] { new Item(Item.NONE) } : ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, ItemDestination.FieldItemDropped);
@@ -169,7 +169,7 @@ namespace SysBot.ACNHOrders
 
                     request = san;
                     var replace = VillagerResources.GetVillager(res);
-                    vr = new VillagerRequest(Context.User is SocketGuildUser guildUser ? guildUser.Nickname : Context.User.Username, replace, 0, GameInfo.Strings.GetVillager(res));
+                    vr = new VillagerRequest(Context.User.Username, replace, 0, GameInfo.Strings.GetVillager(res));
                 }
 
                 Item[]? items = null;
@@ -269,7 +269,7 @@ namespace SysBot.ACNHOrders
 
                 presetName = san;
                 var replace = VillagerResources.GetVillager(res);
-                vr = new VillagerRequest(Context.User is SocketGuildUser guildUser ? guildUser.Nickname : Context.User.Username, replace, 0, GameInfo.Strings.GetVillager(res));
+                vr = new VillagerRequest(Context.User.Username, replace, 0, GameInfo.Strings.GetVillager(res));
             }
 
             presetName = presetName.Trim();
@@ -532,7 +532,7 @@ namespace SysBot.ACNHOrders
 
             var multiOrder = new MultiItem(items.ToArray(), catalogue, true, true);
             var requestInfo = new OrderRequest<Item>(multiOrder, multiOrder.ItemArray.Items.ToArray(), orderer.Id, QueueExtensions.GetNextID(), orderer, msgChannel, vr);
-            await Context.AddToQueueAsync(requestInfo, orderer is SocketGuildUser guildUser ? guildUser.Nickname : orderer.Username, orderer);
+            await Context.AddToQueueAsync(requestInfo, orderer.Username, orderer);
         }
 
         public static bool CanCommand(ulong id, int secondsCooldown, bool addIfNotAdded)
