@@ -441,3 +441,5 @@
 {"HashIdentifier":2077121178,"NIDIdentifier":1927706495161876236,"Identity":"833920540","PlaintextName":"yuuri"}
 {"HashIdentifier":3337170848,"NIDIdentifier":13026256370114670424,"Identity":"1124777018744123462","PlaintextName":"gonpachirokamaboko6709"}
 {"HashIdentifier":4136241939,"NIDIdentifier":14914038093739232271,"Identity":"794595642","PlaintextName":"neversane13"}
+{"HashIdentifier":362426823,"NIDIdentifier":2027161969586851167,"Identity":"242423919","PlaintextName":"TNephilim"}
+{"HashIdentifier":899950657,"NIDIdentifier":9791954075222115907,"Identity":"242423919","PlaintextName":"TNephilim"}
