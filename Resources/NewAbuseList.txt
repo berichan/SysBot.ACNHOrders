@@ -465,3 +465,6 @@
 {"HashIdentifier":2480749174,"NIDIdentifier":16686348279919292500,"Identity":"90970493418491904","PlaintextName":"BLANK-Shiro"}
 {"HashIdentifier":3444303147,"NIDIdentifier":7964599255987264852,"Identity":"661310088597864468","PlaintextName":"Milya-Mewni"}
 {"HashIdentifier":1778704981,"NIDIdentifier":3831405991536872402,"Identity":"723252491","PlaintextName":"gren_maju_da_eiza"}
+{"HashIdentifier":4157589470,"NIDIdentifier":3794786394925139037,"Identity":"594924971000594432","PlaintextName":"Robbie-Gardenia"}
+{"HashIdentifier":2899337038,"NIDIdentifier":8935561801024155633,"Identity":"832758151711031326","PlaintextName":"Raven-Opal"}
+{"HashIdentifier":3831906301,"NIDIdentifier":6046095047715859377,"Identity":"748876048934109186","PlaintextName":"GordenCand"}
