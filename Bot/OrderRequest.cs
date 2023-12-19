@@ -2,6 +2,7 @@
 using Discord.WebSocket;
 using NHSE.Core;
 using System;
+using System.Diagnostics;
 using System.Linq;
 
 namespace SysBot.ACNHOrders
@@ -46,7 +47,7 @@ namespace SysBot.ACNHOrders
 
         public void OrderReady(CrossBot routine, string msg, string dodo)
         {
-            Trader.SendMessageAsync($"I'm waiting for you {Trader.Username}! {msg}. Your Dodo code is **{dodo}**");
+            Trader.SendMessageAsync($"I'm waiting for you {Trader.Mention}! {msg}. Your Dodo code is **{dodo}**");
         }
 
         public void OrderFinished(CrossBot routine, string msg)

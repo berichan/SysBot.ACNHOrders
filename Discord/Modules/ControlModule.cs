@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using ACNHMobileSpawner;
 using Discord.Commands;
+using Discord.WebSocket;
 using SysBot.Base;
 
 namespace SysBot.ACNHOrders
@@ -117,6 +119,13 @@ namespace SysBot.ACNHOrders
         {
             await ReplyAsync($"Goodbye {Context.User.Mention}, remember me.").ConfigureAwait(false);
             Environment.Exit(0);
+        }
+
+        [Command("ping")]
+        [Summary("Replies with pong if alive")]
+        public async Task PingAsync()
+        {
+            await ReplyAsync($"Hi {Context.User.Mention}, Pong!").ConfigureAwait(false);
         }
 
         private async Task SetScreen(bool on)
