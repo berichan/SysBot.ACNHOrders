@@ -3,9 +3,11 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using ACNHMobileSpawner;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using SysBot.Base;
+using System.IO;
 
 namespace SysBot.ACNHOrders
 {
@@ -128,6 +130,31 @@ namespace SysBot.ACNHOrders
             await ReplyAsync($"Hi {Context.User.Mention}, Pong!").ConfigureAwait(false);
         }
 
+        [Command("makebat")]
+        [Alias("makebatch")]
+        [RequireSudo]
+        public async Task MakeBatAsync()
+        {
+            var botloc = AppDomain.CurrentDomain.BaseDirectory;
+            var botapp = AppDomain.CurrentDomain.FriendlyName;
+            var botname = "";
+            if (Globals.Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
+            {
+                botname = "Treasure Island";
+            }
+            else
+            {
+                botname = "Order Bot";
+            }
+            var batinfo = $"TITLE {botname}\n@echo off\n:Start\ncd {botloc}\n{botapp}\n:: Wait 20 seconds before restarting.\nTIMEOUT / T 20\nGOTO: Start";
+            using (StreamWriter writer = new StreamWriter("Restart.bat"))
+            {
+                writer.WriteLine($"{batinfo}");
+            }
+            await Context.Message.DeleteAsync(RequestOptions.Default).ConfigureAwait(false);
+            await ReplyAsync("I have made `Restart.bat`. Please check the bot folder for the file.").ConfigureAwait(false);
+        }
+        
         private async Task SetScreen(bool on)
         {
             var bot = Globals.Bot;
