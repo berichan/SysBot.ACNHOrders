@@ -138,13 +138,8 @@ namespace SysBot.ACNHOrders
             var filenameNoExt = Config.FieldLayerName;
             filename += ".nhl";
             filename = Path.Combine(Config.FieldLayerNHLDirectory, filename);
-            if (!File.Exists(filename))
+            if (File.Exists(filename))
             {
-                //LogUtil.LogInfo($"Could not load {filename}.", Config.IP);
-            }
-            else
-            {
-
                 CLayer = filenameNoExt;
                 var bytes1 = File.ReadAllBytes(filename);
                 LogUtil.LogInfo($"Layer {filename} loaded.", Config.IP);
