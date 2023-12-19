@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using ACNHMobileSpawner;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using SysBot.Base;
