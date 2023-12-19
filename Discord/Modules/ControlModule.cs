@@ -6,6 +6,7 @@ using ACNHMobileSpawner;
 using Discord.Commands;
 using Discord.WebSocket;
 using SysBot.Base;
+using System.IO;
 
 namespace SysBot.ACNHOrders
 {
