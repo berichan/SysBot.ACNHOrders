@@ -514,3 +514,5 @@
 {"HashIdentifier":2860466902,"NIDIdentifier":11510311216849531046,"Identity":"11510311216849531046","PlaintextName":"Ebonywoods-Mary"}
 {"HashIdentifier":2844939862,"NIDIdentifier":18330509819027737250,"Identity":"1139027577403617321","PlaintextName":"Atlas-Pamplona"}
 {"HashIdentifier":907793224,"NIDIdentifier":8904524569838325992,"Identity":"207771266","PlaintextName":"sampaguita0210"}
+{"HashIdentifier":3040135860,"NIDIdentifier":17441310267917561007,"Identity":"1010944344859095041","PlaintextName":"remi2440"}
+{"HashIdentifier":3107897576,"NIDIdentifier":17547318309164855167,"Identity":"1250264654148665355","PlaintextName":"Floofy-Shiba"}
