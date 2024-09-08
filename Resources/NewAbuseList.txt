@@ -529,3 +529,4 @@
 {"HashIdentifier":2326214435,"NIDIdentifier":2511082674165652177,"Identity":"45380427","PlaintextName":"Sancuu"}
 {"HashIdentifier":1181035785,"NIDIdentifier":17271226760192418201,"Identity":"45380427","PlaintextName":"Sancuu"}
 {"HashIdentifier":3389095442,"NIDIdentifier":15672377558772104057,"Identity":"1276864371561070705","PlaintextName":"millie-amethyst"}
+{"HashIdentifier":4244428143,"NIDIdentifier":12428960796321015428,"Identity":"453241012005896213","PlaintextName":"Snorlac-Johto"}
