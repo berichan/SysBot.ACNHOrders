@@ -530,3 +530,5 @@
 {"HashIdentifier":1181035785,"NIDIdentifier":17271226760192418201,"Identity":"45380427","PlaintextName":"Sancuu"}
 {"HashIdentifier":3389095442,"NIDIdentifier":15672377558772104057,"Identity":"1276864371561070705","PlaintextName":"millie-amethyst"}
 {"HashIdentifier":4244428143,"NIDIdentifier":12428960796321015428,"Identity":"453241012005896213","PlaintextName":"Snorlac-Johto"}
+{"HashIdentifier":2094579973,"NIDIdentifier":1222460878813603641,"Identity":"603871024","PlaintextName":"myguy121"}
+{"HashIdentifier":4073471466,"NIDIdentifier":10912623928722397712,"Identity":"671359841318600723 ","PlaintextName":"K-Kîle"}
