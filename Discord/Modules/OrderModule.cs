@@ -597,6 +597,7 @@ namespace SysBot.ACNHOrders
             }
 
             sanitizedOrder = order.Substring(0, index);
+            sanitizedOrder = sanitizedOrder.Trim().TrimEnd(',');
             result = internalName;
             return VillagerRequestResult.Success;
         }
