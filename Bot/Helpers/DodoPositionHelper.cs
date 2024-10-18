@@ -1,6 +1,7 @@
 ﻿using SysBot.Base;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -22,6 +23,35 @@ namespace SysBot.ACNHOrders
     public class DodoPositionHelper
     {
         private const string DodoPattern = @"^[A-Z0-9]*$";
+
+        private const string ExperimentalDodoFetchRoutine =
+                "A,W{0}," +
+                "A,W900," +
+                "DD,W400," +
+                "A,W1000," +
+                "A,W550," +
+                "DD,W400," +
+                "A,W600," +
+                "A,W550," +
+                "A,W550," +
+                "A,W550," +
+                "A,W{1}," +
+                "A,W550," +
+                "DU,W400," +
+                "DU,W400," +
+                "A,W800," +
+                "A,W550," +
+                "DU,W400," +
+                "A,W550," +
+                "A,W550," +
+                "A,W550," +
+                "A,W550," +
+                "A,W550," +
+                "A,W550," +
+                "A,W550," +
+                "{end}";
+
+        private const string ExperimentalFetchTextFilename = "ExperimentalFetch.txt";
 
         private int ButtonClickTime => 0_900 + Config.DialogueButtonPressExtraDelay;
 
@@ -223,32 +253,14 @@ namespace SysBot.ACNHOrders
             // Navigate through dialog with Dodo to open gates and to get Dodo code.
             await Task.Delay(0_500, token).ConfigureAwait(false);
 
-            var encodedBytesSequence = Encoding.ASCII.GetBytes("clickSeq " +
-                $"A,W{(isRetry ? 2_000 : 3_100)}," +
-                "A,W900," +
-                "DD,W400," +
-                "A,W1000," +
-                "A,W550," +
-                "DD,W400," +
-                "A,W600," +
-                "A,W550," +
-                "A,W550," +
-                "A,W550," +
-                $"A,W{17_000 + Config.ExtraTimeConnectionWait}," +
-                "A,W550," +
-                "DU,W400," +
-                "DU,W400," +
-                "A,W800," +
-                "A,W550," +
-                "DU,W400," +
-                "A,W550," +
-                "A,W550," +
-                "A,W550," +
-                "A,W550," +
-                "A,W550," +
-                "A,W550," +
-                "A,W550," +
-                "\r\n");
+            if (!File.Exists(ExperimentalFetchTextFilename))
+                File.WriteAllText(ExperimentalFetchTextFilename, ExperimentalDodoFetchRoutine);
+            var experimentalText = File.ReadAllText(ExperimentalFetchTextFilename)
+                .Replace("{0}", $"{(isRetry ? 2_000 : 3_100)}")
+                .Replace("{1}", $"{17_000 + Config.ExtraTimeConnectionWait}")
+                .Replace("{end}", "\r\n");
+
+            var encodedBytesSequence = Encoding.ASCII.GetBytes($"clickSeq " + experimentalText);
 
             await BotRunner.UpdateBlocker(true, token).ConfigureAwait(false);
 
