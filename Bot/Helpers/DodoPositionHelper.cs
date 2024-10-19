@@ -102,8 +102,8 @@ namespace SysBot.ACNHOrders
             DodoCode = string.Empty;
         }
 
-        byte[] freezeBytes = Encoding.ASCII.GetBytes($"freeze 0x{ACNHMobileSpawner.OffsetHelper.TextSpeedAddress:X8} 0x03\r\n");
-        byte[] unFreezeBytes = Encoding.ASCII.GetBytes($"unFreeze 0x{ACNHMobileSpawner.OffsetHelper.TextSpeedAddress:X8}\r\n");
+        private readonly byte[] freezeBytes = Encoding.ASCII.GetBytes($"freeze 0x{ACNHMobileSpawner.OffsetHelper.TextSpeedAddress:X8} 0x03\r\n");
+        private readonly byte[] unFreezeBytes = Encoding.ASCII.GetBytes($"unFreeze 0x{ACNHMobileSpawner.OffsetHelper.TextSpeedAddress:X8}\r\n");
 
         public async Task GetDodoCode(uint Offset, bool isRetry, CancellationToken token)
         {
@@ -256,6 +256,7 @@ namespace SysBot.ACNHOrders
             if (!File.Exists(ExperimentalFetchTextFilename))
                 File.WriteAllText(ExperimentalFetchTextFilename, ExperimentalDodoFetchRoutine);
             var experimentalText = File.ReadAllText(ExperimentalFetchTextFilename)
+                .Trim()
                 .Replace("{0}", $"{(isRetry ? 2_000 : 3_100)}")
                 .Replace("{1}", $"{17_000 + Config.ExtraTimeConnectionWait}")
                 .Replace("{end}", "\r\n");
