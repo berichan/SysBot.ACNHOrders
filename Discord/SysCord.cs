@@ -181,7 +181,13 @@ namespace SysBot.ACNHOrders
                     await textChannel.SendMessageAsync(message).ConfigureAwait(false);
                 return true;
             }
-            catch{ }
+            catch(Exception e)
+            {
+                if (e.StackTrace != null)
+                    LogUtil.LogError($"SpeakMessage failed with:\n{e.Message}\n{e.StackTrace}", nameof(SysCord));
+                else
+                    LogUtil.LogError($"SpeakMessage failed with:\n{e.Message}", nameof(SysCord));
+            }
 
             return false;
         }
