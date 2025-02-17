@@ -552,3 +552,5 @@
 {"HashIdentifier":4221261207,"NIDIdentifier":17028044185107673444,"Identity":"1127443760008138862","PlaintextName":"Bennett-VanillaBay"}
 {"HashIdentifier":3066390066,"NIDIdentifier":10764212663961540474,"Identity":"409923958222094368","PlaintextName":"JamessJ-NIGHT CITY"}
 {"HashIdentifier":2782542619,"NIDIdentifier":11421660761026298539,"Identity":"1184198789989416980","PlaintextName":"camerupt_7"}
+{"HashIdentifier":3979553323,"NIDIdentifier":11636400880000733110,"Identity":"1294949885954490400","PlaintextName":"nathan-nathanile"}
+{"HashIdentifier":2243122204,"NIDIdentifier":12422589817177624785,"Identity":"853303454822957066","PlaintextName":"Atheer-Yeah!"}
