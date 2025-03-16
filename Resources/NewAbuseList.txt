@@ -397,7 +397,8 @@
 {"HashIdentifier":1455282771,"NIDIdentifier":11132063072368317844,"Identity":"120938757","PlaintextName":"Secretive"}
 {"HashIdentifier":1509415004,"NIDIdentifier":1966124332199186309,"Identity":"867136608322977814","PlaintextName":"Raloff"}
 {"HashIdentifier":2153220131,"NIDIdentifier":10801070389062230123,"Identity":"67367887","PlaintextName":"Jordanchu_-Raloff"}
-{"HashIdentifier":3913082481,"NIDIdentifier":8177104241025201015,"Identity":"961362571103977523","PlaintextName":"Inkopolis-Julian"}
+{"HashIdentifier":2175312275,"NIDIdentifier":8177104241025201015,"Identity":"961362571103977523","PlaintextName":"Inkopolis-Julian"}
+{"HashIdentifier":3292592631,"NIDIdentifier":17172525422945019121,"Identity":"528264546343714816","PlaintextName":"La Palma-Claudia"}
 {"HashIdentifier":2540054624,"NIDIdentifier":353460269226261915,"Identity":"853332787321765909","PlaintextName":"othello-kfc"}
 {"HashIdentifier":3978704342,"NIDIdentifier":5746795811444764186,"Identity":"832101575525793793","PlaintextName":"Malibu"}
 {"HashIdentifier":4293408379,"NIDIdentifier":2676001713080930940,"Identity":"1121725670582648863","PlaintextName":"podel-pico"}
@@ -554,3 +555,5 @@
 {"HashIdentifier":2782542619,"NIDIdentifier":11421660761026298539,"Identity":"1184198789989416980","PlaintextName":"camerupt_7"}
 {"HashIdentifier":3979553323,"NIDIdentifier":11636400880000733110,"Identity":"1294949885954490400","PlaintextName":"nathan-nathanile"}
 {"HashIdentifier":2243122204,"NIDIdentifier":12422589817177624785,"Identity":"853303454822957066","PlaintextName":"Atheer-Yeah!"}
+{"HashIdentifier":3281302726,"NIDIdentifier":933772623522129509,"Identity":"900629555","PlaintextName":"kreatonkartana"}
+{"HashIdentifier":2898692878,"NIDIdentifier":6206731870602405689,"Identity":"886359079516258324","PlaintextName":"Simone-Leapflower"}
