@@ -779,6 +779,9 @@ namespace SysBot.ACNHOrders
                 {
                     LogUtil.LogInfo($"{LastArrival} from {LastArrivalIsland} is a known abuser. Starting next order...", Config.IP);
                     order.OrderCancelled(this, $"You are a known abuser. You cannot use this bot.", false);
+                    await RestartGame(token).ConfigureAwait(false);
+                    await Task.Delay(2_000, token).ConfigureAwait(false);
+                    await Click(SwitchButton.A, 0_500, token).ConfigureAwait(false);
                     return OrderResult.NoArrival;
                 }
                 else
