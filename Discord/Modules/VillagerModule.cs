@@ -89,7 +89,7 @@ namespace SysBot.ACNHOrders
                         var reply = success
                             ? $"{nameSearched} has been injected by the bot at Index {slot}. Please go talk to them!{extraMsg}"
                             : "Failed to inject villager. Please tell the bot owner to look at the logs!";
-                        Task.Run(async () => await ReplyAsync($"{mention}: {reply}").ConfigureAwait(false));
+                        Task.Run(async () => await ReplyAsync($"{reply}").ConfigureAwait(false));
                     }
                 };
 
@@ -99,7 +99,7 @@ namespace SysBot.ACNHOrders
             }
 
             var addMsg = count > 1 ? $"Villager inject request for {count} villagers have" : "Villager inject request has";
-            var msg = $"{Context.User.Mention}: {addMsg} been added to the queue and will be injected momentarily. I will reply to you once this has completed.";
+            var msg = $":{addMsg} been added to the queue and will be injected momentarily. I will reply to you once this has completed.";
             await ReplyAsync(msg).ConfigureAwait(false);
         }
 
