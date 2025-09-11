@@ -299,6 +299,8 @@
 {"HashIdentifier":2228767669,"NIDIdentifier":2731916748611838791,"Identity":"836499610","PlaintextName":"ameiriii"}
 {"HashIdentifier":1069976856,"NIDIdentifier":4055981010896882256,"Identity":"818048316","PlaintextName":"littlekittenkitty"}
 {"HashIdentifier":3300677961,"NIDIdentifier":18202388940349091373,"Identity":"374531928570986518","PlaintextName":"Amphibia-Clarence"}
+{"HashIdentifier":3300677961,"NIDIdentifier":1412759696934305882,"Identity":"374531928570986518","PlaintextName":"Mindscape-Clarence"}
+{"HashIdentifier":2711536028,"NIDIdentifier":14141649075436855470,"Identity":"702098221572554772","PlaintextName":"Valentin-Umi"}
 {"HashIdentifier":2449100277,"NIDIdentifier":888554259457979611,"Identity":"154276606","PlaintextName":"redtroll3r"}
 {"HashIdentifier":3675778413,"NIDIdentifier":365702668952773839,"Identity":"869039144","PlaintextName":"jimlin59777"}
 {"HashIdentifier":2644273189,"NIDIdentifier":6364688092878272369,"Identity":"376182706158960651","PlaintextName":"Neko Punch"}
@@ -577,3 +579,5 @@
 {"HashIdentifier":3204065702,"NIDIdentifier":7829317081191339054,"Identity":"792839933387472918","PlaintextName":"Pandesien-Stefano"}
 {"HashIdentifier":319533799,"NIDIdentifier":9702522154855317568,"Identity":"891346860","PlaintextName":"Pluvio_markyjosh0603"}
 {"HashIdentifier":644088644,"NIDIdentifier":18293720404967306000,"Identity":"556943655810891793","PlaintextName":"Sertan"}
+{"HashIdentifier":2226839519,"NIDIdentifier":13170218727039877648,"Identity":"749434100","PlaintextName":"infernape6696"}
+{"HashIdentifier":2333277420,"NIDIdentifier":12541630811643594926,"Identity":"1289631206312382466","PlaintextName":"aquacove-moritz"}
