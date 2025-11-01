@@ -181,7 +181,7 @@ namespace SysBot.ACNHOrders.Twitch
             var items = ItemParser.GetItemsFromUserInput(message, cfg.DropConfig, cfg.DropConfig.UseLegacyDrop ? ItemDestination.PlayerDropped : ItemDestination.HeldItem);
             MultiItem.StackToMax(items);
 
-            if (!InternalItemTool.CurrentInstance.IsSane(items, cfg.DropConfig))
+            if (!InternalItemTool.CurrentInstance.IsSaneAfterCorrection(items, cfg.DropConfig))
                 return $"You are attempting to drop items that will damage your save. Drop request not accepted.";
 
             var MaxRequestCount = cfg.DropConfig.MaxDropCount;
@@ -225,7 +225,7 @@ namespace SysBot.ACNHOrders.Twitch
 
         private static bool InsertToQueue(IReadOnlyCollection<Item> items, VillagerRequest? vr, string display, string username, ulong id, bool sub, bool cat, out string msg)
         {
-            if (!InternalItemTool.CurrentInstance.IsSane(items, Globals.Bot.Config.DropConfig))
+            if (!InternalItemTool.CurrentInstance.IsSaneAfterCorrection(items, Globals.Bot.Config.DropConfig))
             {
                 msg = $"@{username} - You are attempting to order items that will damage your save. Order not accepted.";
                 return false;
