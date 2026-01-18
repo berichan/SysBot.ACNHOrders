@@ -45,6 +45,43 @@ namespace SysBot.ACNHOrders
         [Summary("checks a user's ban state by their long number id.")]
         [RequireSudo]
         public async Task CheckBanAsync(string id) => await ReplyAsync(GlobalBan.IsBanned(id) ? $"{id} is abuse-banned" : $"{id} is not abuse-banned").ConfigureAwait(false);
-        
+
+        [Command("restrict")]
+        [Summary("temporarily restricts a user by their long number account id.")]
+        [RequireSudo]
+        public async Task RestrictAsync(ulong id)
+        {
+            if (GlobalBan.IsTempRestricted(id))
+            {
+                await ReplyAsync($"{id} is already temporarily restricted").ConfigureAwait(false);
+            }
+            else
+            {
+                GlobalBan.TempRestrict(id);
+                await ReplyAsync($"{id} has been temporarily restricted.").ConfigureAwait(false);
+            }
+        }
+
+        [Command("unRestrict")]
+        [Summary("removes temporary restriction from a user by their long number account id.")]
+        [RequireSudo]
+        public async Task UnRestrictAsync(ulong id)
+        {
+            if (GlobalBan.IsTempRestricted(id))
+            {
+                GlobalBan.RemoveTempRestrict(id);
+                await ReplyAsync($"{id} has been removed from temporary restriction.").ConfigureAwait(false);
+            }
+            else
+            {
+                await ReplyAsync($"{id} is not temporarily restricted").ConfigureAwait(false);
+            }
+        }
+
+        [Command("checkRestrict")]
+        [Summary("checks a user's temporary restriction state by their long number account id.")]
+        [RequireSudo]
+        public async Task CheckRestrictAsync(ulong id) => await ReplyAsync(GlobalBan.IsTempRestricted(id) ? $"{id} is temporarily restricted" : $"{id} is not temporarily restricted").ConfigureAwait(false);
+    
     }
 }

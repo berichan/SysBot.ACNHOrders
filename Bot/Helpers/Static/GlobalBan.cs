@@ -27,6 +27,7 @@ namespace SysBot.ACNHOrders
 
         private static int PenaltyCountBan = 0;
         private static readonly List<Penalty> PenaltyList = new();
+        private static readonly List<ulong> TemporaryRestrictionList = new();
 
         private static readonly object MapAccessor = new();
 
@@ -136,6 +137,34 @@ namespace SysBot.ACNHOrders
             foreach (var b in bans)
                 if (PenaltyList.Find(x => x.ID == b) == null)
                     PenaltyList.Add(new Penalty(b, (uint)PenaltyCountBan));
+        }
+
+        //temp restriction methods
+        public static void TempRestrict(ulong switchID)
+        {
+            lock (MapAccessor)
+            {
+                if (!TemporaryRestrictionList.Contains(switchID))
+                    TemporaryRestrictionList.Add(switchID);
+            }
+        }
+
+        public static bool IsTempRestricted(ulong switchID)
+        {
+            lock (MapAccessor)
+            {
+                return TemporaryRestrictionList.Contains(switchID);
+            }
+        }
+
+        public static void RemoveTempRestrict(ulong switchID)
+        {
+            lock (MapAccessor)
+            {
+                if (!TemporaryRestrictionList.Contains(switchID))
+                    return;
+                TemporaryRestrictionList.Remove(switchID);
+            }
         }
     }
 }

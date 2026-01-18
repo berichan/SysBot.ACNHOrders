@@ -10,11 +10,15 @@ using SysBot.Base;
 using System.Text;
 using System.IO;
 using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace SysBot.ACNHOrders
 {
     public sealed class CrossBot : SwitchRoutineExecutor<CrossBotConfig>
     {
+        private const string ACNH_PROGRAM_ID = "01006F8002326000";
+
         private ConcurrentQueue<IACNHOrderNotifier<Item>> Orders => QueueHub.CurrentInstance.Orders;
         private uint InventoryOffset { get; set; } = (uint)OffsetHelper.InventoryOffset;
 
@@ -56,6 +60,8 @@ namespace SysBot.ACNHOrders
         public DateTime LastDodoFetchTime { get; private set; } = DateTime.Now;
 
         public VillagerHelper Villagers { get; private set; } = VillagerHelper.Empty;
+
+        private readonly RegionScreenshotComparer LoadingScreenPixelComparer = new RegionScreenshotComparer(274, 24, 1, 1, new Rgba32(2, 2, 2, 255), 2);
 
         public CrossBot(CrossBotConfig cfg) : base(cfg)
         {
@@ -111,6 +117,15 @@ namespace SysBot.ACNHOrders
             LogUtil.LogInfo("Attempting get version. Please wait...", Config.IP);
             string version = await SwitchConnection.GetVersionAsync(token).ConfigureAwait(false);
             LogUtil.LogInfo($"sys-botbase version identified as: {version}", Config.IP);
+
+            // ensure game is running
+            if (!await IsGameRunning(token).ConfigureAwait(false))
+            {
+                Log("ACNH is not running, pressing HOME twice then restarting...");
+                await Click(SwitchButton.HOME, 1_000, token).ConfigureAwait(false);
+                await Click(SwitchButton.HOME, 1_000, token).ConfigureAwait(false);
+                await RestartGame(token, false).ConfigureAwait(false);
+            }
 
             // Get inventory offset
             InventoryOffset = await this.GetCurrentPlayerOffset((uint)OffsetHelper.InventoryOffset, (uint)OffsetHelper.PlayerSize, token).ConfigureAwait(false);
@@ -403,8 +418,13 @@ namespace SysBot.ACNHOrders
         private async Task AttemptEchoHook(string message, IReadOnlyCollection<ulong> channels, CancellationToken token, bool checkForDoublePosts = false)
         {
             foreach (var msgChannel in channels)
+            {
                 if (!await Globals.Self.TrySpeakMessage(msgChannel, message, checkForDoublePosts).ConfigureAwait(false))
+                {
                     LogUtil.LogError($"Unable to post into channels: {msgChannel}.", Config.IP);
+                    throw new Exception("Discord has disconnected.");
+                }
+            }
 
             LogUtil.LogText($"Echo: {message}");
         }
@@ -706,7 +726,10 @@ namespace SysBot.ACNHOrders
             LastDodoFetchTime = DateTime.Now;
 
             if (!ignoreInjection)
+            {
+                LogUtil.LogInfo($"Sending Dodo Code {DodoCode} to {order.VillagerName}", Config.IP);
                 order.OrderReady(this, $"You have {(int)(Config.OrderConfig.WaitForArriverTime * 0.9f)} seconds to arrive. My island name is **{TownName}**", DodoCode);
+            }
 
             if (DodoImageDrawer != null)
                 DodoImageDrawer.Draw(DodoCode);
@@ -740,6 +763,7 @@ namespace SysBot.ACNHOrders
                 return OrderResult.Success;
 
             LogUtil.LogInfo($"Waiting for arrival.", Config.IP);
+            order.SendNotification(this, $"**{string.Join(" ", DodoCode.ToCharArray())}**");
             var startTime = DateTime.Now;
             // Wait for arrival
             while (!await IsArriverNew(token).ConfigureAwait(false))
@@ -773,12 +797,17 @@ namespace SysBot.ACNHOrders
 
             // Check the user against known abusers
             var IsSafe = LegacyAntiAbuse.CurrentInstance.LogUser(LastArrival, LastArrivalIsland, $"{order.VillagerName}-{order.UserGuid}") && IsSafeNewAbuse;
-            if (!IsSafe)
+            // Handle restrictions
+            var IsRestricted = GlobalBan.IsTempRestricted(order.UserGuid);
+            if (!IsSafe || IsRestricted)
             {
                 if (!Config.AllowKnownAbusers)
                 {
                     LogUtil.LogInfo($"{LastArrival} from {LastArrivalIsland} is a known abuser. Starting next order...", Config.IP);
-                    order.OrderCancelled(this, $"You are a known abuser. You cannot use this bot.", false);
+                    if (!IsRestricted)
+                        order.OrderCancelled(this, $"You are a known abuser. You cannot use this bot.", false);
+                    else
+                        order.OrderCancelled(this, $"You are unable to visit the island at this time.", false);
                     await RestartGame(token).ConfigureAwait(false);
                     await Task.Delay(2_000, token).ConfigureAwait(false);
                     await Click(SwitchButton.A, 0_500, token).ConfigureAwait(false);
@@ -880,19 +909,25 @@ namespace SysBot.ACNHOrders
             return OrderResult.Success;
         }
 
-        private async Task RestartGame(CancellationToken token)
+        private async Task RestartGame(CancellationToken token, bool skipClose = false)
         {
-            // Close game
-            await Click(SwitchButton.B, 0_500, token).ConfigureAwait(false);
-            await Task.Delay(0_500, token).ConfigureAwait(false);
-            await Click(SwitchButton.HOME, 0_800, token).ConfigureAwait(false);
-            await Task.Delay(0_300, token).ConfigureAwait(false);
+            if (!skipClose)
+            {
+                // Close game
+                await Click(SwitchButton.B, 0_500, token).ConfigureAwait(false);
+                await Task.Delay(0_500, token).ConfigureAwait(false);
+                await Click(SwitchButton.HOME, 0_800, token).ConfigureAwait(false);
+                await Task.Delay(0_300, token).ConfigureAwait(false);
 
-            await Click(SwitchButton.X, 0_500, token).ConfigureAwait(false);
-            await Click(SwitchButton.A, 0_500, token).ConfigureAwait(false);
+                await Click(SwitchButton.X, 0_500, token).ConfigureAwait(false);
+                await Click(SwitchButton.A, 0_500, token).ConfigureAwait(false);
 
-            // Wait for "closing software" wheel
-            await Task.Delay(3_500 + Config.RestartGameWait, token).ConfigureAwait(false);
+                // Wait for "closing software" wheel
+                await Task.Delay(3_500 + Config.RestartGameWait, token).ConfigureAwait(false);
+            }
+        startgame:
+            if (Config.AvoidSystemUpdate)
+                await SwitchConnection.ClearUpdate(token).ConfigureAwait(false);
 
             await Click(SwitchButton.A, 1_000 + Config.RestartGameWait, token).ConfigureAwait(false);
 
@@ -909,6 +944,17 @@ namespace SysBot.ACNHOrders
 
             for (int i = 0; i < 3; ++i)
                 await Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);
+
+            // Check if the game actually booted
+            await Task.Delay(5_000 + Config.RestartGameWait, token).ConfigureAwait(false);
+
+            if (!await IsGameRunning(token).ConfigureAwait(false))
+            {
+                Log("ACNH is not running, pressing HOME twice then restarting...");
+                await Click(SwitchButton.HOME, 1_000, token).ConfigureAwait(false);
+                await Click(SwitchButton.HOME, 1_000, token).ConfigureAwait(false);
+                goto startgame;
+            }
         }
 
         private async Task EndSession(CancellationToken token)
@@ -935,7 +981,8 @@ namespace SysBot.ACNHOrders
             int tries = 0;
             var state = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false);
             var baseState = state;
-            while (baseState == state)
+            bool isLoadingScreen = false;
+            while (baseState == state || !isLoadingScreen)
             {
                 // Go into airport
                 LogUtil.LogInfo($"Attempting to enter airport. Try: {tries + 1}", Config.IP);
@@ -947,16 +994,28 @@ namespace SysBot.ACNHOrders
                 await SetStick(SwitchStick.LEFT, 0, 0, 0_600, token).ConfigureAwait(false);
                 await Task.Delay(1_000, token).ConfigureAwait(false);
 
+                if (!isLoadingScreen)
+                {
+                    isLoadingScreen = await CompareScreenImageAsync(SwitchConnection, LoadingScreenPixelComparer, token).ConfigureAwait(false);
+                    if (isLoadingScreen)
+                        LogUtil.LogInfo("Loading screen detected.", Config.IP);
+                }
+
                 tries++;
                 if (tries > 6)
                     break;
             }
 
+            await Task.Delay(1_000, token).ConfigureAwait(false);
+            state = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false);
+            isLoadingScreen = await CompareScreenImageAsync(SwitchConnection, LoadingScreenPixelComparer, token).ConfigureAwait(false);
+
             tries = 0;
-            while (state != OverworldState.Overworld)
+            while (state != OverworldState.Overworld || isLoadingScreen)
             {
                 await Task.Delay(1_000, token).ConfigureAwait(false);
                 state = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false);
+                isLoadingScreen = await CompareScreenImageAsync(SwitchConnection, LoadingScreenPixelComparer, token).ConfigureAwait(false);
                 tries++;
                 if (tries > 12)
                     break;
@@ -1338,6 +1397,13 @@ namespace SysBot.ACNHOrders
             }
         }
 
+        public async Task<bool> IsGameRunning(CancellationToken token)
+        {
+            var commandBytes = Encoding.ASCII.GetBytes($"isProgramRunning 0x{ACNH_PROGRAM_ID}\r\n");
+            var isRunning = Encoding.ASCII.GetString(await SwitchConnection.ReadRaw(commandBytes, 17, token).ConfigureAwait(false));
+            return ulong.Parse(isRunning.Trim(), System.Globalization.NumberStyles.HexNumber) == 1;
+        }
+
         // Additional
         private readonly byte[] MaxTextSpeed = new byte[1] { 3 };
         public async Task ClickConversation(SwitchButton b, int delay, CancellationToken token)
@@ -1350,7 +1416,7 @@ namespace SysBot.ACNHOrders
         {
             if (!Config.ExperimentalSleepScreenOnIdle && !force)
                 return;
-            await SetScreen(on, token).ConfigureAwait(false);
+            await SetScreen(on ? ScreenState.On : ScreenState.Off, token).ConfigureAwait(false);
         }
 
         public async Task UpdateBlocker(bool show, CancellationToken token) => await FileUtil.WriteBytesToFileAsync(show ? Encoding.UTF8.GetBytes(Config.BlockerEmoji) : Array.Empty<byte>(), "blocker.txt", token).ConfigureAwait(false);
@@ -1366,6 +1432,16 @@ namespace SysBot.ACNHOrders
             foreach (var n in DodoNotifiers)
                 n.NotifyServerOfState(st);
         }
-        
+
+        public override string GetSummary()
+        {
+            return $"{Connection.Label} - CrossBot";
+        }
+
+        public override async Task HardStop()
+        {
+            await SetScreen(ScreenState.On, CancellationToken.None).ConfigureAwait(false);
+            await DetachController(CancellationToken.None).ConfigureAwait(false);
+        }
     }
 }

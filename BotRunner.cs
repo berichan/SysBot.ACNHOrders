@@ -80,14 +80,27 @@ namespace SysBot.ACNHOrders
                 else
                 {
                     bot.Log("Bot has terminated.");
-                    if (config.DodoModeConfig.LimitedDodoRestoreOnlyMode) // don't restore ordermode crashes
+                   // if (config.DodoModeConfig.LimitedDodoRestoreOnlyMode) // don't restore ordermode crashes
+                   // {
                         attemptReconnect = true;
+                        bot.Log("Please wait... Attempting to reconnect in 10 seconds.");
+                   // }
                 }
 
                 if (attemptReconnect)
                 {
                     await Task.Delay(10_000, cancel).ConfigureAwait(false);
                     bot.Log("Bot is attempting a restart...");
+                    bot = new CrossBot(config);
+                    Globals.Bot = bot;
+
+                    await sys.Disconnect();
+                    sys = new SysCord(bot);
+                    Globals.Self = sys;
+                    bot.Log("Restarting Discord.");
+#pragma warning disable 4014
+                    Task.Run(() => sys.MainAsync(config.Token, cancel), cancel);
+#pragma warning restore 4014
                 }
                 else
                     break;
