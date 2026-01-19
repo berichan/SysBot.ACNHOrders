@@ -17,7 +17,7 @@ namespace SysBot.ACNHOrders
         private readonly DiscordSocketClient _client;
         private readonly CrossBot Bot;
         public ulong Owner = ulong.MaxValue;
-        public bool Ready = false;
+        public static bool ForwardersReady = false; // static because we don't need to reset forwarders on reconnect/crash
 
         // Keep the CommandService and DI container around for use with commands.
         // These two types require you install the Discord.Net.Commands package.
@@ -65,7 +65,7 @@ namespace SysBot.ACNHOrders
         // If this method is getting pretty long, you can separate it out into another file using partials.
         private static IServiceProvider ConfigureServices()
         {
-            var map = new ServiceCollection();//.AddSingleton(new SomeServiceClass());
+            var map = new Microsoft.Extensions.DependencyInjection.ServiceCollection();//.AddSingleton(new SomeServiceClass());
 
             // When all your required services are in the collection, build the container.
             // Tip: There's an overload taking in a 'validateScopes' bool to make sure
@@ -129,9 +129,9 @@ namespace SysBot.ACNHOrders
 
         private async Task ClientReady()
         {
-            if (Ready)
+            if (ForwardersReady)
                 return;
-            Ready = true;
+            ForwardersReady = true;
 
             await Task.Delay(1_000).ConfigureAwait(false);
 
@@ -160,6 +160,13 @@ namespace SysBot.ACNHOrders
             await _commands.AddModulesAsync(assembly, _services).ConfigureAwait(false);
             // Subscribe a handler to see if a message invokes a command.
             _client.MessageReceived += HandleMessageAsync;
+        }
+
+        public async Task Disconnect()
+        {
+            if (_client == null)
+                return;
+            await _client.StopAsync().ConfigureAwait(false);
         }
 
         public async Task<bool> TrySpeakMessage(ulong id, string message, bool noDoublePost = false)

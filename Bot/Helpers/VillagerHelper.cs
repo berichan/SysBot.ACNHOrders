@@ -124,7 +124,7 @@ namespace SysBot.ACNHOrders
 
             var houseIndex = VillagerHouses.IndexOf(house);
 
-            var villagerToInject = (byte[])vd.Villager.Clone();
+            var villagerToInject = vd.Villager.ToArray();
             var villagerAsVillager = new Villager2(villagerToInject);
 
             LogUtil.LogInfo($"Beginning injection for: {GameInfo.Strings.GetVillager(villagerAsVillager.InternalName)}", Bot.Config.IP);
@@ -139,7 +139,7 @@ namespace SysBot.ACNHOrders
             villagerAsVillager.SetEventFlagsSave(flags);
             villagerAsVillager.CatchPhrase = GameInfo.Strings.GetVillagerDefaultPhrase(villagerAsVillager.InternalName);
 
-            var houseToInject = (byte[])vd.House.Clone();
+            var houseToInject = vd.House.ToArray();
             var houseAsHouse = new VillagerHouse2(houseToInject)
             {
                 HouseStatus = house.HouseStatus == 0 ? 2 : house.HouseStatus,
@@ -148,12 +148,12 @@ namespace SysBot.ACNHOrders
             };
             
             // inject villager
-            await Connection.WriteBytesAsync(villagerAsVillager.Data, (uint)OffsetHelper.VillagerAddress + ((uint)index * Villager2.SIZE), token).ConfigureAwait(false);
-            await Connection.WriteBytesAsync(villagerAsVillager.Data, (uint)OffsetHelper.VillagerAddress + ((uint)index * Villager2.SIZE) + (uint)OffsetHelper.BackupSaveDiff, token).ConfigureAwait(false);
+            await Connection.WriteBytesAsync(villagerAsVillager.Data.ToArray(), (uint)OffsetHelper.VillagerAddress + ((uint)index * Villager2.SIZE), token).ConfigureAwait(false);
+            await Connection.WriteBytesAsync(villagerAsVillager.Data.ToArray(), (uint)OffsetHelper.VillagerAddress + ((uint)index * Villager2.SIZE) + (uint)OffsetHelper.BackupSaveDiff, token).ConfigureAwait(false);
 
             // inject house
-            await Connection.WriteBytesAsync(houseAsHouse.Data, (uint)OffsetHelper.VillagerHouseAddress + ((uint)houseIndex * VillagerHouse2.SIZE), token).ConfigureAwait(false);
-            await Connection.WriteBytesAsync(houseAsHouse.Data, (uint)OffsetHelper.VillagerHouseAddress + ((uint)houseIndex * VillagerHouse2.SIZE) + (uint)OffsetHelper.BackupSaveDiff, token).ConfigureAwait(false);
+            await Connection.WriteBytesAsync(houseAsHouse.Data.ToArray(), (uint)OffsetHelper.VillagerHouseAddress + ((uint)houseIndex * VillagerHouse2.SIZE), token).ConfigureAwait(false);
+            await Connection.WriteBytesAsync(houseAsHouse.Data.ToArray(), (uint)OffsetHelper.VillagerHouseAddress + ((uint)houseIndex * VillagerHouse2.SIZE) + (uint)OffsetHelper.BackupSaveDiff, token).ConfigureAwait(false);
 
             LogUtil.LogInfo($"Villager injection complete.", Bot.Config.IP);
             vr.OnFinish?.Invoke(true);

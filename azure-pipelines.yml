@@ -39,6 +39,6 @@ steps:
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact: SysBot-ACNH-Orders'
   inputs:
-    PathtoPublish: 'bin\Release\net47'
+    PathtoPublish: 'bin\Release\net10.0'
     ArtifactName: SysBot-ACNH-Orders
   condition: succeededOrFailed()

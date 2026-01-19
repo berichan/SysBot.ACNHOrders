@@ -84,7 +84,7 @@ namespace ACNHMobileSpawner
         /// <param name="chunkSize">The chunk size in bytes, must be divisible by 8 (Item.SIZE)</param>
         /// <param name="mapOffset">The offset in ram for fielditemstart</param>
         /// <returns></returns>
-        public OffsetData[] GenerateReturnBytes(int chunkSize = 4096, uint mapOffset = (uint)OffsetHelper.FieldItemStart)
+        public OffsetData[] GenerateReturnBytes(int chunkSize = 4096, uint mapOffset = (uint)OffsetHelper.FieldItemStartLayer1)
         {
             int acreSizeItems = chunkSize / Item.SIZE;
 
@@ -105,7 +105,7 @@ namespace ACNHMobileSpawner
             return dataSendList.ToArray();
         }
 
-        public OffsetData[] GetDifferencePrioritizeStartup(byte[] newMapBytes, int chunkSize = 4096, bool merge = false, uint mapOffset = (uint)OffsetHelper.FieldItemStart)
+        public OffsetData[] GetDifferencePrioritizeStartup(byte[] newMapBytes, int chunkSize = 4096, bool merge = false, uint mapOffset = (uint)OffsetHelper.FieldItemStartLayer1)
         {
             if (merge)
                 return GetDifferenceMerge(newMapBytes, mapOffset);
@@ -127,7 +127,7 @@ namespace ACNHMobileSpawner
             return dataSendList.ToArray();
         }
 
-        private OffsetData[] GetDifferenceMerge(byte[] newMapBytes, uint mapOffset = (uint)OffsetHelper.FieldItemStart)
+        private OffsetData[] GetDifferenceMerge(byte[] newMapBytes, uint mapOffset = (uint)OffsetHelper.FieldItemStartLayer1)
         {
             const int chunkSize = 4096;
             if (newMapBytes.Length != ByteSize)

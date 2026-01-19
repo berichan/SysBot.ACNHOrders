@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using NHSE.Core;
+using SysBot.Base;
 using System;
 using System.Diagnostics;
 using System.Linq;
@@ -47,7 +48,14 @@ namespace SysBot.ACNHOrders
 
         public void OrderReady(CrossBot routine, string msg, string dodo)
         {
-            Trader.SendMessageAsync($"I'm waiting for you {Trader.Mention}! {msg}. Your Dodo code is **{dodo}**");
+            try
+            {
+                Trader.SendMessageAsync($"I'm waiting for you {Trader.Mention}! {msg}. Your Dodo code is **{dodo}**");
+            }
+            catch (Exception e)
+            {
+                LogUtil.LogError("Failed sending dodo code: " + e.Message + "\n" + e.StackTrace, "Discord");
+            }
         }
 
         public void OrderFinished(CrossBot routine, string msg)

@@ -47,8 +47,8 @@ namespace SysBot.ACNHOrders
 
             var pocket2 = seqItems.Take(20).ToArray();
             var pocket1 = seqItems.Skip(20).ToArray();
-            var p1 = Item.GetArray(data.Slice(0, pocket));
-            var p2 = Item.GetArray(data.Slice(pocket + 0x18, pocket));
+            var p1 = Item.GetArray(data.AsSpan(0, pocket));
+            var p2 = Item.GetArray(data.AsSpan(pocket + 0x18, pocket));
 
             for (int i = 0; i < pocket1.Length; i++)
                 pocket1[i].CopyFrom(p1[i]);
