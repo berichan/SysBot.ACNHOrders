@@ -8,7 +8,7 @@ trigger:
 
 pool:
   name: Azure Pipelines
-  vmImage: 'windows-2022'
+  vmImage: 'windows-latest'
   demands:
   - msbuild
   - visualstudio
