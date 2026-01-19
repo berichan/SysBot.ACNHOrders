@@ -68,7 +68,7 @@ namespace SysBot.ACNHOrders
             VisitorCount = 0;
             for (uint i = 0; i < VisitorListSize; ++i)
             {
-                ulong offset = OffsetHelper.OnlineSessionVisitorAddress - (i * OffsetHelper.OnlineSessionVisitorSize);
+                ulong offset = OffsetHelper.OnlineSessionVisitorAddress + (i * OffsetHelper.OnlineSessionVisitorSize);
                 var bytes = await Connection.ReadBytesAsync((uint)offset, VisitorNameSize, token).ConfigureAwait(false);
                 Visitors[i] = Encoding.UTF8.GetString(bytes).TrimEnd('\0');
 
