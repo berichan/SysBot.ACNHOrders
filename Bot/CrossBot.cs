@@ -309,7 +309,7 @@ namespace SysBot.ACNHOrders
                         if (Config.DodoModeConfig.EchoArrivalChannels.Count > 0)
                             await AttemptEchoHook($"> [{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] 🛬 {LastArrival} from {LastArrivalIsland} is joining {TownName}.{(Config.DodoModeConfig.PostDodoCodeWithNewArrivals ? $" Dodo code is: {DodoCode}." : string.Empty)}", Config.DodoModeConfig.EchoArrivalChannels, token).ConfigureAwait(false);
 
-                        var nid = await Connection.ReadBytesAsync((uint)OffsetHelper.ArriverNID, 8, token).ConfigureAwait(false);
+                        var nid = await SwitchConnection.PointerPeek(8, OffsetHelper.VillagerArrivingNIDJumps, token).ConfigureAwait(false);
 
                         var islandArriverAddress = await DodoPosition.FollowMainPointer(OffsetHelper.VillagerArrivingJumps, token).ConfigureAwait(false);
                         var arriver = await JoiningVillagerHelper.FetchVillager(islandArriverAddress, SwitchConnection, token).ConfigureAwait(false);
@@ -735,6 +735,10 @@ namespace SysBot.ACNHOrders
                 order.OrderReady(this, $"You have {(int)(Config.OrderConfig.WaitForArriverTime * 0.9f)} seconds to arrive. My island name is **{TownName}**", DodoCode);
             }
 
+            // Clear username of last arrival (again)
+            await JoiningVillagerHelper.ClearVillager(await DodoPosition.FollowMainPointer(OffsetHelper.VillagerArrivingJumps, token).ConfigureAwait(false), SwitchConnection, token).ConfigureAwait(false);
+            LastArrival = string.Empty;
+
             if (DodoImageDrawer != null)
                 DodoImageDrawer.Draw(DodoCode);
 
@@ -782,7 +786,7 @@ namespace SysBot.ACNHOrders
                 }
             }
 
-            var nid = await Connection.ReadBytesAsync((uint)OffsetHelper.ArriverNID, 8, token).ConfigureAwait(false);
+            var nid = await SwitchConnection.PointerPeek(8, OffsetHelper.VillagerArrivingNIDJumps, token).ConfigureAwait(false);
 
             var islandArriverAddress = await DodoPosition.FollowMainPointer(OffsetHelper.VillagerArrivingJumps, token).ConfigureAwait(false);
             var arriver = await JoiningVillagerHelper.FetchVillager(islandArriverAddress, SwitchConnection, token).ConfigureAwait(false);

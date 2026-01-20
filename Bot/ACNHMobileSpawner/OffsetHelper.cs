@@ -58,6 +58,7 @@ namespace ACNHMobileSpawner
         public static readonly long[] PlayerCoordJumps = new long[5] { 0x4BF9E30L, 0x18L, 0x178L, 0xD0L, 0xD8L }; // [[[[main+4627088]+18]+178]+D0]+D8
         public static readonly long[] ChatCoordJumps = new long[2] { 0x5254A40L, 0x40L };
         public static readonly long[] VillagerArrivingJumps = new long[3] { 0x526B6E8L, 0x40L, 0x170L };
+        public static readonly long[] VillagerArrivingNIDJumps = new long[2] { 0x526B6E8L, 0xD0L};
 
         // exefs (main)
         public const ulong AnimationSpeedOffset = 0x043BC3C0;
