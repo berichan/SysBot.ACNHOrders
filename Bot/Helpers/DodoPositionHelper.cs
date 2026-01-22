@@ -69,19 +69,7 @@ namespace SysBot.ACNHOrders
             Config = BotRunner.Config;
         }
 
-        public async Task<ulong> FollowMainPointer(long[] jumps, CancellationToken token) //include the last jump here
-        {
-            var jumpsWithoutLast = jumps.Take(jumps.Length - 1);
-
-            byte[] command = Encoding.UTF8.GetBytes($"pointer{string.Concat(jumpsWithoutLast.Select(z => $" {z}"))}\r\n");
-
-            byte[] socketReturn = await Connection.ReadRaw(command, sizeof(ulong) * 2 + 1, token).ConfigureAwait(false);
-            var bytes = Base.Decoder.ConvertHexByteStringToBytes(socketReturn);
-            bytes = bytes.Reverse().ToArray();
-
-            var offset = (ulong)((long)BitConverter.ToUInt64(bytes, 0) + jumps[jumps.Length - 1]);
-            return offset;
-        }
+        public async Task<ulong> FollowMainPointer(long[] jumps, CancellationToken token) => await Connection.PointerAll(jumps, token).ConfigureAwait(false);
 
         public async Task CloseGate(uint Offset, CancellationToken token)
         {
