@@ -143,11 +143,11 @@ namespace SysBot.ACNHOrders
                     return;
                 }
             }
-            // Creat folder for last order if folder does not valid
-            if (!Directory.Exists("UserOrder"))
-            {
-                Directory.CreateDirectory("UserOrder");
-            }
+
+            // Create last order directory if not present
+            if (!Directory.Exists(OrderModule.LastOrderDirectory))
+                Directory.CreateDirectory(OrderModule.LastOrderDirectory);
+            
             // Load layer on bot boot
             var filename = Config.FieldLayerName;
             var filenameNoExt = Config.FieldLayerName;

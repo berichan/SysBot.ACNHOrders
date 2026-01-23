@@ -1,21 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using NHSE.Core;
 using NHSE.Villagers;
 using SysBot.Base;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace SysBot.ACNHOrders
 {
     // ReSharper disable once UnusedType.Global
     public class OrderModule : ModuleBase<SocketCommandContext>
     {
+        public const string LastOrderDirectory = "UserOrder";
+        public const string OrderMarker = "ORDER";
+        public const string OrderCatMarker = "ORDERCAT";
+
         private static int MaxOrderCount => Globals.Bot.Config.OrderConfig.MaxQueueCount;
         private static Dictionary<ulong, DateTime> UserLastCommand = new();
         private static object commandSync = new();
@@ -70,11 +74,23 @@ namespace SysBot.ACNHOrders
                 else
                 {
                     items = itemData;
+
+                    // Log this order as NHI
+                    string path = Path.Combine(LastOrderDirectory, $"{Context.User.Id}");
+                    var itemArray = new ItemArrayEditor<Item>(att.Data);
+                    File.WriteAllBytes(path, itemArray.Write());
                 }
             }
 
             if (items == null)
                 items = string.IsNullOrWhiteSpace(request) ? new Item[1] { new Item(Item.NONE) } : ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, ItemDestination.FieldItemDropped).ToArray();
+
+            // Log this order if not attachment
+            if (attachment == default)
+            {
+                string path = Path.Combine(LastOrderDirectory, $"{Context.User.Id}");
+                File.WriteAllText(path, OrderMarker + request);
+            }
 
             await AttemptToQueueRequest(items, Context.User, Context.Channel, vr).ConfigureAwait(false);
         }
@@ -111,6 +127,11 @@ namespace SysBot.ACNHOrders
             }
 
             var items = string.IsNullOrWhiteSpace(request) ? new Item[1] { new Item(Item.NONE) } : ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, ItemDestination.FieldItemDropped);
+
+            // Log this order
+            string path = Path.Combine(LastOrderDirectory, $"{Context.User.Id}");
+            File.WriteAllText(path, OrderCatMarker + request);
+
             await AttemptToQueueRequest(items, Context.User, Context.Channel, vr, true).ConfigureAwait(false);
         }
 
@@ -133,66 +154,62 @@ namespace SysBot.ACNHOrders
                 return;
             }
 
+            // Log this order as NHI
+            string path = Path.Combine(LastOrderDirectory, $"{Context.User.Id}");
+            var itemArray = new ItemArrayEditor<Item>(att.Data);
+            File.WriteAllBytes(path, itemArray.Write());
+
             await AttemptToQueueRequest(items, Context.User, Context.Channel, null, true).ConfigureAwait(false);
         }
 
 
         [Command("lastorder")]
         [Alias("lo", "lasto", "lorder")]
-        [Summary("LastOrderItemSummary")]
+        [Summary("Provides the user with their last order data.")]
         [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task RequestLastOrderAsync()
         {
             var cfg = Globals.Bot.Config;
-            string path = ("UserOrder\\" + $"{Context.User.Id}.txt");
+            string path = Path.Combine(LastOrderDirectory, $"{Context.User.Id}");
             if (File.Exists(path))
             {
                 string request = File.ReadAllText(path);
-                ;
-                VillagerRequest? vr = null;
 
-                // try get villager
-                var result = VillagerOrderParser.ExtractVillagerName(request, out var res, out var san);
-                if (result == VillagerOrderParser.VillagerRequestResult.InvalidVillagerRequested)
+                if (request.StartsWith(OrderMarker))
                 {
-                    await ReplyAsync($"{Context.User.Mention} - {res} Order has not been accepted.");
+                    var stringWithoutMarker = request[OrderMarker.Length..];
+                    var orderString = Globals.Bot.Config.Prefix + "order " + stringWithoutMarker;
+                    await ReplyAsync($"{Context.User.Mention}, your last order command was:\n`{orderString}`").ConfigureAwait(false);
                     return;
                 }
-
-                if (result == VillagerOrderParser.VillagerRequestResult.Success)
+                else if (request.StartsWith(OrderCatMarker))
                 {
-                    if (!cfg.AllowVillagerInjection)
-                    {
-                        await ReplyAsync($"{Context.User.Mention} - Villager injection is currently disabled.");
-                        return;
-                    }
-
-                    request = san;
-                    var replace = VillagerResources.GetVillager(res);
-                    vr = new VillagerRequest(Context.User.Username, replace, 0, GameInfo.Strings.GetVillager(res));
+                    var stringWithoutMarker = request[OrderCatMarker.Length..];
+                    var orderString = Globals.Bot.Config.Prefix + "ordercat " + stringWithoutMarker;
+                    await ReplyAsync($"{Context.User.Mention}, your last catalogue order command was:\n`{orderString}`").ConfigureAwait(false);
+                    return;
                 }
-
-                Item[]? items = null;
-
-                var attachment = Context.Message.Attachments.FirstOrDefault();
-                if (attachment != default)
+                else
                 {
-                    var att = await NetUtil.DownloadNHIAsync(attachment).ConfigureAwait(false);
-                    if (!att.Success || !(att.Data is Item[] itemData))
+                    // assume nhi
+                    var bytes = File.ReadAllBytes(path);
+                    var tempFileName = $"{Context.User.Id}.nhi";
+                    var tempFilePath = Path.Combine(Path.GetTempPath(), tempFileName);
+                    File.WriteAllBytes(tempFilePath, bytes);
+
+                    // send file in the same channel
+                    await Context.Channel.SendFileAsync(tempFilePath, $"{Context.User.Mention}, here's your last ordered nhi file!").ConfigureAwait(false);
+
+                    // clean up
+                    try
                     {
-                        await ReplyAsync("No NHI attachment provided!").ConfigureAwait(false);
-                        return;
+                        File.Delete(tempFilePath);
                     }
-                    else
+                    catch (Exception e)
                     {
-                        items = itemData;
+                        LogUtil.LogError($"Failed to delete temp NHI file {tempFilePath}: {e.Message}", nameof(OrderModule));
                     }
                 }
-
-                if (items == null)
-                    items = string.IsNullOrWhiteSpace(request) ? new Item[1] { new Item(Item.NONE) } : ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, ItemDestination.FieldItemDropped).ToArray();
-
-                await AttemptToQueueRequest(items, Context.User, Context.Channel, vr).ConfigureAwait(false);
             }
             else
             {
@@ -220,11 +237,7 @@ namespace SysBot.ACNHOrders
                     if (Bitems.Contains(CheckItem))
                     {
                         ushort itemID = ItemParser.GetID(CheckItem);
-                        if (itemID == Item.NONE)
-                        {
-
-                        }
-                        else
+                        if (itemID != Item.NONE)
                         {
                             var name = GameInfo.Strings.GetItemName(itemID);
                             CheckItemN = name + ": " + CheckItem;
@@ -303,7 +316,6 @@ namespace SysBot.ACNHOrders
         [Command("uploadpreset")]
         [Alias("UpPre", "UP")]
         [Summary("Uploads file to add to preset folder.")]
-        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         [RequireSudo]
         public async Task RequestUploadPresetAsync()
         {
