@@ -1,4 +1,4 @@
-﻿using Discord;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using NHSE.Core;
@@ -374,8 +374,8 @@ namespace SysBot.ACNHOrders
                 return;
             }
 
-            order.SkipRequested = true;
-            await ReplyAsync($"{Context.User.Mention} - Your order has been removed. Please note that you will not be able to rejoin the queue again for a while.").ConfigureAwait(false);
+            Globals.Hub.Orders.RemoveByUserId(Context.User.Id);
+            await ReplyAsync($"{Context.User.Mention} - Your order has been removed. You can rejoin the queue at any time.").ConfigureAwait(false);
         }
 
         [Command("removeUser")]
@@ -393,7 +393,7 @@ namespace SysBot.ACNHOrders
                     return;
                 }
 
-                order.SkipRequested = true;
+                Globals.Hub.Orders.RemoveByUserId(res);
                 await ReplyAsync($"{identity} ({order.VillagerName}) has been removed from the queue.").ConfigureAwait(false);
             }
             else
