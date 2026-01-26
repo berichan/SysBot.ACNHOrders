@@ -40,25 +40,24 @@ namespace ACNHMobileSpawner
         public const ulong MainFieldStructurStart = FieldItemStart + 0x100200;
 
         // other addresses
-        //public const ulong ArriverNameLocAddress = 0xBA03FAC0; // or BA022B08
-        public const ulong ArriverVillageShift = 0x1C;
-        //public const ulong ArriverVillageLocAddress = ArriverNameLocAddress - 0x1C;
-
         public const ulong TextSpeedAddress = 0xBD9A9FC;
         public const ulong ChatBufferSize = 0x1E;
 
         public const ulong DodoAddress = 0xAC1A164;
         public const ulong OnlineSessionAddress = 0x9499748;
-        public const ulong OnlineSessionVisitorAddress = 0xA2CE644;
-        public const ulong OnlineSessionVisitorSize = 0x78;
 
         public const ulong TimeAddress = 0x0BD91B00;
 
         // pointers
-        public static readonly long[] PlayerCoordJumps = new long[5] { 0x4BF9E30L, 0x18L, 0x178L, 0xD0L, 0xD8L }; // [[[[main+4627088]+18]+178]+D0]+D8
-        public static readonly long[] ChatCoordJumps = new long[2] { 0x5254A40L, 0x40L };
-        public static readonly long[] VillagerArrivingJumps = new long[3] { 0x526B6E8L, 0x40L, 0x170L };
-        public static readonly long[] VillagerArrivingNIDJumps = new long[2] { 0x526B6E8L, 0xD0L};
+        public static readonly long[] PlayerCoordJumps = [0x4BF9E30L, 0x18L, 0x178L, 0xD0L, 0xD8L]; // [[[[main+4BF9E30]+18]+178]+D0]+D8
+        public static readonly long[] ChatCoordJumps = [0x5254A40L, 0x40L];
+
+        public static readonly long[] VillagerArrivingJumps = [0x526B6E8L, 0x40L, 0x170L];
+        public static readonly long[] VillagerArrivingNIDJumps = [0x526B6E8L, 0xD0L];
+        public const ulong ArriverVillageShift = 0x1C;
+
+        public static readonly long[] VillagerListJumps = [0x59E5A40L, 0x38L, 0xE0L, 0x1ECL, 0x17AL];
+        public const ulong VillagerListUnitSize = 0x1C;
 
         // exefs (main)
         public const ulong AnimationSpeedOffset = 0x043BC3C0;

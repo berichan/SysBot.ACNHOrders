@@ -1200,7 +1200,7 @@ namespace SysBot.ACNHOrders
             else
             {
                 // VisitorList.VisitorCount - 1 because the host is always on the island.
-                uint VisitorCount = VisitorList.VisitorCount - 1;
+                uint VisitorCount = Math.Clamp(VisitorList.VisitorCount - 1, 0, VisitorListHelper.VisitorListSize);
                 VisitorInfo = Config.DodoModeConfig.MinimizeDetails ? $"{VisitorCount}" : $"Visitors: {VisitorCount}";
             }
 

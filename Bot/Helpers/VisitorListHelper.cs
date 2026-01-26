@@ -65,12 +65,16 @@ namespace SysBot.ACNHOrders
         public async Task<IReadOnlyCollection<VisitorDifference.Difference>> UpdateNames(CancellationToken token)
         {
             var formattedList = $"The following visitors are on {TownName}:\n";
+            var baseOffset = await Connection.PointerAll(OffsetHelper.VillagerListJumps, token).ConfigureAwait(false); ;
             VisitorCount = 0;
             for (uint i = 0; i < VisitorListSize; ++i)
             {
-                ulong offset = OffsetHelper.OnlineSessionVisitorAddress + (i * OffsetHelper.OnlineSessionVisitorSize);
-                var bytes = await Connection.ReadBytesAsync((uint)offset, VisitorNameSize, token).ConfigureAwait(false);
-                Visitors[i] = Encoding.UTF8.GetString(bytes).TrimEnd('\0');
+                if (baseOffset > 0)
+                {
+                    ulong offset = baseOffset + (i * OffsetHelper.VillagerListUnitSize);
+                    var bytes = await Connection.ReadBytesAbsoluteAsync(offset, VisitorNameSize, token).ConfigureAwait(false);
+                    Visitors[i] = Encoding.Unicode.GetString(bytes).TrimEnd('\0');
+                }
 
                 string VisitorInformation = "Available slot";
                 if (!string.IsNullOrWhiteSpace(Visitors[i]))
