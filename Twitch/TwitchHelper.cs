@@ -1,4 +1,4 @@
-﻿using NHSE.Core;
+using NHSE.Core;
 using NHSE.Villagers;
 using SysBot.Base;
 using System;
@@ -114,8 +114,8 @@ namespace SysBot.ACNHOrders.Twitch
             if (order == null)
                 return "Sorry, you are not in the queue, or your order is happening now.";
 
-            order.SkipRequested = true;
-            return "Your order has been removed. Please note that you will not be able to rejoin the queue again for a while.";
+            Globals.Hub.Orders.RemoveByUserId(userID);
+            return "Your order has been removed. You can rejoin the queue at any time.";
         }
 
         public static string ClearTrade(string userID)
