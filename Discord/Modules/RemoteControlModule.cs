@@ -81,7 +81,7 @@ namespace SysBot.ACNHOrders
             var b = Bot;
             var data = System.Text.Encoding.UTF8.GetBytes(command + "\r\n");
             await ReplyAsync($"Sending `{command}` and waiting for {expectedReturnSize}-byte result.").ConfigureAwait(false);
-            var ret = await b.SwitchConnection.ReadRaw(data, expectedReturnSize, CancellationToken.None).ConfigureAwait(false);
+            var ret = await b.SwitchConnectedConnection.ReadRaw(data, expectedReturnSize, CancellationToken.None).ConfigureAwait(false);
             await ReplyAsync($"`{command}` returned with result: {System.Text.Encoding.UTF8.GetString(ret)}").ConfigureAwait(false);
         }
 
@@ -91,7 +91,7 @@ namespace SysBot.ACNHOrders
         public async Task UnfreezeAll()
         {
             var data = System.Text.Encoding.ASCII.GetBytes($"freezeClear\r\n");
-            await Bot.SwitchConnection.SendRaw(data, CancellationToken.None).ConfigureAwait(false);
+            await Bot.SwitchConnectedConnection.SendRaw(data, CancellationToken.None).ConfigureAwait(false);
             await ReplyAsync("Unfrozen all previously frozen values").ConfigureAwait(false);
         }
 
@@ -108,7 +108,7 @@ namespace SysBot.ACNHOrders
             }
 
             var data = System.Text.Encoding.ASCII.GetBytes($"configure freezeRate {ms}\r\n");
-            await Bot.SwitchConnection.SendRaw(data, CancellationToken.None).ConfigureAwait(false);
+            await Bot.SwitchConnectedConnection.SendRaw(data, CancellationToken.None).ConfigureAwait(false);
             await ReplyAsync($"Set freeze rate to: {ms}").ConfigureAwait(false);
         }
 
@@ -118,7 +118,7 @@ namespace SysBot.ACNHOrders
         [RequireSudo]
         public async Task FreezePause()
         {
-            await Bot.SwitchConnection.SetFreezePauseState(true, CancellationToken.None).ConfigureAwait(false);
+            await Bot.SwitchConnectedConnection.SetFreezePauseState(true, CancellationToken.None).ConfigureAwait(false);
             await ReplyAsync($"Freeze has been paused.").ConfigureAwait(false);
         }
 
@@ -128,7 +128,7 @@ namespace SysBot.ACNHOrders
         [RequireSudo]
         public async Task FreezeUnpause()
         {
-            await Bot.SwitchConnection.SetFreezePauseState(false, CancellationToken.None).ConfigureAwait(false);
+            await Bot.SwitchConnectedConnection.SetFreezePauseState(false, CancellationToken.None).ConfigureAwait(false);
             await ReplyAsync($"Freeze has been unpaused.").ConfigureAwait(false);
         }
 

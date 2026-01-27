@@ -65,7 +65,7 @@ namespace SysBot.ACNHOrders
         public DodoPositionHelper(CrossBot bot)
         {
             BotRunner = bot;
-            Connection = BotRunner.SwitchConnection;
+            Connection = BotRunner.SwitchConnectedConnection;
             Config = BotRunner.Config;
         }
 
@@ -236,7 +236,7 @@ namespace SysBot.ACNHOrders
 
         public async Task GetDodoCodeGigafast(uint Offset, bool isRetry, CancellationToken token)
         {
-            await BotRunner.SwitchConnection.SendRaw(freezeBytes, token).ConfigureAwait(false);
+            await BotRunner.SwitchConnectedConnection.SendRaw(freezeBytes, token).ConfigureAwait(false);
 
             // Navigate through dialog with Dodo to open gates and to get Dodo code.
             await Task.Delay(0_500, token).ConfigureAwait(false);
@@ -253,7 +253,7 @@ namespace SysBot.ACNHOrders
 
             await BotRunner.UpdateBlocker(true, token).ConfigureAwait(false);
 
-            var bytesRes = await BotRunner.SwitchConnection.ReadRaw(encodedBytesSequence, 6, token).ConfigureAwait(false);
+            var bytesRes = await BotRunner.SwitchConnectedConnection.ReadRaw(encodedBytesSequence, 6, token).ConfigureAwait(false);
             if (!Encoding.Default.GetString(bytesRes).ToLower().StartsWith("done"))
                 LogUtil.LogInfo("FATAL ERROR", Config.IP);
 
@@ -262,7 +262,7 @@ namespace SysBot.ACNHOrders
                 await BotRunner.Click(SwitchButton.B, 0_500, token).ConfigureAwait(false);
             await BotRunner.UpdateBlocker(false, token).ConfigureAwait(false);
 
-            await BotRunner.SwitchConnection.SendRaw(unFreezeBytes, token).ConfigureAwait(false);
+            await BotRunner.SwitchConnectedConnection.SendRaw(unFreezeBytes, token).ConfigureAwait(false);
 
             if (Globals.Bot.Config.AttemptMitigateDialogueWarping)
                 await AttemptCheckForEndOfConversation(10, token).ConfigureAwait(false);
