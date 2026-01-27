@@ -12,7 +12,6 @@ namespace SysBot.ACNHOrders.Twitch
         public ulong UserGuid { get; }
         public ulong OrderID { get; }
         public string VillagerName { get; }
-        public bool SkipRequested { get; set; } = false;
         public Action<CrossBot>? OnFinish { private get; set; }
         public string Trader { get; }
         private TwitchClient Client { get; }

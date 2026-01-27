@@ -19,7 +19,6 @@ namespace SysBot.ACNHOrders
         public Action<CrossBot>? OnFinish { private get; set; }
         public T[] Order { get; } // stupid but I cba to work on this part anymore
         public VillagerRequest? VillagerOrder { get; }
-        public bool SkipRequested { get; set; } = false;
 
         public OrderRequest(MultiItem data, T[] order, ulong user, ulong orderId, SocketUser trader, ISocketMessageChannel commandSentChannel, VillagerRequest? vil)
         {

@@ -10,7 +10,6 @@ namespace SysBot.ACNHOrders
         public ulong UserGuid { get; }
         public ulong OrderID { get; }
         public string VillagerName { get; }
-        public bool SkipRequested { get; }
         void OrderInitializing(CrossBot routine, string msg);
         void OrderReady(CrossBot routine, string msg, string dodo);
         void OrderCancelled(CrossBot routine, string msg, bool faulted);
