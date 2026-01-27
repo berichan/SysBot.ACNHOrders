@@ -937,9 +937,6 @@ namespace SysBot.ACNHOrders
                 await Task.Delay(3_500 + Config.RestartGameWait, token).ConfigureAwait(false);
             }
         startgame:
-            if (Config.AvoidSystemUpdate)
-                await SwitchConnection.ClearUpdate(token).ConfigureAwait(false);
-
             await Click(SwitchButton.A, 1_000 + Config.RestartGameWait, token).ConfigureAwait(false);
 
             // Click away from any system updates if requested

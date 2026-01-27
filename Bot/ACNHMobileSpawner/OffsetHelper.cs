@@ -66,7 +66,6 @@ namespace ACNHMobileSpawner
         public const ulong CollisionStateOffset = 0x0155FDC0;
         public const ulong TimeStateAddress = 0x00328BD0;
 
-        //public const ulong ArriverVillageId = ArriverVillageLocAddress - 0x4;
         public const ulong ArriverNID = 0xBA022438;
 
         // dlc

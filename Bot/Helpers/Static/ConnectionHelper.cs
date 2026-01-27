@@ -74,11 +74,5 @@ namespace SysBot.ACNHOrders
                 offsets[i] = startOffset + (i * chunkSize);
             return offsets;
         }
-
-        public static async Task ClearUpdate(this ISwitchConnectionAsync connection, CancellationToken token)
-        {
-            var commandBytes = Encoding.ASCII.GetBytes("clearUpdate\r\n");
-            await connection.SendRaw(commandBytes, token).ConfigureAwait(false);
-        }
     }
 }

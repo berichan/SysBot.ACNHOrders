@@ -610,3 +610,5 @@
 {"HashIdentifier":2749922386,"NIDIdentifier":364154331067737980,"Identity":"797434228228227102","PlaintextName":"Jordyn-Sunshine"}
 {"HashIdentifier":2497959446,"NIDIdentifier":12370021111917950907,"Identity":"691026939544207372","PlaintextName":"Arson-GemCove"}
 {"HashIdentifier":2249022271,"NIDIdentifier":2107438397314007132,"Identity":"927025229123977297","PlaintextName":"2249022271-3844502105"}
+{"HashIdentifier":3698838112,"NIDIdentifier":11981947085632199705,"Identity":"1377407547186872421","PlaintextName":"bingaware-hachi"}
+{"HashIdentifier":3808879072,"NIDIdentifier":16597844281026667530,"Identity":"266409514809425921","PlaintextName":"David-New Seoul"}
