@@ -32,7 +32,6 @@ namespace SysBot.ACNHOrders
         public readonly AnchorHelper Anchors;
         public readonly VisitorListHelper VisitorList;
         public readonly DummyOrder<Item> DummyRequest = new();
-        public readonly ISwitchConnectionAsync SwitchConnection;
         public readonly ConcurrentBag<IDodoRestoreNotifier> DodoNotifiers = new();
 
         public readonly ExternalMapHelper ExternalMap;
@@ -63,14 +62,12 @@ namespace SysBot.ACNHOrders
 
         private readonly RegionScreenshotComparer LoadingScreenPixelComparer = new RegionScreenshotComparer(274, 24, 1, 1, new Rgba32(2, 2, 2, 255), 2);
 
+        public ISwitchConnectionAsync SwitchConnectedConnection => SwitchConnection;
+
         public CrossBot(CrossBotConfig cfg) : base(cfg)
         {
             State = new DropBotState(cfg.DropConfig);
             Anchors = new AnchorHelper(Config.AnchorFilename);
-            if (Connection is ISwitchConnectionAsync con)
-                SwitchConnection = con;
-            else
-                throw new Exception("Connection is null.");
 
             if (Connection is SwitchSocketAsync ssa)
                 ssa.MaximumTransferSize = cfg.MapPullChunkSize;
@@ -444,7 +441,7 @@ namespace SysBot.ACNHOrders
 
             await EnsureAnchorsAreInitialised(token);
 
-            if (Orders.TryDequeue(out var item))
+            if (Orders.TryDequeue(out var item) && item != null)
             {
                 var result = await ExecuteOrder(item, token).ConfigureAwait(false);
                 

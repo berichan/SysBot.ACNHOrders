@@ -55,7 +55,7 @@ namespace SysBot.ACNHOrders
         public VisitorListHelper(CrossBot bot)
         {
             BotRunner = bot;
-            Connection = BotRunner.SwitchConnection;
+            Connection = BotRunner.SwitchConnectedConnection;
             Config = BotRunner.Config;
             LastVisitorDiff = new VisitorDifference(Visitors);
         }

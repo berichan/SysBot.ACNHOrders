@@ -31,7 +31,6 @@
     <PackageReference Include="SixLabors.ImageSharp" Version="2.1.12" />
     <PackageReference Include="SixLabors.Fonts" Version="1.0.0-beta0013" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-beta11" />
-    <PackageReference Include="System.Text.Json" Version="10.0.2" />
     <PackageReference Include="TwitchLib.Client" Version="3.2.1" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.2" />
   </ItemGroup>
