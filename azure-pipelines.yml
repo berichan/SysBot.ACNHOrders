@@ -19,6 +19,12 @@ variables:
   Configuration: 'Release'
 
 steps:
+- task: UseDotNet@2
+  displayName: 'Install .NET 10 SDK'
+  inputs:
+    version: '10.x'
+    includePreviewVersions: true
+
 - task: NuGetToolInstaller@1
 
 - task: NuGetCommand@2
