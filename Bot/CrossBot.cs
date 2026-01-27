@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
@@ -19,7 +19,7 @@ namespace SysBot.ACNHOrders
     {
         private const string ACNH_PROGRAM_ID = "01006F8002326000";
 
-        private ConcurrentQueue<IACNHOrderNotifier<Item>> Orders => QueueHub.CurrentInstance.Orders;
+        private OrderQueue<IACNHOrderNotifier<Item>> Orders => QueueHub.CurrentInstance.Orders;
         private uint InventoryOffset { get; set; } = (uint)OffsetHelper.InventoryOffset;
 
         public readonly ConcurrentQueue<ItemRequest> Injections = new();
@@ -444,7 +444,7 @@ namespace SysBot.ACNHOrders
 
             await EnsureAnchorsAreInitialised(token);
 
-            if (Orders.TryDequeue(out var item) && !item.SkipRequested)
+            if (Orders.TryDequeue(out var item))
             {
                 var result = await ExecuteOrder(item, token).ConfigureAwait(false);
                 

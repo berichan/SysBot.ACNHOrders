@@ -1,4 +1,4 @@
-﻿using Discord;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Discord.Net;
@@ -31,24 +31,18 @@ namespace SysBot.ACNHOrders
                 return;
             }
 
-            // Try adding
             var result = AttemptAddToQueue(itemReq, trader.Mention, trader.Username, out var msg);
 
-            // Notify in channel
             await Context.Channel.SendMessageAsync(msg).ConfigureAwait(false);
-            // Notify in PM to mirror what is said in the channel.
             await trader.SendMessageAsync(msg).ConfigureAwait(false);
 
-            // Clean Up
             if (result)
             {
-                // Delete the user's join message for privacy
                 if (!Context.IsPrivate)
                     await Context.Message.DeleteAsync(RequestOptions.Default).ConfigureAwait(false);
             }
             else
             {
-                // Delete our "I'm adding you!", and send the same message that we sent to the general channel.
                 await test.DeleteAsync().ConfigureAwait(false);
             }
         }
@@ -57,22 +51,17 @@ namespace SysBot.ACNHOrders
         {
             var result = AttemptAddToQueue(itemReq, playerMention, playerNameId, out var msge);
             msg = msge;
-
             return result;
         }
 
-        // this sucks
         private static bool AttemptAddToQueue(IACNHOrderNotifier<Item> itemReq, string traderMention, string traderDispName, out string msg)
         {
             var orders = Globals.Hub.Orders;
-            var orderArray = orders.ToArray();
-            var order = Array.Find(orderArray, x => x.UserGuid == itemReq.UserGuid);
-            if (order != null)
+            
+            var existingOrder = orders.GetByUserId(itemReq.UserGuid);
+            if (existingOrder != null)
             {
-                if (!order.SkipRequested)
-                    msg = $"{traderMention} - Sorry, you are already in the queue.";
-                else
-                    msg = $"{traderMention} - You have been recently removed from the queue. Please wait a while before attempting to enter the queue again.";
+                msg = $"{traderMention} - Sorry, you are already in the queue.";
                 return false;
             }
 
@@ -82,7 +71,7 @@ namespace SysBot.ACNHOrders
                 return false;
             }
 
-            var position = orderArray.Length + 1;
+            var position = orders.Count + 1;
             var idToken = Globals.Bot.Config.OrderConfig.ShowIDs ? $" (ID {itemReq.OrderID})" : string.Empty;
             msg = $"{traderMention} - Added you to the order queue{idToken}. Your position is: **{position}**";
 
@@ -102,14 +91,15 @@ namespace SysBot.ACNHOrders
         public static int GetPosition(ulong id, out OrderRequest<Item>? order)
         {
             var orders = Globals.Hub.Orders;
-            var orderArray = orders.ToArray().Where(x => !x.SkipRequested).ToArray();
-            var orderFound = Array.Find(orderArray, x => x.UserGuid == id);
-            if (orderFound != null && !orderFound.SkipRequested)
+            var position = orders.GetPosition(id);
+            
+            if (position > 0)
             {
-                if (orderFound is OrderRequest<Item> oreq)
+                var found = orders.GetByUserId(id);
+                if (found is OrderRequest<Item> oreq)
                 {
                     order = oreq;
-                    return Array.IndexOf(orderArray, orderFound) + 1;
+                    return position;
                 }
             }
 
@@ -140,16 +130,16 @@ namespace SysBot.ACNHOrders
 
         public static void ClearQueue<T>(this ConcurrentQueue<T> queue)
         {
-            T item; // weird runtime error
+            T item;
 #pragma warning disable CS8600
-            while (queue.TryDequeue(out item)) { } // do nothing
+            while (queue.TryDequeue(out item)) { }
 #pragma warning restore CS8600
         }
 
         public static string GetQueueString()
         {
             var orders = Globals.Hub.Orders;
-            var orderArray = orders.ToArray().Where(x => !x.SkipRequested).ToArray();
+            var orderArray = orders.ToArray();
             string orderString = string.Empty;
             foreach (var ord in orderArray)
                 orderString += $"{ord.VillagerName} \r\n";
@@ -158,3 +148,4 @@ namespace SysBot.ACNHOrders
         }
     }
 }
+
