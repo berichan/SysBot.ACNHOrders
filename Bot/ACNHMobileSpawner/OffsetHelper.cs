@@ -45,8 +45,6 @@ namespace ACNHMobileSpawner
 
         public const ulong DodoAddress = 0xAC1A164;
         public const ulong OnlineSessionAddress = 0x9499748;
-        public const ulong OnlineSessionVisitorAddress = 0xA2CE644;
-        public const ulong OnlineSessionVisitorSize = 0x78;
         public const ulong TimeAddress = 0x0BD91B00;
 
         // pointers
