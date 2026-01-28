@@ -54,5 +54,8 @@ namespace SysBot.ACNHOrders
 
         /// <summary> Send messages of orders starting/arriving in the echo channels </summary>
         public List<ulong> EchoArrivingLeavingChannels { get; set; } = new();
+
+        /// <summary> How much extra time to wait for arrivals in ms </summary>
+        public int ArrivalExtraWaitTime { get; set; } = 1000;
     }
 }

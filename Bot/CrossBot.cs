@@ -832,7 +832,7 @@ namespace SysBot.ACNHOrders
                 await AttemptEchoHook($"> Visitor arriving: {order.VillagerName}", Config.OrderConfig.EchoArrivingLeavingChannels, token).ConfigureAwait(false);
 
             // Wait for arrival animation (flight board, arrival through gate, terrible dodo seaplane joke, etc)
-            await Task.Delay(10_000, token).ConfigureAwait(false);
+            await Task.Delay(10_000 + Config.OrderConfig.ArrivalExtraWaitTime, token).ConfigureAwait(false);
 
             OverworldState state = OverworldState.Unknown;
             bool isUserArriveLeaving = false;
