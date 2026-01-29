@@ -612,3 +612,4 @@
 {"HashIdentifier":2249022271,"NIDIdentifier":2107438397314007132,"Identity":"927025229123977297","PlaintextName":"2249022271-3844502105"}
 {"HashIdentifier":3698838112,"NIDIdentifier":11981947085632199705,"Identity":"1377407547186872421","PlaintextName":"bingaware-hachi"}
 {"HashIdentifier":3808879072,"NIDIdentifier":16597844281026667530,"Identity":"266409514809425921","PlaintextName":"David-New Seoul"}
+{"HashIdentifier":2809642436,"NIDIdentifier":4989964792459667388,"Identity":"1071449709970993232","PlaintextName":"Cubito <3-cubiland<3"}

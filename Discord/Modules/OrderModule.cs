@@ -694,8 +694,6 @@ namespace SysBot.ACNHOrders
             "xct",
             "brd20",
             "der12",
-            "squ19",
-            "squ20"
         };
 
         public static bool IsUnadoptable(string? internalName) => UnadoptableVillagers.Contains(internalName == null ? string.Empty : internalName.Trim().ToLower());
