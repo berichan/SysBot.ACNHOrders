@@ -613,3 +613,5 @@
 {"HashIdentifier":3698838112,"NIDIdentifier":11981947085632199705,"Identity":"1377407547186872421","PlaintextName":"bingaware-hachi"}
 {"HashIdentifier":3808879072,"NIDIdentifier":16597844281026667530,"Identity":"266409514809425921","PlaintextName":"David-New Seoul"}
 {"HashIdentifier":2809642436,"NIDIdentifier":4989964792459667388,"Identity":"1071449709970993232","PlaintextName":"Cubito <3-cubiland<3"}
+{"HashIdentifier":3756193328,"NIDIdentifier":15362942498637935007,"Identity":"328160880531472384","PlaintextName":"Kimi-Elchea"}
+{"HashIdentifier":3824169883,"NIDIdentifier":12027045104123826939,"Identity":"1052914686632407071","PlaintextName":"masatoshi-ariga"}
