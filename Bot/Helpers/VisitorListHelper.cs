@@ -44,7 +44,6 @@ namespace SysBot.ACNHOrders
 
         private readonly ISwitchConnectionAsync Connection;
         private readonly CrossBot BotRunner;
-        private readonly CrossBotConfig Config;
 
         public string[] Visitors { get; private set; } = new string[VisitorListSize];
 
@@ -56,7 +55,6 @@ namespace SysBot.ACNHOrders
         {
             BotRunner = bot;
             Connection = BotRunner.SwitchConnectedConnection;
-            Config = BotRunner.Config;
             LastVisitorDiff = new VisitorDifference(Visitors);
         }
 

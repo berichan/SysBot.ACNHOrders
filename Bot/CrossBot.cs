@@ -836,7 +836,8 @@ namespace SysBot.ACNHOrders
 
             OverworldState state = OverworldState.Unknown;
             bool isUserArriveLeaving = false;
-            // Ensure we're on overworld before starting timer/drop loop
+            // Ensure we're on overworld before starting timer/drop loop, or wait for timeout
+            int timer = 80;
             while (state != OverworldState.Overworld)
             {
                 state = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false);
@@ -854,10 +855,15 @@ namespace SysBot.ACNHOrders
                     isUserArriveLeaving = false;
                 }
 
-                await VisitorList.UpdateNames(token).ConfigureAwait(false);
-                if (VisitorList.VisitorCount < 2)
+                if (timer-- < 1)
+                {
+                    // just assume they arrived
+                    LogUtil.LogInfo($"Failed to detect arrival, but user has likely arrived based on time elapsed. Starting countdown.", Config.IP);
                     break;
+                }
             }
+
+            LogUtil.LogInfo($"Visitor has arrived. Starting countdown.", Config.IP);
 
             await UpdateBlocker(false, token).ConfigureAwait(false);
 
