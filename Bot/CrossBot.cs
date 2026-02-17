@@ -857,9 +857,10 @@ namespace SysBot.ACNHOrders
 
                 if (timer-- < 1)
                 {
-                    // just assume they arrived
-                    LogUtil.LogInfo($"Failed to detect arrival, but user has likely arrived based on time elapsed. Starting countdown.", Config.IP);
-                    break;
+                    // Took too long, cancel their order
+                    LogUtil.LogError($"Visitor took too long to arrive. Removed from queue, moving to next order.", Config.IP);
+                    order.OrderCancelled(this, "You took too long to arrive, this is likely due to a connection issue. Your request has been removed.", false);
+                    return OrderResult.NoArrival;
                 }
             }
 
