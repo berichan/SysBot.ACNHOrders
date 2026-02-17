@@ -837,7 +837,7 @@ namespace SysBot.ACNHOrders
             OverworldState state = OverworldState.Unknown;
             bool isUserArriveLeaving = false;
             // Ensure we're on overworld before starting timer/drop loop, or wait for timeout
-            int timer = 80;
+            int timer = 150;
             while (state != OverworldState.Overworld)
             {
                 state = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false);
