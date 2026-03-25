@@ -274,115 +274,132 @@ namespace SysBot.ACNHOrders
 
                 await SaveDodoCodeToFile(token).ConfigureAwait(false);
 
-                while (await IsNetworkSessionActive(token).ConfigureAwait(false))
+                while (true)
                 {
+                    // Check session outside lock, then release for delay
+                    await USBLock.WaitAsync(token).ConfigureAwait(false);
+                    bool sessionActive;
+                    try { sessionActive = await IsNetworkSessionActive(token).ConfigureAwait(false); }
+                    finally { USBLock.Release(); }
+
+                    if (!sessionActive)
+                        break;
+
+                    // Delay without lock so Discord commands can run
                     await Task.Delay(2_000, token).ConfigureAwait(false);
 
-                    ChargePercent = await SwitchConnection.GetChargePercentAsync(token).ConfigureAwait(false);
-
-                    if (RestoreRestartRequested)
+                    await USBLock.WaitAsync(token).ConfigureAwait(false);
+                    try
                     {
-                        RestoreRestartRequested = false;
-                        await ResetFiles(token).ConfigureAwait(false);
-                        await AttemptEchoHook($"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] Please wait for the new dodo code for {TownName}.", Config.DodoModeConfig.EchoDodoChannels, token).ConfigureAwait(false);
-                        await DodoRestoreLoop(true, token).ConfigureAwait(false);
-                        return;
-                    }
+                        ChargePercent = await SwitchConnection.GetChargePercentAsync(token).ConfigureAwait(false);
 
-                    NotifyState(GameState.Active);
-
-                    var owState = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false);
-                    if (Config.DodoModeConfig.RefreshMap)
-                        if (owState == OverworldState.UserArriveLeaving || owState == OverworldState.Loading) // only refresh when someone leaves/joins or when moving out/in a building
-                            await ClearMapAndSpawnInternally(null, Map, Config.DodoModeConfig.RefreshTerrainData, token).ConfigureAwait(false);
-
-                    if (Config.DodoModeConfig.MashB)
-                        for (int i = 0; i < 5; ++i)
-                            await Click(SwitchButton.B, 0_200, token).ConfigureAwait(false);
-
-                    var timeBytes = await Connection.ReadBytesAsync((uint)OffsetHelper.TimeAddress, TimeBlock.SIZE, token).ConfigureAwait(false);
-                    LastTimeState = timeBytes.ToClass<TimeBlock>();
-
-                    await DropLoop(token).ConfigureAwait(false);
-
-                    var diffs = await VisitorList.UpdateNames(token).ConfigureAwait(false);
-
-                    if (Config.DodoModeConfig.EchoArrivalChannels.Count > 0)
-                        foreach (var diff in diffs)
-                            if (!diff.Arrived)
-                                await AttemptEchoHook($"> [{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] 🛫 {diff.Name} has departed from {TownName}", Config.DodoModeConfig.EchoArrivalChannels, token).ConfigureAwait(false);
-
-                    // Check for new arrivals
-                    if (await IsArriverNew(token).ConfigureAwait(false))
-                    {
-                        if (Config.DodoModeConfig.EchoArrivalChannels.Count > 0)
-                            await AttemptEchoHook($"> [{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] 🛬 {LastArrival} from {LastArrivalIsland} is joining {TownName}.{(Config.DodoModeConfig.PostDodoCodeWithNewArrivals ? $" Dodo code is: {DodoCode}." : string.Empty)}", Config.DodoModeConfig.EchoArrivalChannels, token).ConfigureAwait(false);
-
-                        var nid = await SwitchConnection.PointerPeek(8, OffsetHelper.VillagerArrivingNIDJumps, token).ConfigureAwait(false);
-
-                        var islandArriverAddress = await DodoPosition.FollowMainPointer(OffsetHelper.VillagerArrivingJumps, token).ConfigureAwait(false);
-                        var arriver = await JoiningVillagerHelper.FetchVillager(islandArriverAddress, SwitchConnection, token).ConfigureAwait(false);
-                        var islandId = arriver.IslandID;
-
-                        bool IsSafeNewAbuse = true;
-                        try
+                        if (RestoreRestartRequested)
                         {
-                            var newnid = BitConverter.ToUInt64(nid, 0);
-                            var newnislid = islandId;
-                            var plaintext = $"Treasure island arrival";
-                            IsSafeNewAbuse = NewAntiAbuse.Instance.LogUser(newnislid, newnid, string.Empty, plaintext);
-                            LogUtil.LogInfo($"Arrival logged: NID={newnid} TownID={newnislid} Order details={plaintext}", Config.IP);
-
-                            if (!IsSafeNewAbuse)
-                                LogUtil.LogInfo((Globals.Bot.Config.OrderConfig.PingOnAbuseDetection ? $"Pinging <@{Globals.Self.Owner}>: " : string.Empty) + $"{LastArrival} (NID: {newnid}) is in the known abuser list. It is likely this user is abusing your treasure island.", Globals.Bot.Config.IP);
+                            RestoreRestartRequested = false;
+                            await ResetFiles(token).ConfigureAwait(false);
+                            await AttemptEchoHook($"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] Please wait for the new dodo code for {TownName}.", Config.DodoModeConfig.EchoDodoChannels, token).ConfigureAwait(false);
+                            await DodoRestoreLoop(true, token).ConfigureAwait(false);
+                            return;
                         }
-                        catch { }
 
-                        await Task.Delay(60_000, token).ConfigureAwait(false);
+                        NotifyState(GameState.Active);
 
-                        // Clear username of last arrival
-                        await JoiningVillagerHelper.ClearVillager(islandArriverAddress, SwitchConnection, token).ConfigureAwait(false);
-                        LastArrival = string.Empty;
-                    }
+                        var owState = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false);
+                        if (Config.DodoModeConfig.RefreshMap)
+                            if (owState == OverworldState.UserArriveLeaving || owState == OverworldState.Loading)
+                                await ClearMapAndSpawnInternally(null, Map, Config.DodoModeConfig.RefreshTerrainData, token).ConfigureAwait(false);
 
-                    await SaveVisitorsToFile(token).ConfigureAwait(false);
+                        if (Config.DodoModeConfig.MashB)
+                            for (int i = 0; i < 5; ++i)
+                                await Click(SwitchButton.B, 0_200, token).ConfigureAwait(false);
 
-                    await DropLoop(token).ConfigureAwait(false);
+                        var timeBytes = await Connection.ReadBytesAsync((uint)OffsetHelper.TimeAddress, TimeBlock.SIZE, token).ConfigureAwait(false);
+                        LastTimeState = timeBytes.ToClass<TimeBlock>();
 
-                    if (VillagerInjections.TryDequeue(out var vil))
-                        await Villagers.InjectVillager(vil, token).ConfigureAwait(false);
-                    var lostVillagers = await Villagers.UpdateVillagers(token).ConfigureAwait(false);
-                    if (Config.DodoModeConfig.ReinjectMovedOutVillagers) // reinject lost villagers if requested
-                        if (lostVillagers != null)
-                            foreach (var lv in lostVillagers)
-                                if (!lv.Value.StartsWith("non"))
-                                    VillagerInjections.Enqueue(new VillagerRequest("REINJECT", VillagerResources.GetVillager(lv.Value), (byte)lv.Key, GameInfo.Strings.GetVillager(lv.Value)));
-                    
-                    await SaveVillagersToFile(token).ConfigureAwait(false);
+                        await DropLoop(token).ConfigureAwait(false);
 
-                    MapOverrideRequest? mapRequest;
-                    if ((MapOverrides.TryDequeue(out mapRequest) || ExternalMap.CheckForCycle(out mapRequest)) && mapRequest != null)
-                    {
-                        var tempMap = new MapTerrainLite(mapRequest.Item, Map.StartupTerrain, Map.StartupAcreParams)
+                        var diffs = await VisitorList.UpdateNames(token).ConfigureAwait(false);
+
+                        if (Config.DodoModeConfig.EchoArrivalChannels.Count > 0)
+                            foreach (var diff in diffs)
+                                if (!diff.Arrived)
+                                    await AttemptEchoHook($"> [{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] 🛫 {diff.Name} has departed from {TownName}", Config.DodoModeConfig.EchoArrivalChannels, token).ConfigureAwait(false);
+
+                        // Check for new arrivals
+                        if (await IsArriverNew(token).ConfigureAwait(false))
                         {
-                            SpawnX = Config.MapPlaceX,
-                            SpawnY = Config.MapPlaceY
-                        };
-                        Map = tempMap;
+                            if (Config.DodoModeConfig.EchoArrivalChannels.Count > 0)
+                                await AttemptEchoHook($"> [{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] 🛬 {LastArrival} from {LastArrivalIsland} is joining {TownName}.{(Config.DodoModeConfig.PostDodoCodeWithNewArrivals ? $" Dodo code is: {DodoCode}." : string.Empty)}", Config.DodoModeConfig.EchoArrivalChannels, token).ConfigureAwait(false);
 
-                        // Write one full map with newly loaded nhl or freeze
-                        if (!Config.DodoModeConfig.FreezeMap)
-                            await ClearMapAndSpawnInternally(null, Map, Config.DodoModeConfig.RefreshTerrainData, token, true).ConfigureAwait(false);
-                        else
-                            await SwitchConnection.FreezeValues((uint)OffsetHelper.FieldItemStartLayer1, Map.StartupBytes, ConnectionHelper.MapChunkCount, token).ConfigureAwait(false);
+                            var nid = await SwitchConnection.PointerPeek(8, OffsetHelper.VillagerArrivingNIDJumps, token).ConfigureAwait(false);
 
-                        await AttemptEchoHook($"{TownName} has switched to item layer: {mapRequest.OverrideLayerName}", Config.DodoModeConfig.EchoIslandUpdateChannels, token).ConfigureAwait(false);
-                        await SaveLayerNameToFile(Path.GetFileNameWithoutExtension(mapRequest.OverrideLayerName), token).ConfigureAwait(false); 
+                            var islandArriverAddress = await DodoPosition.FollowMainPointer(OffsetHelper.VillagerArrivingJumps, token).ConfigureAwait(false);
+                            var arriver = await JoiningVillagerHelper.FetchVillager(islandArriverAddress, SwitchConnection, token).ConfigureAwait(false);
+                            var islandId = arriver.IslandID;
+
+                            bool IsSafeNewAbuse = true;
+                            try
+                            {
+                                var newnid = BitConverter.ToUInt64(nid, 0);
+                                var newnislid = islandId;
+                                var plaintext = $"Treasure island arrival";
+                                IsSafeNewAbuse = NewAntiAbuse.Instance.LogUser(newnislid, newnid, string.Empty, plaintext);
+                                LogUtil.LogInfo($"Arrival logged: NID={newnid} TownID={newnislid} Order details={plaintext}", Config.IP);
+
+                                if (!IsSafeNewAbuse)
+                                    LogUtil.LogInfo((Globals.Bot.Config.OrderConfig.PingOnAbuseDetection ? $"Pinging <@{Globals.Self.Owner}>: " : string.Empty) + $"{LastArrival} (NID: {newnid}) is in the known abuser list. It is likely this user is abusing your treasure island.", Globals.Bot.Config.IP);
+                            }
+                            catch { }
+
+                            // Release lock during the long arrival wait
+                            USBLock.Release();
+                            await Task.Delay(60_000, token).ConfigureAwait(false);
+                            await USBLock.WaitAsync(token).ConfigureAwait(false);
+
+                            // Clear username of last arrival
+                            await JoiningVillagerHelper.ClearVillager(islandArriverAddress, SwitchConnection, token).ConfigureAwait(false);
+                            LastArrival = string.Empty;
+                        }
+
+                        await SaveVisitorsToFile(token).ConfigureAwait(false);
+
+                        await DropLoop(token).ConfigureAwait(false);
+
+                        if (VillagerInjections.TryDequeue(out var vil))
+                            await Villagers.InjectVillager(vil, token).ConfigureAwait(false);
+                        var lostVillagers = await Villagers.UpdateVillagers(token).ConfigureAwait(false);
+                        if (Config.DodoModeConfig.ReinjectMovedOutVillagers)
+                            if (lostVillagers != null)
+                                foreach (var lv in lostVillagers)
+                                    if (!lv.Value.StartsWith("non"))
+                                        VillagerInjections.Enqueue(new VillagerRequest("REINJECT", VillagerResources.GetVillager(lv.Value), (byte)lv.Key, GameInfo.Strings.GetVillager(lv.Value)));
+                    
+                        await SaveVillagersToFile(token).ConfigureAwait(false);
+
+                        MapOverrideRequest? mapRequest;
+                        if ((MapOverrides.TryDequeue(out mapRequest) || ExternalMap.CheckForCycle(out mapRequest)) && mapRequest != null)
+                        {
+                            var tempMap = new MapTerrainLite(mapRequest.Item, Map.StartupTerrain, Map.StartupAcreParams)
+                            {
+                                SpawnX = Config.MapPlaceX,
+                                SpawnY = Config.MapPlaceY
+                            };
+                            Map = tempMap;
+
+                            if (!Config.DodoModeConfig.FreezeMap)
+                                await ClearMapAndSpawnInternally(null, Map, Config.DodoModeConfig.RefreshTerrainData, token, true).ConfigureAwait(false);
+                            else
+                                await SwitchConnection.FreezeValues((uint)OffsetHelper.FieldItemStartLayer1, Map.StartupBytes, ConnectionHelper.MapChunkCount, token).ConfigureAwait(false);
+
+                            await AttemptEchoHook($"{TownName} has switched to item layer: {mapRequest.OverrideLayerName}", Config.DodoModeConfig.EchoIslandUpdateChannels, token).ConfigureAwait(false);
+                            await SaveLayerNameToFile(Path.GetFileNameWithoutExtension(mapRequest.OverrideLayerName), token).ConfigureAwait(false); 
+                        }
+
+                        if (Config.DodoModeConfig.AutoNewDodoTimeMinutes > -1)
+                            if ((DateTime.Now - LastDodoFetchTime).TotalMinutes >= Config.DodoModeConfig.AutoNewDodoTimeMinutes && VisitorList.VisitorCount == 1) // 1 for host
+                                RestoreRestartRequested = true;
                     }
-
-                    if (Config.DodoModeConfig.AutoNewDodoTimeMinutes > -1)
-                        if ((DateTime.Now - LastDodoFetchTime).TotalMinutes >= Config.DodoModeConfig.AutoNewDodoTimeMinutes && VisitorList.VisitorCount == 1) // 1 for host
-                            RestoreRestartRequested = true;
+                    finally { USBLock.Release(); }
                 }
 
                 if (Config.DodoModeConfig.EchoDodoChannels.Count > 0)
@@ -450,30 +467,37 @@ namespace SysBot.ACNHOrders
             if (!Config.AcceptingCommands)
             {
                 await Task.Delay(1_000, token).ConfigureAwait(false);
-                await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false);
+                await USBLock.WaitAsync(token).ConfigureAwait(false);
+                try { await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false); }
+                finally { USBLock.Release(); }
                 return;
             }
 
-            await EnsureAnchorsAreInitialised(token);
-
-            if (Orders.TryDequeue(out var item) && item != null)
+            await USBLock.WaitAsync(token).ConfigureAwait(false);
+            try
             {
-                var result = await ExecuteOrder(item, token).ConfigureAwait(false);
+                await EnsureAnchorsAreInitialised(token);
+
+                if (Orders.TryDequeue(out var item) && item != null)
+                {
+                    var result = await ExecuteOrder(item, token).ConfigureAwait(false);
                 
-                // Cleanup
-                LogUtil.LogInfo($"Exited order with result: {result}", Config.IP);
-                CurrentUserId = default!;
-                LastArrival = string.Empty;
-                CurrentUserName = string.Empty;
+                    // Cleanup
+                    LogUtil.LogInfo($"Exited order with result: {result}", Config.IP);
+                    CurrentUserId = default!;
+                    LastArrival = string.Empty;
+                    CurrentUserName = string.Empty;
+                }
+
+                var timeBytes = await Connection.ReadBytesAsync((uint)OffsetHelper.TimeAddress, TimeBlock.SIZE, token).ConfigureAwait(false);
+                var newTimeState = timeBytes.ToClass<TimeBlock>();
+                if (LastTimeState.Hour < 5 && newTimeState.Hour == 5)
+                    GameIsDirty = true;
+                LastTimeState = newTimeState;
+
+                ChargePercent = await SwitchConnection.GetChargePercentAsync(token).ConfigureAwait(false);
             }
-
-            var timeBytes = await Connection.ReadBytesAsync((uint)OffsetHelper.TimeAddress, TimeBlock.SIZE, token).ConfigureAwait(false);
-            var newTimeState = timeBytes.ToClass<TimeBlock>();
-            if (LastTimeState.Hour < 5 && newTimeState.Hour == 5)
-                GameIsDirty = true;
-            LastTimeState = newTimeState;
-
-            ChargePercent = await SwitchConnection.GetChargePercentAsync(token).ConfigureAwait(false);
+            finally { USBLock.Release(); }
 
             await Task.Delay(1_000, token).ConfigureAwait(false);
         }

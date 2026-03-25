@@ -101,67 +101,52 @@ namespace SysBot.ACNHOrders
             await BotRunner.ClickConversation(SwitchButton.A, 1_000, token).ConfigureAwait(false);
 
             // Orville greets (chat)
-            await Task.Delay(2_000, token).ConfigureAwait(false);
+            await Task.Delay(5_000, token).ConfigureAwait(false);
             await BotRunner.ClickConversation(SwitchButton.A, 1_000, token).ConfigureAwait(false);
-            await BotRunner.ClickConversation(SwitchButton.A, ButtonClickTime, token).ConfigureAwait(false);
 
-            // Orville asks what you'd like (chat)
-            await Task.Delay(2_000, token).ConfigureAwait(false);
-            await BotRunner.ClickConversation(SwitchButton.A, 1_000, token).ConfigureAwait(false);
-            await BotRunner.ClickConversation(SwitchButton.A, ButtonClickTime, token).ConfigureAwait(false);
-
-            // "I want visitors" (second option)
+            // What can i do you for? (chat)
+            await Task.Delay(0_500, token).ConfigureAwait(false);
             await BotRunner.Click(SwitchButton.DDOWN, 0_500, token).ConfigureAwait(false);
-            await BotRunner.ClickConversation(SwitchButton.A, ButtonClickTime, token).ConfigureAwait(false);
-
-            // Orville responds to selection (chat)
-            await Task.Delay(2_000, token).ConfigureAwait(false);
             await BotRunner.ClickConversation(SwitchButton.A, 1_000, token).ConfigureAwait(false);
-            await BotRunner.ClickConversation(SwitchButton.A, ButtonClickTime, token).ConfigureAwait(false);
+
+            // You wanna invite someone to your island? (chat)
+            await Task.Delay(5_000, token).ConfigureAwait(false);
+            await BotRunner.ClickConversation(SwitchButton.A, 1_000, token).ConfigureAwait(false);
 
             // "Local play" (first option)
+            await Task.Delay(0_500, token).ConfigureAwait(false);
             await BotRunner.ClickConversation(SwitchButton.A, ButtonClickTime, token).ConfigureAwait(false);
 
             // "Alright gimme a sec to set up local play" (chat)
-            await Task.Delay(2_000, token).ConfigureAwait(false);
+            await Task.Delay(3_000, token).ConfigureAwait(false);
             await BotRunner.ClickConversation(SwitchButton.A, 1_000, token).ConfigureAwait(false);
-            await BotRunner.ClickConversation(SwitchButton.A, ButtonClickTime, token).ConfigureAwait(false);
 
             // "Roger!" (first option)
+            await Task.Delay(0_500, token).ConfigureAwait(false);
             await BotRunner.ClickConversation(SwitchButton.A, ButtonClickTime, token).ConfigureAwait(false);
 
             // Saving and disconnecting from online - wait for it to finish
             await Task.Delay(10_000, token).ConfigureAwait(false);
             await BotRunner.ClickConversation(SwitchButton.A, 1_000, token).ConfigureAwait(false);
-            await BotRunner.ClickConversation(SwitchButton.A, ButtonClickTime, token).ConfigureAwait(false);
 
             // "So you want me to fling open using local" (chat)
-            await Task.Delay(2_000, token).ConfigureAwait(false);
+            await Task.Delay(3_000, token).ConfigureAwait(false);
             await BotRunner.ClickConversation(SwitchButton.A, 1_000, token).ConfigureAwait(false);
-            await BotRunner.ClickConversation(SwitchButton.A, ButtonClickTime, token).ConfigureAwait(false);
 
             // "Or set up a special dodo code to keep out the riffraff" (chat)
-            await Task.Delay(2_000, token).ConfigureAwait(false);
+            await Task.Delay(3_000, token).ConfigureAwait(false);
             await BotRunner.ClickConversation(SwitchButton.A, 1_000, token).ConfigureAwait(false);
-            await BotRunner.ClickConversation(SwitchButton.A, ButtonClickTime, token).ConfigureAwait(false);
 
             // "Fling em open!" (first option)
+            await Task.Delay(0_500, token).ConfigureAwait(false);
             await BotRunner.ClickConversation(SwitchButton.A, ButtonClickTime, token).ConfigureAwait(false);
 
             // "You got it, opening the gate now" (chat)
-            await Task.Delay(2_000, token).ConfigureAwait(false);
+            await Task.Delay(5_000, token).ConfigureAwait(false);
             await BotRunner.ClickConversation(SwitchButton.A, 1_000, token).ConfigureAwait(false);
-            await BotRunner.ClickConversation(SwitchButton.A, ButtonClickTime, token).ConfigureAwait(false);
 
             // Wait for gate to finish opening
-            await Task.Delay(3_000, token).ConfigureAwait(false);
-
-            // Dismiss remaining dialogue
-            for (int i = 0; i < 5; ++i)
-                await BotRunner.ClickConversation(SwitchButton.B, 1_000, token).ConfigureAwait(false);
-
-            if (Globals.Bot.Config.AttemptMitigateDialogueWarping)
-                await AttemptCheckForEndOfConversation(10, token).ConfigureAwait(false);
+            await Task.Delay(5_000, token).ConfigureAwait(false);
 
             DodoCode = "LOCAL";
             LogUtil.LogInfo("Local play gate opened.", Config.IP);
