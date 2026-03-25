@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -127,7 +127,16 @@ namespace SysBot.ACNHOrders
         public async Task RequestDropAsync([Summary(DropItemSummary)][Remainder]string request)
         {
             var cfg = Globals.Bot.Config;
-            var items = ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, cfg.DropConfig.UseLegacyDrop ? ItemDestination.PlayerDropped : ItemDestination.HeldItem);
+            IReadOnlyCollection<Item> items;
+            try
+            {
+                items = ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, cfg.DropConfig.UseLegacyDrop ? ItemDestination.PlayerDropped : ItemDestination.HeldItem);
+            }
+            catch (Exception ex)
+            {
+                await ReplyAsync($"{Context.User.Mention} - Unable to parse your drop request. Please check the format and try again. ({ex.Message})").ConfigureAwait(false);
+                return;
+            }
 
             MultiItem.StackToMax(items);
             await DropItems(items).ConfigureAwait(false);

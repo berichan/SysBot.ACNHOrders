@@ -83,7 +83,24 @@ namespace SysBot.ACNHOrders
             }
 
             if (items == null)
-                items = string.IsNullOrWhiteSpace(request) ? new Item[1] { new Item(Item.NONE) } : ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, ItemDestination.FieldItemDropped).ToArray();
+            {
+                if (string.IsNullOrWhiteSpace(request))
+                {
+                    items = new Item[1] { new Item(Item.NONE) };
+                }
+                else
+                {
+                    try
+                    {
+                        items = ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, ItemDestination.FieldItemDropped).ToArray();
+                    }
+                    catch (Exception ex)
+                    {
+                        await ReplyAsync($"{Context.User.Mention} - Unable to parse your order request. Please check the format and try again. ({ex.Message})").ConfigureAwait(false);
+                        return;
+                    }
+                }
+            }
 
             // Log this order if not attachment
             if (attachment == default)
@@ -126,7 +143,23 @@ namespace SysBot.ACNHOrders
                 vr = new VillagerRequest(Context.User.Username, replace, 0, GameInfo.Strings.GetVillager(res));
             }
 
-            var items = string.IsNullOrWhiteSpace(request) ? new Item[1] { new Item(Item.NONE) } : ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, ItemDestination.FieldItemDropped);
+            IReadOnlyCollection<Item> items;
+            if (string.IsNullOrWhiteSpace(request))
+            {
+                items = new Item[1] { new Item(Item.NONE) };
+            }
+            else
+            {
+                try
+                {
+                    items = ItemParser.GetItemsFromUserInput(request, cfg.DropConfig, ItemDestination.FieldItemDropped);
+                }
+                catch (Exception ex)
+                {
+                    await ReplyAsync($"{Context.User.Mention} - Unable to parse your order request. Please check the format and try again. ({ex.Message})").ConfigureAwait(false);
+                    return;
+                }
+            }
 
             // Log this order
             string path = Path.Combine(LastOrderDirectory, $"{Context.User.Id}");

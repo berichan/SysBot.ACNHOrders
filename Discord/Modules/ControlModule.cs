@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ACNHMobileSpawner;
 using Discord;
+using NHSE.Core;
 using Discord.Commands;
 using Discord.WebSocket;
 using SysBot.Base;
@@ -125,6 +126,13 @@ namespace SysBot.ACNHOrders
         public async Task KillBotAsync()
         {
             await ReplyAsync($"Goodbye {Context.User.Mention}, remember me.").ConfigureAwait(false);
+            var bot = Globals.Bot;
+            try
+            {
+                await bot.Connection.SendAsync(SwitchCommand.DetachController(), CancellationToken.None).ConfigureAwait(false);
+                await Task.Delay(500).ConfigureAwait(false);
+            }
+            catch { }
             Environment.Exit(0);
         }
 
@@ -156,10 +164,31 @@ namespace SysBot.ACNHOrders
             {
                 writer.WriteLine($"{batinfo}");
             }
-            await Context.Message.DeleteAsync(RequestOptions.Default).ConfigureAwait(false);
+            if (Context.Guild != null)
+                await Context.Message.DeleteAsync(RequestOptions.Default).ConfigureAwait(false);
             await ReplyAsync("I have made `Restart.bat`. Please check the bot folder for the file.").ConfigureAwait(false);
         }
-        
+
+        [Command("clearInventory")]
+        [Alias("ci", "clearinv")]
+        [Summary("Clears the in-game player inventory.")]
+        [RequireSudo]
+        public async Task ClearInventoryAsync()
+        {
+            var bot = Globals.Bot;
+            await bot.USBLock.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+            try
+            {
+                var emptyInventory = MultiItem.DeepDuplicateItem(Item.NO_ITEM, 40);
+                var result = await bot.PocketInjector.Write(emptyInventory, CancellationToken.None).ConfigureAwait(false);
+                if (result == InjectionResult.Success)
+                    await ReplyAsync($"{Context.User.Mention} - Inventory has been cleared.").ConfigureAwait(false);
+                else
+                    await ReplyAsync($"{Context.User.Mention} - Failed to clear inventory: {result}").ConfigureAwait(false);
+            }
+            finally { bot.USBLock.Release(); }
+        }
+
         private async Task SetScreen(bool on)
         {
             var bot = Globals.Bot;

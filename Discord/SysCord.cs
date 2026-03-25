@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -115,6 +115,8 @@ namespace SysBot.ACNHOrders
             var game = Bot.Config.Name;
             if (!string.IsNullOrWhiteSpace(game))
                 await _client.SetGameAsync(game).ConfigureAwait(false);
+
+            await _client.SetStatusAsync(UserStatus.Online).ConfigureAwait(false);
 
             var app = await _client.GetApplicationInfoAsync().ConfigureAwait(false);
             Owner = app.Owner.Id;
@@ -313,8 +315,15 @@ namespace SysBot.ACNHOrders
         private async Task MonitorStatusAsync(CancellationToken token)
         {
             const int Interval = 20; // seconds
-            // Check datetime for update
-            UserStatus state = UserStatus.Idle;
+            UserStatus state = UserStatus.Online;
+
+            UserStatus DesiredStatus()
+            {
+                if (Bot.IsExecutingOrder || !Bot.Config.AcceptingCommands)
+                    return UserStatus.DoNotDisturb;
+                return UserStatus.Online;
+            }
+
             while (!token.IsCancellationRequested)
             {
                 var time = DateTime.Now;
@@ -324,10 +333,10 @@ namespace SysBot.ACNHOrders
 
                 if (gap <= TimeSpan.Zero)
                 {
-                    var idle = !Bot.Config.AcceptingCommands ? UserStatus.DoNotDisturb : UserStatus.Idle;
-                    if (idle != state)
+                    var next = DesiredStatus();
+                    if (next != state)
                     {
-                        state = idle;
+                        state = next;
                         await _client.SetStatusAsync(state).ConfigureAwait(false);
                     }
 
@@ -338,7 +347,7 @@ namespace SysBot.ACNHOrders
                     continue;
                 }
 
-                var active = !Bot.Config.AcceptingCommands ? UserStatus.DoNotDisturb : UserStatus.Online;
+                var active = DesiredStatus();
                 if (active != state)
                 {
                     state = active;

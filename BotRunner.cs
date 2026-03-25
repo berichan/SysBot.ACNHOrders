@@ -53,37 +53,22 @@ namespace SysBot.ACNHOrders
             {
                 bot.Log("Starting bot loop.");
 
-                var task = bot.RunAsync(cancel);
-                await task.ConfigureAwait(false);
-
                 bool attemptReconnect = false;
-
-                if (task.IsFaulted)
+                try
                 {
-                    if (task.Exception == null)
-                    {
-                        bot.Log("Bot has terminated due to an unknown error.");
-                    }
-                    else
-                    {
-                        bot.Log("Bot has terminated due to an error:");
-                        foreach (var ex in task.Exception.InnerExceptions)
-                        {
-                            bot.Log(ex.Message);
-                            var st = ex.StackTrace;
-                            if (st != null)
-                                bot.Log(st);
-                        }
-                    }
-                    attemptReconnect = true;
-                    bot.Log("Please wait... Attempting to reconnect in 10 seconds.");
-                }
-                else
-                {
+                    await bot.RunAsync(cancel).ConfigureAwait(false);
                     bot.Log("Bot has terminated.");
-                    attemptReconnect = true;
-                    bot.Log("Please wait... Attempting to reconnect in 10 seconds.");
                 }
+                catch (Exception ex)
+                {
+                    bot.Log($"Bot has terminated due to an error: {ex.Message}");
+                    var st = ex.StackTrace;
+                    if (st != null)
+                        bot.Log(st);
+                }
+
+                attemptReconnect = true;
+                bot.Log("Please wait... Attempting to reconnect in 10 seconds.");
 
                 if (attemptReconnect)
                 {

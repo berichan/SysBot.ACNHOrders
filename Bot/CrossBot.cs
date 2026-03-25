@@ -55,6 +55,7 @@ namespace SysBot.ACNHOrders
         public string LastArrivalIsland { get; private set; } = string.Empty;
         public ulong CurrentUserId { get; set; } = default!;
         public string CurrentUserName { get; set; } = string.Empty;
+        public bool IsExecutingOrder { get; private set; }
         public bool GameIsDirty { get; set; } = true; // Dirty if crashed or last user didn't arrive/leave correctly
         public ulong ChatAddress { get; set; } = 0;
         public int ChargePercent { get; set; } = 100;
@@ -510,43 +511,50 @@ namespace SysBot.ACNHOrders
             if (order.VillagerName != string.Empty && Config.OrderConfig.EchoArrivingLeavingChannels.Count > 0)
                 await AttemptEchoHook($"> {startMsg}", Config.OrderConfig.EchoArrivingLeavingChannels, token).ConfigureAwait(false);
             CurrentUserName = order.VillagerName;
-
-            // Clear any lingering injections from the last user
-            Injections.ClearQueue();
-            Speaks.ClearQueue();
-
-            int timeOut = (Config.OrderConfig.UserTimeAllowed + 360) * 1_000; // 360 seconds = 6 minutes
-            var cts = new CancellationTokenSource(timeOut);
-            var cToken = cts.Token; // tokens need combining, somehow & eventually
-            OrderResult result = OrderResult.Faulted;
-            var orderTask = GameIsDirty ? ExecuteOrderStart(order, false, true, cToken) : ExecuteOrderMidway(order, cToken);
+            IsExecutingOrder = true;
             try
             {
-                result = await orderTask.ConfigureAwait(false);
+                // Clear any lingering injections from the last user
+                Injections.ClearQueue();
+                Speaks.ClearQueue();
+
+                int timeOut = (Config.OrderConfig.UserTimeAllowed + 360) * 1_000; // 360 seconds = 6 minutes
+                var cts = new CancellationTokenSource(timeOut);
+                var cToken = cts.Token; // tokens need combining, somehow & eventually
+                OrderResult result = OrderResult.Faulted;
+                var orderTask = GameIsDirty ? ExecuteOrderStart(order, false, true, cToken) : ExecuteOrderMidway(order, cToken);
+                try
+                {
+                    result = await orderTask.ConfigureAwait(false);
+                }
+                catch (OperationCanceledException e)
+                {
+                    LogUtil.LogInfo($"{order.VillagerName} ({order.UserGuid}) had their order timeout: {e.Message}.", Config.IP);
+                    order.OrderCancelled(this, "Unfortunately a game crash occured while your order was in progress. Sorry, your request has been removed.", true);
+                }
+
+                if (result == OrderResult.Success)
+                {
+                    GameIsDirty = await CloseGate(token).ConfigureAwait(false);
+                }
+                else
+                {
+                    await EndSession(token).ConfigureAwait(false);
+                    GameIsDirty = true;
+                }
+
+                if (result == OrderResult.NoArrival || result == OrderResult.NoLeave)
+                    GlobalBan.Penalize(order.UserGuid.ToString());
+
+                // Clear username of last arrival
+                await JoiningVillagerHelper.ClearVillager(await DodoPosition.FollowMainPointer(OffsetHelper.VillagerArrivingJumps, token).ConfigureAwait(false), SwitchConnection, token).ConfigureAwait(false);
+
+                return result;
             }
-            catch (OperationCanceledException e)
+            finally
             {
-                LogUtil.LogInfo($"{order.VillagerName} ({order.UserGuid}) had their order timeout: {e.Message}.", Config.IP);
-                order.OrderCancelled(this, "Unfortunately a game crash occured while your order was in progress. Sorry, your request has been removed.", true);
+                IsExecutingOrder = false;
             }
-
-            if (result == OrderResult.Success)
-            {
-                GameIsDirty = await CloseGate(token).ConfigureAwait(false);
-            }
-            else
-            {
-                await EndSession(token).ConfigureAwait(false);
-                GameIsDirty = true;
-            }
-
-            if (result == OrderResult.NoArrival || result == OrderResult.NoLeave)
-                GlobalBan.Penalize(order.UserGuid.ToString());
-
-            // Clear username of last arrival
-            await JoiningVillagerHelper.ClearVillager(await DodoPosition.FollowMainPointer(OffsetHelper.VillagerArrivingJumps, token).ConfigureAwait(false), SwitchConnection, token).ConfigureAwait(false);
-
-            return result;
         }
 
         // execute order directly after someone else's order
@@ -1209,8 +1217,10 @@ namespace SysBot.ACNHOrders
             ulong offset = await DodoPosition.FollowMainPointer(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false);
             var bytesA = await SwitchConnection.ReadBytesAbsoluteAsync(offset, 0xC, token).ConfigureAwait(false);
             var bytesB = await SwitchConnection.ReadBytesAbsoluteAsync(offset + 0x3C, 0x4, token).ConfigureAwait(false);
-            var sequentinalAnchor = bytesA.Concat(bytesB).ToArray();
-            return new PosRotAnchor(sequentinalAnchor);
+            var sequentialAnchor = bytesA.Concat(bytesB).ToArray();
+            if (sequentialAnchor.Length < PosRotAnchor.SIZE)
+                return new PosRotAnchor();
+            return new PosRotAnchor(sequentialAnchor);
         }
 
         private async Task<bool> IsArriverNew(CancellationToken token)
