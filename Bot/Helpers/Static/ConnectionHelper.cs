@@ -1,4 +1,4 @@
-﻿using SysBot.Base;
+using SysBot.Base;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,12 +20,29 @@ namespace SysBot.ACNHOrders
             return version;
         }
 
+        private static bool _chargeSupported = true;
+
         public static async Task<int> GetChargePercentAsync(this ISwitchConnectionAsync connection, CancellationToken token)
         {
-            var gvbytes = Encoding.ASCII.GetBytes("charge\r\n");
-            byte[] socketReturn = await connection.ReadRaw(gvbytes, 9, token).ConfigureAwait(false);
-            string chargepc = Encoding.UTF8.GetString(socketReturn).TrimEnd('\0').TrimEnd('\n');
-            return int.Parse(chargepc);
+            if (!_chargeSupported)
+                return -1;
+
+            try
+            {
+                var gvbytes = Encoding.ASCII.GetBytes("charge\r\n");
+                byte[] socketReturn = await connection.ReadRaw(gvbytes, 9, token).ConfigureAwait(false);
+                string chargepc = Encoding.UTF8.GetString(socketReturn).TrimEnd('\0').TrimEnd('\n');
+
+                if (int.TryParse(chargepc, out var result))
+                    return result;
+            }
+            catch
+            {
+                // USB-Botbase does not support the charge command.
+            }
+
+            _chargeSupported = false;
+            return -1;
         }
 
         private static T[] SubArray<T>(T[] data, int index, int length)

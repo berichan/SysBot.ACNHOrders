@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using SysBot.Base;
@@ -75,16 +75,14 @@ namespace SysBot.ACNHOrders
                                 bot.Log(st);
                         }
                     }
-                    attemptReconnect = false;
+                    attemptReconnect = true;
+                    bot.Log("Please wait... Attempting to reconnect in 10 seconds.");
                 }
                 else
                 {
                     bot.Log("Bot has terminated.");
-                   // if (config.DodoModeConfig.LimitedDodoRestoreOnlyMode) // don't restore ordermode crashes
-                   // {
-                        attemptReconnect = true;
-                        bot.Log("Please wait... Attempting to reconnect in 10 seconds.");
-                   // }
+                    attemptReconnect = true;
+                    bot.Log("Please wait... Attempting to reconnect in 10 seconds.");
                 }
 
                 if (attemptReconnect)

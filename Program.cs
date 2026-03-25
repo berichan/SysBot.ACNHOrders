@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using System.Text.Json;
@@ -17,6 +18,7 @@ namespace SysBot.ACNHOrders
             string configPath;
 
 			Console.WriteLine("Starting up...");
+            KillStaleInstances();
             if (args.Length > 0) 
             {
                 if (args.Length > 1) 
@@ -95,6 +97,33 @@ namespace SysBot.ACNHOrders
             SaveConfig(new CrossBotConfig {IP = "192.168.0.1", Port = 6000}, configPath);
             Console.WriteLine("Created blank config file. Please configure it and restart the program.");
             WaitKeyExit();
+        }
+
+        private static void KillStaleInstances()
+        {
+            var currentPid = Environment.ProcessId;
+            var processName = Process.GetCurrentProcess().ProcessName;
+
+            foreach (var proc in Process.GetProcessesByName(processName))
+            {
+                if (proc.Id == currentPid)
+                    continue;
+
+                try
+                {
+                    Console.WriteLine($"Killing stale instance (PID {proc.Id}) to release USB handle...");
+                    proc.Kill();
+                    proc.WaitForExit(5000);
+                }
+                catch
+                {
+                    // Best effort - may fail if already exiting.
+                }
+                finally
+                {
+                    proc.Dispose();
+                }
+            }
         }
 
         private static void WaitKeyExit()

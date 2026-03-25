@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,7 +21,12 @@ namespace SysBot.ACNHOrders
         {
             await ReplyAsync("A controller detach request will be executed momentarily.").ConfigureAwait(false);
             var bot = Globals.Bot;
-            await bot.Connection.SendAsync(SwitchCommand.DetachController(), CancellationToken.None).ConfigureAwait(false);
+            await bot.USBLock.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+            try
+            {
+                await bot.Connection.SendAsync(SwitchCommand.DetachController(), CancellationToken.None).ConfigureAwait(false);
+            }
+            finally { bot.USBLock.Release(); }
         }
 
         [Command("toggleRequests")]
@@ -158,9 +163,13 @@ namespace SysBot.ACNHOrders
         private async Task SetScreen(bool on)
         {
             var bot = Globals.Bot;
-                
-            await bot.SetScreenCheck(on, CancellationToken.None, true).ConfigureAwait(false);
-            await ReplyAsync("Screen state set to: " + (on ? "On" : "Off")).ConfigureAwait(false);
+            await bot.USBLock.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+            try
+            {
+                await bot.SetScreenCheck(on, CancellationToken.None, true).ConfigureAwait(false);
+                await ReplyAsync("Screen state set to: " + (on ? "On" : "Off")).ConfigureAwait(false);
+            }
+            finally { bot.USBLock.Release(); }
         }
     }
 }

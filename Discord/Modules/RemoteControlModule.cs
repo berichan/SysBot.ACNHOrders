@@ -1,4 +1,4 @@
-﻿using Discord.Commands;
+using Discord.Commands;
 using SysBot.Base;
 using System;
 using System.IO;
@@ -31,8 +31,13 @@ namespace SysBot.ACNHOrders
         private async Task ClickAsyncImpl(SwitchButton button)
         {
             var b = Globals.Bot;
-            await b.Connection.SendAsync(SwitchCommand.Click(button, b.UseCRLF), CancellationToken.None).ConfigureAwait(false);
-            await ReplyAsync($"{b.Connection.Name} has performed: {button}").ConfigureAwait(false);
+            await b.USBLock.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+            try
+            {
+                await b.Connection.SendAsync(SwitchCommand.Click(button, b.UseCRLF), CancellationToken.None).ConfigureAwait(false);
+                await ReplyAsync($"{b.Connection.Name} has performed: {button}").ConfigureAwait(false);
+            }
+            finally { b.USBLock.Release(); }
         }
 
         private async Task SetStickAsyncImpl(SwitchStick s, short x, short y, ushort ms)
@@ -44,11 +49,16 @@ namespace SysBot.ACNHOrders
             }
 
             var b = Bot;
-            await b.Connection.SendAsync(SwitchCommand.SetStick(s, x, y, b.UseCRLF), CancellationToken.None).ConfigureAwait(false);
-            await ReplyAsync($"{b.Connection.Name} has performed: {s}").ConfigureAwait(false);
-            await Task.Delay(ms).ConfigureAwait(false);
-            await b.Connection.SendAsync(SwitchCommand.ResetStick(s, b.UseCRLF), CancellationToken.None).ConfigureAwait(false);
-            await ReplyAsync($"{b.Connection.Name} has reset the stick position.").ConfigureAwait(false);
+            await b.USBLock.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+            try
+            {
+                await b.Connection.SendAsync(SwitchCommand.SetStick(s, x, y, b.UseCRLF), CancellationToken.None).ConfigureAwait(false);
+                await ReplyAsync($"{b.Connection.Name} has performed: {s}").ConfigureAwait(false);
+                await Task.Delay(ms).ConfigureAwait(false);
+                await b.Connection.SendAsync(SwitchCommand.ResetStick(s, b.UseCRLF), CancellationToken.None).ConfigureAwait(false);
+                await ReplyAsync($"{b.Connection.Name} has reset the stick position.").ConfigureAwait(false);
+            }
+            finally { b.USBLock.Release(); }
         }
 
         [Command("readMemory")]
@@ -57,9 +67,14 @@ namespace SysBot.ACNHOrders
         public async Task ReadAsync(uint offset, int length)
         {
             var b = Bot;
-            var result = await b.Connection.ReadBytesAsync(offset, length, CancellationToken.None).ConfigureAwait(false);
-            File.WriteAllBytes("dump.bin", result);
-            await ReplyAsync("Done.").ConfigureAwait(false);
+            await b.USBLock.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+            try
+            {
+                var result = await b.Connection.ReadBytesAsync(offset, length, CancellationToken.None).ConfigureAwait(false);
+                File.WriteAllBytes("dump.bin", result);
+                await ReplyAsync("Done.").ConfigureAwait(false);
+            }
+            finally { b.USBLock.Release(); }
         }
 
         [Command("writeMemory")]
@@ -68,9 +83,14 @@ namespace SysBot.ACNHOrders
         public async Task WriteAsync(uint offset, string hex)
         {
             var b = Bot;
-            var data = GetBytesFromHexString(hex.Replace(" ", ""));
-            await b.Connection.WriteBytesAsync(data, offset, CancellationToken.None).ConfigureAwait(false);
-            await ReplyAsync("Done.").ConfigureAwait(false);
+            await b.USBLock.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+            try
+            {
+                var data = GetBytesFromHexString(hex.Replace(" ", ""));
+                await b.Connection.WriteBytesAsync(data, offset, CancellationToken.None).ConfigureAwait(false);
+                await ReplyAsync("Done.").ConfigureAwait(false);
+            }
+            finally { b.USBLock.Release(); }
         }
 
         [Command("readCommand")]
@@ -79,10 +99,15 @@ namespace SysBot.ACNHOrders
         public async Task ReadCommandAsync(int expectedReturnSize, [Remainder]string command)
         {
             var b = Bot;
-            var data = System.Text.Encoding.UTF8.GetBytes(command + "\r\n");
-            await ReplyAsync($"Sending `{command}` and waiting for {expectedReturnSize}-byte result.").ConfigureAwait(false);
-            var ret = await b.SwitchConnectedConnection.ReadRaw(data, expectedReturnSize, CancellationToken.None).ConfigureAwait(false);
-            await ReplyAsync($"`{command}` returned with result: {System.Text.Encoding.UTF8.GetString(ret)}").ConfigureAwait(false);
+            await b.USBLock.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+            try
+            {
+                var data = System.Text.Encoding.UTF8.GetBytes(command + "\r\n");
+                await ReplyAsync($"Sending `{command}` and waiting for {expectedReturnSize}-byte result.").ConfigureAwait(false);
+                var ret = await b.SwitchConnectedConnection.ReadRaw(data, expectedReturnSize, CancellationToken.None).ConfigureAwait(false);
+                await ReplyAsync($"`{command}` returned with result: {System.Text.Encoding.UTF8.GetString(ret)}").ConfigureAwait(false);
+            }
+            finally { b.USBLock.Release(); }
         }
 
         [Command("unfreezeAll")]
@@ -90,9 +115,14 @@ namespace SysBot.ACNHOrders
         [RequireSudo]
         public async Task UnfreezeAll()
         {
-            var data = System.Text.Encoding.ASCII.GetBytes($"freezeClear\r\n");
-            await Bot.SwitchConnectedConnection.SendRaw(data, CancellationToken.None).ConfigureAwait(false);
-            await ReplyAsync("Unfrozen all previously frozen values").ConfigureAwait(false);
+            await Bot.USBLock.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+            try
+            {
+                var data = System.Text.Encoding.ASCII.GetBytes($"freezeClear\r\n");
+                await Bot.SwitchConnectedConnection.SendRaw(data, CancellationToken.None).ConfigureAwait(false);
+                await ReplyAsync("Unfrozen all previously frozen values").ConfigureAwait(false);
+            }
+            finally { Bot.USBLock.Release(); }
         }
 
         [Command("setFreezeDelay")]
@@ -107,9 +137,14 @@ namespace SysBot.ACNHOrders
                 return;
             }
 
-            var data = System.Text.Encoding.ASCII.GetBytes($"configure freezeRate {ms}\r\n");
-            await Bot.SwitchConnectedConnection.SendRaw(data, CancellationToken.None).ConfigureAwait(false);
-            await ReplyAsync($"Set freeze rate to: {ms}").ConfigureAwait(false);
+            await Bot.USBLock.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+            try
+            {
+                var data = System.Text.Encoding.ASCII.GetBytes($"configure freezeRate {ms}\r\n");
+                await Bot.SwitchConnectedConnection.SendRaw(data, CancellationToken.None).ConfigureAwait(false);
+                await ReplyAsync($"Set freeze rate to: {ms}").ConfigureAwait(false);
+            }
+            finally { Bot.USBLock.Release(); }
         }
 
         [Command("pauseFreeze")]
@@ -118,8 +153,13 @@ namespace SysBot.ACNHOrders
         [RequireSudo]
         public async Task FreezePause()
         {
-            await Bot.SwitchConnectedConnection.SetFreezePauseState(true, CancellationToken.None).ConfigureAwait(false);
-            await ReplyAsync($"Freeze has been paused.").ConfigureAwait(false);
+            await Bot.USBLock.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+            try
+            {
+                await Bot.SwitchConnectedConnection.SetFreezePauseState(true, CancellationToken.None).ConfigureAwait(false);
+                await ReplyAsync($"Freeze has been paused.").ConfigureAwait(false);
+            }
+            finally { Bot.USBLock.Release(); }
         }
 
         [Command("pauseUnfreeze")]
@@ -128,8 +168,13 @@ namespace SysBot.ACNHOrders
         [RequireSudo]
         public async Task FreezeUnpause()
         {
-            await Bot.SwitchConnectedConnection.SetFreezePauseState(false, CancellationToken.None).ConfigureAwait(false);
-            await ReplyAsync($"Freeze has been unpaused.").ConfigureAwait(false);
+            await Bot.USBLock.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+            try
+            {
+                await Bot.SwitchConnectedConnection.SetFreezePauseState(false, CancellationToken.None).ConfigureAwait(false);
+                await ReplyAsync($"Freeze has been unpaused.").ConfigureAwait(false);
+            }
+            finally { Bot.USBLock.Release(); }
         }
 
         private static byte[] GetBytesFromHexString(string seed)

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using SysBot.Base;
@@ -90,6 +90,9 @@ namespace SysBot.ACNHOrders
 
         /// <summary> Should we check instant text offset to see if we are still in dialogue, and if so should we keep mashing B? </summary>
         public bool AttemptMitigateDialogueWarping { get; set; } = false;
+
+        /// <summary> Use local play instead of online play. No dodo code is generated, gates are flung open to all local players. </summary>
+        public bool UseLocalPlay { get; set; } = false;
 
         /// <summary> Should we not use instant text? </summary>
         public bool LegacyDodoCodeRetrieval { get; set; } = false;

@@ -19,6 +19,8 @@ namespace SysBot.ACNHOrders
     {
         private const string ACNH_PROGRAM_ID = "01006F8002326000";
 
+        public readonly SemaphoreSlim USBLock = new(1, 1);
+
         private OrderQueue<IACNHOrderNotifier<Item>> Orders => QueueHub.CurrentInstance.Orders;
         private uint InventoryOffset { get; set; } = (uint)OffsetHelper.InventoryOffset;
 
@@ -246,11 +248,21 @@ namespace SysBot.ACNHOrders
             bool hardCrash = immediateRestart;
             if (!immediateRestart)
             {
-                byte[] bytes = await Connection.ReadBytesAsync((uint)OffsetHelper.DodoAddress, 0x5, token).ConfigureAwait(false);
-                DodoCode = Encoding.UTF8.GetString(bytes, 0, 5);
+                if (Config.UseLocalPlay)
+                {
+                    DodoCode = "LOCAL";
+                    LogUtil.LogInfo($"Local play mode active for {TownName}. No Dodo code needed.", Config.IP);
+                    if (Config.DodoModeConfig.EchoDodoChannels.Count > 0)
+                        await AttemptEchoHook($"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] {TownName} is open via local play.", Config.DodoModeConfig.EchoDodoChannels, token).ConfigureAwait(false);
+                }
+                else
+                {
+                    byte[] bytes = await Connection.ReadBytesAsync((uint)OffsetHelper.DodoAddress, 0x5, token).ConfigureAwait(false);
+                    DodoCode = Encoding.UTF8.GetString(bytes, 0, 5);
 
-                if (DodoPosition.IsDodoValid(DodoCode) && Config.DodoModeConfig.EchoDodoChannels.Count > 0)
-                    await AttemptEchoHook($"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] The Dodo code for {TownName} has updated, the new Dodo code is: {DodoCode}.", Config.DodoModeConfig.EchoDodoChannels, token).ConfigureAwait(false);
+                    if (DodoPosition.IsDodoValid(DodoCode) && Config.DodoModeConfig.EchoDodoChannels.Count > 0)
+                        await AttemptEchoHook($"[{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] The Dodo code for {TownName} has updated, the new Dodo code is: {DodoCode}.", Config.DodoModeConfig.EchoDodoChannels, token).ConfigureAwait(false);
+                }
 
                 NotifyDodo(DodoCode);
                 if (Config.DodoModeConfig.MaxBells)
@@ -410,7 +422,10 @@ namespace SysBot.ACNHOrders
             }
 
             await SaveDodoCodeToFile(token).ConfigureAwait(false);
-            LogUtil.LogInfo($"Dodo restore successful. New dodo for {TownName} is {DodoCode} and saved to {Config.DodoModeConfig.DodoRestoreFilename}.", Config.IP);
+            if (Config.UseLocalPlay)
+                LogUtil.LogInfo($"Gate restore successful. {TownName} is open via local play.", Config.IP);
+            else
+                LogUtil.LogInfo($"Dodo restore successful. New dodo for {TownName} is {DodoCode} and saved to {Config.DodoModeConfig.DodoRestoreFilename}.", Config.IP);
             if (Config.DodoModeConfig.RefreshMap) // clean map
                 await ClearMapAndSpawnInternally(null, Map, Config.DodoModeConfig.RefreshTerrainData, token, true).ConfigureAwait(false);
         }
@@ -699,37 +714,59 @@ namespace SysBot.ACNHOrders
 
         private async Task<OrderResult> FetchDodoAndAwaitOrder(IACNHOrderNotifier<Item> order, bool ignoreInjection, CancellationToken token)
         {
-            LogUtil.LogInfo($"Talking to Orville. Attempting to get Dodo code for {TownName}.", Config.IP);
-            if (ignoreInjection)
-                await SetScreenCheck(true, token).ConfigureAwait(false);
-            await DodoPosition.GetDodoCode((uint)OffsetHelper.DodoAddress, false, token).ConfigureAwait(false);
-
-            // try again if we failed to get a dodo
-            if (Config.OrderConfig.RetryFetchDodoOnFail && !DodoPosition.IsDodoValid(DodoPosition.DodoCode))
+            if (Config.UseLocalPlay)
             {
-                LogUtil.LogInfo($"Failed to get a valid Dodo code for {TownName}. Trying again...", Config.IP);
-                for (int i = 0; i < 10; ++i)
-                    await ClickConversation(SwitchButton.B, 0_600, token).ConfigureAwait(false);
-                await DodoPosition.GetDodoCode((uint)OffsetHelper.DodoAddress, true, token).ConfigureAwait(false);
+                LogUtil.LogInfo($"Talking to Orville. Opening local play gate for {TownName}.", Config.IP);
+                if (ignoreInjection)
+                    await SetScreenCheck(true, token).ConfigureAwait(false);
+
+                await DodoPosition.OpenGateLocal(token).ConfigureAwait(false);
+
+                await SetScreenCheck(false, token).ConfigureAwait(false);
+
+                DodoCode = "LOCAL";
+                LastDodoFetchTime = DateTime.Now;
+
+                if (!ignoreInjection)
+                {
+                    LogUtil.LogInfo($"Local gate open for {order.VillagerName}. No Dodo code needed.", Config.IP);
+                    order.OrderReady(this, $"You have {(int)(Config.OrderConfig.WaitForArriverTime * 0.9f)} seconds to arrive via local play. My island name is **{TownName}**", DodoCode);
+                }
             }
-
-            await SetScreenCheck(false, token).ConfigureAwait(false);
-
-            if (!DodoPosition.IsDodoValid(DodoPosition.DodoCode))
+            else
             {
-                var error = "Failed to connect to the internet and obtain a Dodo code.";
-                LogUtil.LogError($"{error} Trying next request.", Config.IP);
-                order.OrderCancelled(this, $"A connection error occured: {error} Sorry, your request has been removed.", true);
-                return OrderResult.Faulted;
-            }
+                LogUtil.LogInfo($"Talking to Orville. Attempting to get Dodo code for {TownName}.", Config.IP);
+                if (ignoreInjection)
+                    await SetScreenCheck(true, token).ConfigureAwait(false);
+                await DodoPosition.GetDodoCode((uint)OffsetHelper.DodoAddress, false, token).ConfigureAwait(false);
 
-            DodoCode = DodoPosition.DodoCode;
-            LastDodoFetchTime = DateTime.Now;
+                // try again if we failed to get a dodo
+                if (Config.OrderConfig.RetryFetchDodoOnFail && !DodoPosition.IsDodoValid(DodoPosition.DodoCode))
+                {
+                    LogUtil.LogInfo($"Failed to get a valid Dodo code for {TownName}. Trying again...", Config.IP);
+                    for (int i = 0; i < 10; ++i)
+                        await ClickConversation(SwitchButton.B, 0_600, token).ConfigureAwait(false);
+                    await DodoPosition.GetDodoCode((uint)OffsetHelper.DodoAddress, true, token).ConfigureAwait(false);
+                }
 
-            if (!ignoreInjection)
-            {
-                LogUtil.LogInfo($"Sending Dodo Code {DodoCode} to {order.VillagerName}", Config.IP);
-                order.OrderReady(this, $"You have {(int)(Config.OrderConfig.WaitForArriverTime * 0.9f)} seconds to arrive. My island name is **{TownName}**", DodoCode);
+                await SetScreenCheck(false, token).ConfigureAwait(false);
+
+                if (!DodoPosition.IsDodoValid(DodoPosition.DodoCode))
+                {
+                    var error = "Failed to connect to the internet and obtain a Dodo code.";
+                    LogUtil.LogError($"{error} Trying next request.", Config.IP);
+                    order.OrderCancelled(this, $"A connection error occured: {error} Sorry, your request has been removed.", true);
+                    return OrderResult.Faulted;
+                }
+
+                DodoCode = DodoPosition.DodoCode;
+                LastDodoFetchTime = DateTime.Now;
+
+                if (!ignoreInjection)
+                {
+                    LogUtil.LogInfo($"Sending Dodo Code {DodoCode} to {order.VillagerName}", Config.IP);
+                    order.OrderReady(this, $"You have {(int)(Config.OrderConfig.WaitForArriverTime * 0.9f)} seconds to arrive. My island name is **{TownName}**", DodoCode);
+                }
             }
 
             // Clear username of last arrival (again)
@@ -1406,11 +1443,50 @@ namespace SysBot.ACNHOrders
             }
         }
 
+        private bool? _useGetTitleID;
+
         public async Task<bool> IsGameRunning(CancellationToken token)
         {
-            var commandBytes = Encoding.ASCII.GetBytes($"isProgramRunning 0x{ACNH_PROGRAM_ID}\r\n");
-            var isRunning = Encoding.ASCII.GetString(await SwitchConnection.ReadRaw(commandBytes, 17, token).ConfigureAwait(false));
-            return ulong.Parse(isRunning.Trim(), System.Globalization.NumberStyles.HexNumber) == 1;
+            if (_useGetTitleID != true)
+            {
+                try
+                {
+                    var commandBytes = Encoding.ASCII.GetBytes($"isProgramRunning 0x{ACNH_PROGRAM_ID}\r\n");
+                    var raw = await SwitchConnection.ReadRaw(commandBytes, 17, token).ConfigureAwait(false);
+                    var isRunning = Encoding.ASCII.GetString(raw).Trim();
+
+                    if (!string.IsNullOrEmpty(isRunning) &&
+                        ulong.TryParse(isRunning, System.Globalization.NumberStyles.HexNumber, null, out var result))
+                        return result == 1;
+                }
+                catch
+                {
+                    // USB-Botbase does not support isProgramRunning.
+                }
+
+                _useGetTitleID = true;
+            }
+
+            try
+            {
+                var titleCmd = Encoding.ASCII.GetBytes("getTitleID\r\n");
+                var titleRaw = await SwitchConnection.ReadRaw(titleCmd, 8, token).ConfigureAwait(false);
+
+                if (titleRaw.Length >= 8)
+                {
+                    var titleId = BitConverter.ToUInt64(titleRaw, 0);
+                    bool running = titleId == 0x01006F8002326000;
+                    LogUtil.LogInfo($"getTitleID returned 0x{titleId:X16}, ACNH running: {running}", Config.IP);
+                    return running;
+                }
+            }
+            catch (Exception ex)
+            {
+                LogUtil.LogInfo($"getTitleID failed: {ex.Message}", Config.IP);
+            }
+
+            LogUtil.LogInfo("Unable to determine if game is running. Assuming game is running.", Config.IP);
+            return true;
         }
 
         // Additional
