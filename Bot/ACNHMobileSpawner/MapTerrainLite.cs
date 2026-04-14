@@ -17,8 +17,8 @@ namespace ACNHMobileSpawner
     // Written in C# 6 due to Unity limitations. A (much) lighter version of UI_Map.cs and UI_MapTerrain.cs
     public class MapTerrainLite
     {
-        public const int ByteSize = MapGrid.MapTileCount32x32 * Item.SIZE;
-        public const int TerrainSize = MapGrid.MapTileCount16x16 * TerrainTile.SIZE;
+        public const int ByteSize = (int)OffsetHelper.LegacyMapTileCount32x32 * Item.SIZE;
+        public const int TerrainSize = (int)OffsetHelper.LegacyMapTileCount16x16 * TerrainTile.SIZE;
 
         public const int AcreWidth = 7 + (2 * 1); // 1 on each side cannot be traversed
         private const int AcreHeight = 6 + (2 * 1); // 1 on each side cannot be traversed
@@ -32,7 +32,7 @@ namespace ACNHMobileSpawner
         public readonly byte[] StartupTerrain;
         public readonly byte[] StartupAcreParams;
 
-        public readonly FieldItemLayer ItemLayer;
+        public readonly LayerFieldItem ItemLayer;
         public int SpawnX { get; set; } = 0;
         public int SpawnY { get; set; } = 0;
 
@@ -43,7 +43,7 @@ namespace ACNHMobileSpawner
             StartupBytes = itemBytes;
             var items = Item.GetArray(StartupBytes);
             StartupItems = CloneItemArray(items);
-            ItemLayer = new FieldItemLayer(items);
+            ItemLayer = new LayerFieldItem(items, (byte)OffsetHelper.LegacyAcreWidth, (byte)OffsetHelper.LegacyAcreHeight);
 
             StartupTerrain = terrain;
             StartupAcreParams = acreplaza;

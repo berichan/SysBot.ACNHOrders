@@ -4,6 +4,12 @@ namespace ACNHMobileSpawner
 {
     public static class OffsetHelper
     {
+        public const ulong LegacyAcreWidth = 7;
+        public const ulong LegacyAcreHeight = 6;
+        public const ulong LegacyAcreCount = LegacyAcreWidth * LegacyAcreHeight;
+        public const ulong LegacyMapTileCount32x32 = 32 * 32 * LegacyAcreCount;
+        public const ulong LegacyMapTileCount16x16 = 16 * 16 * LegacyAcreCount;
+
         // some helpers
         public const ulong PlayerSize = 0x131F70;
         public const ulong PlayerOtherStartPadding = 0x37BE0;
@@ -30,8 +36,8 @@ namespace ACNHMobileSpawner
         public const ulong BackupSaveDiff = 0x9B0EB0;
 
         private const ulong FieldItemStart = VillagerAddress - 0x10 + 0x22f3f0;
-        private const ulong FieldBufferSize = MapGrid.AcreHeight * 32 * 32 * (MapGrid.AcreWidth + 1);
-        public const ulong FieldSize = MapGrid.MapTileCount32x32 * Item.SIZE;
+        private const ulong FieldBufferSize = LegacyAcreHeight * 32 * 32 * (LegacyAcreWidth + 1);
+        public const ulong FieldSize = LegacyMapTileCount32x32 * Item.SIZE;
         public const ulong FieldItemStartLayer1 = FieldItemStart + FieldBufferSize;
         public const ulong FieldItemStartLayer2 = (FieldItemStart + FieldSize) + (FieldBufferSize * 3); // 2 for layer 1 + 1 buffer for this layer
 
@@ -40,22 +46,22 @@ namespace ACNHMobileSpawner
         public const ulong MainFieldStructurStart = FieldItemStart + 0x100200;
 
         // other addresses
-        public const ulong TextSpeedAddress = 0xBD9A9FC;
+        public const ulong TextSpeedAddress = 0xBD9B9FC;
         public const ulong ChatBufferSize = 0x1E;
 
-        public const ulong DodoAddress = 0xAC1A164;
-        public const ulong OnlineSessionAddress = 0x9499748;
-        public const ulong TimeAddress = 0x0BD91B00;
+        public const ulong DodoAddress = 0xAC1B164;
+        public const ulong OnlineSessionAddress = 0x949A748;
+        public const ulong TimeAddress = 0x0BD92B00;
 
         // pointers
-        public static readonly long[] PlayerCoordJumps = [0x4BF9E30L, 0x18L, 0x178L, 0xD0L, 0xD8L]; // [[[[main+4BF9E30]+18]+178]+D0]+D8
-        public static readonly long[] ChatCoordJumps = [0x5254A40L, 0x40L];
+        public static readonly long[] PlayerCoordJumps = [0x4BFAE30L, 0x18L, 0x178L, 0xD0L, 0xD8L]; // [[[[main+4BFAE30]+18]+178]+D0]+D8
+        public static readonly long[] ChatCoordJumps = [0x5255A60L, 0x40L];
 
-        public static readonly long[] VillagerArrivingJumps = [0x526B6E8L, 0x40L, 0x170L];
-        public static readonly long[] VillagerArrivingNIDJumps = [0x526B6E8L, 0xD0L];
+        public static readonly long[] VillagerArrivingJumps = [0x526C708L, 0x40L, 0x170L]; 
+        public static readonly long[] VillagerArrivingNIDJumps = [0x526C708L, 0xD0L];
         public const ulong ArriverVillageShift = 0x1C;
 
-        public static readonly long[] VillagerListJumps = [0x59E5A40L, 0x38L, 0xE0L, 0x1ECL, 0x17AL];
+        public static readonly long[] VillagerListJumps = [0x59E5A40L, 0x38L, 0xE0L, 0x1ECL, 0x17AL]; // [[[[main+59E6A60]+38]+E0]+1EC]+17A
         public const ulong VillagerListUnitSize = 0x1C;
 
         // exefs (main)
@@ -63,8 +69,6 @@ namespace ACNHMobileSpawner
         public const ulong WalkSpeedOffset = 0x016127A0;
         public const ulong CollisionStateOffset = 0x0155FDC0;
         public const ulong TimeStateAddress = 0x00328BD0;
-
-        public const ulong ArriverNID = 0xBA022438;
 
         // dlc
         public const ulong PokiAddress = 0xB449E6C8;

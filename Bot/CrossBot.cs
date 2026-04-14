@@ -40,7 +40,7 @@ namespace SysBot.ACNHOrders
 
         public readonly DodoDraw? DodoImageDrawer;
 
-        public MapTerrainLite Map { get; private set; } = new MapTerrainLite(new byte[MapGrid.MapTileCount32x32 * Item.SIZE]);
+        public MapTerrainLite Map { get; private set; } = new MapTerrainLite(new byte[OffsetHelper.LegacyMapTileCount32x32 * Item.SIZE]);
         public TimeBlock LastTimeState { get; private set; } = new();
         public bool CleanRequested { private get; set; }
         public bool RestoreRestartRequested { private get; set; }
@@ -88,13 +88,13 @@ namespace SysBot.ACNHOrders
         public override async Task MainLoop(CancellationToken token)
         {
             // Validate map spawn vector
-            if (Config.MapPlaceX < 0 || Config.MapPlaceX >= (MapGrid.AcreWidth * 32))
+            if (Config.MapPlaceX < 0 || Config.MapPlaceX >= ((int)OffsetHelper.LegacyAcreWidth * 32))
             {
                 LogUtil.LogInfo($"{Config.MapPlaceX} is not a valid value for {nameof(Config.MapPlaceX)}. Exiting!", Config.IP);
                 return;
             }
 
-            if (Config.MapPlaceY < 0 || Config.MapPlaceY >= (MapGrid.AcreHeight * 32))
+            if (Config.MapPlaceY < 0 || Config.MapPlaceY >= ((int)OffsetHelper.LegacyAcreHeight * 32))
             {
                 LogUtil.LogInfo($"{Config.MapPlaceY} is not a valid value for {nameof(Config.MapPlaceY)}. Exiting!", Config.IP);
                 return;
