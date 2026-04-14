@@ -61,7 +61,7 @@ namespace ACNHMobileSpawner
         public static readonly long[] VillagerArrivingNIDJumps = [0x526C708L, 0xD0L];
         public const ulong ArriverVillageShift = 0x1C;
 
-        public static readonly long[] VillagerListJumps = [0x59E5A40L, 0x38L, 0xE0L, 0x1ECL, 0x17AL]; // [[[[main+59E6A60]+38]+E0]+1EC]+17A
+        public static readonly long[] VillagerListJumps = [0x59E6A60L, 0x38L, 0xE0L, 0x1ECL, 0x17AL];
         public const ulong VillagerListUnitSize = 0x1C;
 
         // exefs (main)
