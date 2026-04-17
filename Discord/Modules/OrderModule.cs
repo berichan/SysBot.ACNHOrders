@@ -531,7 +531,9 @@ namespace SysBot.ACNHOrders
 
             if (!InternalItemTool.CurrentInstance.IsSaneAfterCorrection(items, Globals.Bot.Config.DropConfig))
             {
-                await ReplyAsync($"{Context.User.Mention} - You are attempting to order items that will damage your save. Order not accepted.");
+                var unsafeItems = InternalItemTool.CurrentInstance.GetUnsafeItemNames(items);
+                var unsafeList = string.Join(", ", unsafeItems);
+                await ReplyAsync($"{Context.User.Mention} - You are attempting to order items that will damage your save. Order not accepted.\r\nThe following item(s) are not safe: {unsafeList}");
                 return;
             }
 

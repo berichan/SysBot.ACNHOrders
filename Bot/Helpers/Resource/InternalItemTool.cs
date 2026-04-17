@@ -42,6 +42,15 @@ namespace SysBot.ACNHOrders
                     return false;
             return true;
         }
+
+        public List<string> GetUnsafeItemNames(IReadOnlyCollection<Item> items)
+        {
+            var result = new List<string>();
+            foreach (var it in items)
+                if (IsInternalItem(it.ItemId))
+                    result.Add($"{GameInfo.Strings.GetItemName(it.ItemId)} ({it.ItemId:X4})");
+            return result;
+        }
     }
 
     public static class InternalItemCorrector
