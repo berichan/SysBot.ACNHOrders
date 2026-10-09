@@ -62,6 +62,27 @@ namespace SysBot.ACNHOrders
             }
         }
 
+        public bool RemoveByUserId(ulong userId, ulong orderId)
+        {
+            lock (_lock)
+            {
+                return _orders.RemoveAll(order => order.UserGuid == userId && order.OrderID == orderId) > 0;
+            }
+        }
+
+        public bool TryDequeue(out T? result, System.Action<T> onDequeued)
+        {
+            lock (_lock)
+            {
+                if (_orders.Count == 0) { result = default; return false; }
+                result = _orders[0];
+                // Register the active order before it disappears from queue lookups.
+                onDequeued(result);
+                _orders.RemoveAt(0);
+                return true;
+            }
+        }
+
         public int GetPosition(ulong userId)
         {
             lock (_lock)

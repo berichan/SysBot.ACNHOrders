@@ -56,6 +56,8 @@ namespace SysBot.ACNHOrders
         public bool GameIsDirty { get; set; } = true; // Dirty if crashed or last user didn't arrive/leave correctly
         public ulong ChatAddress { get; set; } = 0;
         public int ChargePercent { get; set; } = 100;
+        public bool HasChargeReading { get; private set; }
+        public bool? LastScreenCommand { get; private set; }
         public DateTime LastDodoFetchTime { get; private set; } = DateTime.Now;
 
         public VillagerHelper Villagers { get; private set; } = VillagerHelper.Empty;
@@ -88,6 +90,9 @@ namespace SysBot.ACNHOrders
 
         public override async Task MainLoop(CancellationToken token)
         {
+            GameIsDirty = true;
+            RestoreRestartRequested = false;
+            DodoCode = "No code set yet.";
             // Validate map spawn vector
             if (Config.MapPlaceX < 0 || Config.MapPlaceX >= ((int)OffsetHelper.LegacyAcreWidth * 32))
             {
@@ -198,6 +203,7 @@ namespace SysBot.ACNHOrders
                 LogUtil.LogInfo("Force update anchors set to true, no functionality will activate", Config.IP);
 
             LogUtil.LogInfo("Successfully connected to bot. Starting main loop!", Config.IP);
+            Globals.ConsoleControl?.MarkRunning();
             if (Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
             {
                 if (Config.DodoModeConfig.FreezeMap)
@@ -268,6 +274,7 @@ namespace SysBot.ACNHOrders
                     await Task.Delay(2_000, token).ConfigureAwait(false);
 
                     ChargePercent = await SwitchConnection.GetChargePercentAsync(token).ConfigureAwait(false);
+                    HasChargeReading = true;
 
                     if (RestoreRestartRequested)
                     {
@@ -442,15 +449,28 @@ namespace SysBot.ACNHOrders
 
             await EnsureAnchorsAreInitialised(token);
 
-            if (Orders.TryDequeue(out var item) && item != null)
+            IACNHOrderNotifier<Item>? item = null;
+            bool Dequeue() => Config.AcceptingCommands && Orders.TryDequeue(out item,
+                order => OrderStatusStore.Shared.Set(order.UserGuid, order.OrderID, OrderStage.Preparing));
+            if ((Globals.ConsoleControl?.TryStartOrder(Dequeue) ?? Dequeue()) && item != null)
             {
-                var result = await ExecuteOrder(item, token).ConfigureAwait(false);
-                
-                // Cleanup
-                LogUtil.LogInfo($"Exited order with result: {result}", Config.IP);
-                CurrentUserId = default!;
-                LastArrival = string.Empty;
-                CurrentUserName = string.Empty;
+                try
+                {
+                    var result = await ExecuteOrder(item, token).ConfigureAwait(false);
+                    LogUtil.LogInfo($"Exited order with result: {result}", Config.IP);
+                }
+                catch
+                {
+                    OrderStatusStore.Shared.Set(item.UserGuid, item.OrderID, OrderStage.Failed, "The bot stopped while processing this order. Contact the host before retrying.");
+                    throw;
+                }
+                finally
+                {
+                    OrderStatusStore.Shared.Release(item.UserGuid);
+                    CurrentUserId = default!;
+                    LastArrival = string.Empty;
+                    CurrentUserName = string.Empty;
+                }
             }
 
             var timeBytes = await Connection.ReadBytesAsync((uint)OffsetHelper.TimeAddress, TimeBlock.SIZE, token).ConfigureAwait(false);
@@ -460,6 +480,7 @@ namespace SysBot.ACNHOrders
             LastTimeState = newTimeState;
 
             ChargePercent = await SwitchConnection.GetChargePercentAsync(token).ConfigureAwait(false);
+            HasChargeReading = true;
 
             await Task.Delay(1_000, token).ConfigureAwait(false);
         }
@@ -478,15 +499,16 @@ namespace SysBot.ACNHOrders
             Speaks.ClearQueue();
 
             int timeOut = (Config.OrderConfig.UserTimeAllowed + 360) * 1_000; // 360 seconds = 6 minutes
-            var cts = new CancellationTokenSource(timeOut);
-            var cToken = cts.Token; // tokens need combining, somehow & eventually
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+            cts.CancelAfter(timeOut);
+            var cToken = cts.Token;
             OrderResult result = OrderResult.Faulted;
             var orderTask = GameIsDirty ? ExecuteOrderStart(order, false, true, cToken) : ExecuteOrderMidway(order, cToken);
             try
             {
                 result = await orderTask.ConfigureAwait(false);
             }
-            catch (OperationCanceledException e)
+            catch (OperationCanceledException e) when (!token.IsCancellationRequested)
             {
                 LogUtil.LogInfo($"{order.VillagerName} ({order.UserGuid}) had their order timeout: {e.Message}.", Config.IP);
                 order.OrderCancelled(this, "Unfortunately a game crash occured while your order was in progress. Sorry, your request has been removed.", true);
@@ -871,6 +893,8 @@ namespace SysBot.ACNHOrders
 
             // Update current user Id such that they may use drop commands
             CurrentUserId = order.UserGuid;
+            OrderStatusStore.Shared.Set(order.UserGuid, order.OrderID, OrderStage.Visiting,
+                deadline: DateTimeOffset.UtcNow.AddSeconds(Config.OrderConfig.UserTimeAllowed));
 
             // We check if the user has left by checking whether or not someone hits the Arrive/Leaving state
             startTime = DateTime.Now;
@@ -1427,6 +1451,7 @@ namespace SysBot.ACNHOrders
             if (!Config.ExperimentalSleepScreenOnIdle && !force)
                 return;
             await SetScreen(on ? ScreenState.On : ScreenState.Off, token).ConfigureAwait(false);
+            LastScreenCommand = on;
         }
 
         public async Task UpdateBlocker(bool show, CancellationToken token) => await FileUtil.WriteBytesToFileAsync(show ? Encoding.UTF8.GetBytes(Config.BlockerEmoji) : Array.Empty<byte>(), "blocker.txt", token).ConfigureAwait(false);
@@ -1450,7 +1475,7 @@ namespace SysBot.ACNHOrders
 
         public override async Task HardStop()
         {
-            await SetScreen(ScreenState.On, CancellationToken.None).ConfigureAwait(false);
+            await SetScreenCheck(true, CancellationToken.None, true).ConfigureAwait(false);
             await DetachController(CancellationToken.None).ConfigureAwait(false);
         }
     }

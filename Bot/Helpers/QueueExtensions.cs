@@ -87,9 +87,11 @@ namespace SysBot.ACNHOrders
         {
             lock (QueueSync)
             {
+                if (!Globals.Bot.Config.AcceptingCommands || Globals.ConsoleControl?.CanAcceptOrders == false)
+                { msg = "The host has paused orders. Try again when orders reopen."; return false; }
                 if (maxQueueCount.HasValue && Globals.Hub.Orders.Count >= maxQueueCount.Value)
                 {
-                    msg = $"The queue limit has been reached, there are currently {Globals.Hub.Orders.Count} players in the queue. Please try again later.";
+                    msg = $"The queue is full, with {Globals.Hub.Orders.Count} players waiting. Please try again later.";
                     return false;
                 }
 
@@ -106,28 +108,29 @@ namespace SysBot.ACNHOrders
             var existingOrder = orders.GetByUserId(itemReq.UserGuid);
             if (existingOrder != null)
             {
-                msg = $"{traderMention} - Sorry, you are already in the queue.";
+                msg = $"{traderMention}: you already have a waiting order. Use My order to check it.";
                 return false;
             }
 
-            if(Globals.Bot.CurrentUserName == traderDispName)
+            if (OrderStatusStore.Shared.IsActive(itemReq.UserGuid))
             {
-                msg = $"{traderMention} - Failed to queue your order as it is the current processing order. Please wait a few seconds for the queue to clear if you've already completed it.";
+                msg = $"{traderMention}: your order is still in progress. Use My order to check it. If you have finished, wait for the island to finish cleanup.";
                 return false;
             }
 
             var position = orders.Count + 1;
             var idToken = Globals.Bot.Config.OrderConfig.ShowIDs ? $" (ID {itemReq.OrderID})" : string.Empty;
-            msg = $"{traderMention} - Added you to the order queue{idToken}. Your position is: **{position}**";
+            msg = $"{traderMention}: your order was accepted{idToken}. Queue position: **{position}**.";
 
             if (position > 1)
-                msg += $". Your predicted ETA is {GetETA(position)}";
+                msg += $" Approximate wait: {GetETA(position)}.";
             else
-                msg += ". Your order will start after the current order is complete!";
+                msg += " Your order starts when the island is ready.";
 
             if (itemReq.VillagerOrder != null)
-                msg += $". {GameInfo.Strings.GetVillager(itemReq.VillagerOrder.GameName)} will be waiting for you on the island. Ensure you can collect them within the order timeframe.";
+                msg += $" {GameInfo.Strings.GetVillager(itemReq.VillagerOrder.GameName)} will be waiting on the island. Have an empty housing plot ready and adopt them before your visit ends.";
 
+            OrderStatusStore.Shared.Set(itemReq.UserGuid, itemReq.OrderID, OrderStage.Queued);
             Globals.Hub.Orders.Enqueue(itemReq);
 
             return true;
@@ -193,4 +196,3 @@ namespace SysBot.ACNHOrders
         }
     }
 }
-

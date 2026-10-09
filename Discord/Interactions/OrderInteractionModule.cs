@@ -34,248 +34,39 @@ namespace SysBot.ACNHOrders
         public const string OrderMarker = "ORDER";
         public const string OrderCatMarker = "ORDERCAT";
 
-        private static int MaxOrderCount => Globals.Bot.Config.OrderConfig.MaxQueueCount;
         private static Dictionary<ulong, DateTime> UserLastCommand = new();
         private static object commandSync = new();
 
-        [SlashCommand("order", "Requests the bot add the item order to the queue.")]
+        [SlashCommand("order", "Build and review an order before joining the queue.")]
         [RequireQueueRoleInteraction(nameof(Globals.Bot.Config.RoleUseBot))]
-        public async Task RequestOrderAsync(
-            [Summary("items")] string? items = null,
-            [Summary("villager")] string? villager = null,
-            [Summary("language")] string? language = null)
-        {
-            if (string.IsNullOrWhiteSpace(items))
-            {
-                var cb = new ComponentBuilder()
-                    .WithButton("Open Order Form", Globals.Self.GetInteractionCustomId("open-order-modal"), ButtonStyle.Primary);
-                await RespondAsync("Click to place your order:", components: cb.Build(), ephemeral: true);
-                return;
-            }
-
-            await ProcessOrderInline(items, villager, language, false).ConfigureAwait(false);
-        }
+        public Task RequestOrderAsync(string? items = null, string? villager = null, string? language = null) =>
+            new OrderExperience(Context).StartOrder(items, villager, language);
 
         [ComponentInteraction("open-order-modal")]
         [RequireQueueRoleInteraction(nameof(Globals.Bot.Config.RoleUseBot))]
-        public Task OpenOrderModal() => ShowOrderModal();
-
+        public Task OpenOrderModal() => new OrderExperience(Context).StartOrder();
         [ComponentInteraction("open-order-modal:*")]
         [RequireQueueRoleInteraction(nameof(Globals.Bot.Config.RoleUseBot))]
-        public Task OpenSuffixedOrderModal(string _) => ShowOrderModal();
-
-        private async Task ShowOrderModal()
-        {
-            var modal = new ModalBuilder()
-                .WithTitle("Place an Order")
-                .WithCustomId(Globals.Self.GetInteractionCustomId("order-modal"))
-                .AddTextInput(new TextInputBuilder()
-                    .WithLabel("Items")
-                    .WithCustomId("modal-items")
-                    .WithStyle(TextInputStyle.Paragraph)
-                    .WithPlaceholder("Hex IDs (space-separated) or item names (comma-separated)")
-                    .WithRequired(true)
-                    .WithMaxLength(1000))
-                .AddTextInput(new TextInputBuilder()
-                    .WithLabel("Villager (optional)")
-                    .WithCustomId("modal-villager")
-                    .WithStyle(TextInputStyle.Short)
-                    .WithRequired(false)
-                    .WithMaxLength(100))
-                .AddTextInput(new TextInputBuilder()
-                    .WithLabel("Language (optional)")
-                    .WithCustomId("modal-language")
-                    .WithStyle(TextInputStyle.Short)
-                    .WithPlaceholder("e.g., chs, de, fr")
-                    .WithRequired(false)
-                    .WithMaxLength(10));
-
-            await Context.Interaction.RespondWithModalAsync(modal.Build());
-        }
-
+        public Task OpenSuffixedOrderModal(string _) => OpenOrderModal();
         [ModalInteraction("order-modal")]
         [RequireQueueRoleInteraction(nameof(Globals.Bot.Config.RoleUseBot))]
-        public Task HandleOrderModal(OrderModal modal) => ProcessOrderInline(modal.Items, modal.Villager, modal.Language, false);
-
+        public Task HandleOrderModal(OrderModal modal) => new OrderExperience(Context).StartOrder(modal.Items, modal.Villager, modal.Language);
         [ModalInteraction("order-modal:*")]
         [RequireQueueRoleInteraction(nameof(Globals.Bot.Config.RoleUseBot))]
-        public Task HandleSuffixedOrderModal(string _, OrderModal modal) => ProcessOrderInline(modal.Items, modal.Villager, modal.Language, false);
+        public Task HandleSuffixedOrderModal(string _, OrderModal modal) => HandleOrderModal(modal);
 
-        private async Task ProcessOrderInline(string request, string? villagerParam, string? languageParam, bool catalogue)
-        {
-            await DeferAsync(ephemeral: true).ConfigureAwait(false);
-            var cfg = Globals.Bot.Config;
-            VillagerRequest? vr = null;
-
-            LogUtil.LogInfo($"order received by {Context.User.Username} - {request}", nameof(OrderInteractionModule));
-
-            if (!string.IsNullOrWhiteSpace(villagerParam))
-            {
-                if (!cfg.AllowVillagerInjection)
-                {
-                    await SetDeferredResponseAsync("Villager injection is currently disabled.").ConfigureAwait(false);
-                    return;
-                }
-
-                var internalName = villagerParam.Trim();
-                if (!VillagerResources.IsVillagerDataKnown(internalName))
-                    internalName = GameInfo.Strings.VillagerMap.FirstOrDefault(z => string.Equals(z.Value, internalName, StringComparison.InvariantCultureIgnoreCase)).Key;
-
-                if (internalName == default)
-                {
-                    await SetDeferredResponseAsync($"{villagerParam} is not a valid internal villager name.").ConfigureAwait(false);
-                    return;
-                }
-
-                if (VillagerOrderParser.IsUnadoptable(internalName))
-                {
-                    await SetDeferredResponseAsync($"{villagerParam} is not adoptable. Order setup required for this villager is unnecessary.").ConfigureAwait(false);
-                    return;
-                }
-
-                var replace = VillagerResources.GetVillager(internalName);
-                vr = new VillagerRequest(Context.User.Username, replace, 0, GameInfo.Strings.GetVillager(internalName));
-            }
-
-            var combinedRequest = request;
-            if (!string.IsNullOrWhiteSpace(languageParam))
-                combinedRequest = $"{languageParam}, {request}";
-
-            var items = string.IsNullOrWhiteSpace(combinedRequest)
-                ? new[] { new Item(Item.NONE) }
-                : ItemParser.GetItemsFromUserInput(combinedRequest, cfg.DropConfig, ItemDestination.FieldItemDropped).ToArray();
-
-            var result = await AttemptToQueueRequest(items, Context.User, Context.Channel, vr, catalogue).ConfigureAwait(false);
-            if (result.Accepted)
-            {
-                string path = Path.Combine(LastOrderDirectory, $"{Context.User.Id}");
-                var marker = catalogue ? OrderCatMarker : OrderMarker;
-                File.WriteAllText(path, marker + combinedRequest);
-            }
-            await SetDeferredResponseAsync(result.Message).ConfigureAwait(false);
-        }
-
-        [SlashCommand("ordercat", "Orders a catalogue of items, does not duplicate any items.")]
+        [SlashCommand("ordercat", "Review a catalogue order before joining the queue.")]
         [RequireQueueRoleInteraction(nameof(Globals.Bot.Config.RoleUseBot))]
-        public async Task RequestCatalogueOrderAsync(
-            [Summary("items")] string items,
-            [Summary("villager")] string? villager = null)
-        {
-            await DeferAsync(ephemeral: true).ConfigureAwait(false);
-            var cfg = Globals.Bot.Config;
-            VillagerRequest? vr = null;
+        public Task RequestCatalogueOrderAsync(string? items = null, string? villager = null) =>
+            new OrderExperience(Context).StartOrder(items, villager, mode: OrderFillMode.Catalogue);
 
-            LogUtil.LogInfo($"ordercat received by {Context.User.Username} - {items}", nameof(OrderInteractionModule));
-
-            if (!string.IsNullOrWhiteSpace(villager))
-            {
-                if (!cfg.AllowVillagerInjection)
-                {
-                    await SetDeferredResponseAsync("Villager injection is currently disabled.").ConfigureAwait(false);
-                    return;
-                }
-
-                var internalName = villager.Trim();
-                if (!VillagerResources.IsVillagerDataKnown(internalName))
-                    internalName = GameInfo.Strings.VillagerMap.FirstOrDefault(z => string.Equals(z.Value, internalName, StringComparison.InvariantCultureIgnoreCase)).Key;
-
-                if (internalName == default)
-                {
-                    await SetDeferredResponseAsync($"{villager} is not a valid internal villager name.").ConfigureAwait(false);
-                    return;
-                }
-
-                var replace = VillagerResources.GetVillager(internalName);
-                vr = new VillagerRequest(Context.User.Username, replace, 0, GameInfo.Strings.GetVillager(internalName));
-            }
-
-            var parsedItems = string.IsNullOrWhiteSpace(items) ? new Item[1] { new Item(Item.NONE) } : ItemParser.GetItemsFromUserInput(items, cfg.DropConfig, ItemDestination.FieldItemDropped);
-
-            var result = await AttemptToQueueRequest(parsedItems, Context.User, Context.Channel, vr, true).ConfigureAwait(false);
-            if (result.Accepted)
-            {
-                string path = Path.Combine(LastOrderDirectory, $"{Context.User.Id}");
-                File.WriteAllText(path, OrderCatMarker + items);
-            }
-            await SetDeferredResponseAsync(result.Message).ConfigureAwait(false);
-        }
-
-        [SlashCommand("order-nhi", "Requests the bot an order of items in the NHI format.")]
+        [SlashCommand("order-nhi", "Import an .nhi file into an order preview.")]
         [RequireQueueRoleInteraction(nameof(Globals.Bot.Config.RoleUseBot))]
-        public async Task RequestNHIOrderAsync(IAttachment file)
-        {
-            await DeferAsync(ephemeral: true).ConfigureAwait(false);
-            var att = await NetUtil.DownloadNHIAsync(file).ConfigureAwait(false);
-            if (!att.Success || !(att.Data is Item[] items))
-            {
-                await SetDeferredResponseAsync("The attachment is not a valid NHI file.").ConfigureAwait(false);
-                return;
-            }
+        public Task RequestNHIOrderAsync(IAttachment file) => new OrderExperience(Context).ImportFile(file);
 
-            var itemArray = new ItemArrayEditor<Item>(att.Data);
-            var result = await AttemptToQueueRequest(items, Context.User, Context.Channel, null, true).ConfigureAwait(false);
-            if (result.Accepted)
-            {
-                string path = Path.Combine(LastOrderDirectory, $"{Context.User.Id}");
-                File.WriteAllBytes(path, itemArray.Write());
-            }
-            await SetDeferredResponseAsync(result.Message).ConfigureAwait(false);
-        }
-
-        [SlashCommand("lastorder", "Provides the user with their last order data.")]
+        [SlashCommand("lastorder", "Review and optionally repeat your last accepted order.")]
         [RequireQueueRoleInteraction(nameof(Globals.Bot.Config.RoleUseBot))]
-        public async Task RequestLastOrderAsync()
-        {
-            string path = Path.Combine(LastOrderDirectory, $"{Context.User.Id}");
-            if (!File.Exists(path))
-            {
-                await RespondAsync($"<@{Context.User.Id}>, We do not have your last order logged, place an order and then you can use this command.", ephemeral: true);
-                return;
-            }
-
-            string request = File.ReadAllText(path);
-
-            if (request.StartsWith(OrderMarker))
-            {
-                var stringWithoutMarker = request[OrderMarker.Length..];
-                var command = Globals.Self.GetSlashCommandName("order");
-                await RespondAsync($"{Context.User.Mention}, your last order command was:\n`/{command} items:{stringWithoutMarker}`", ephemeral: true);
-            }
-            else if (request.StartsWith(OrderCatMarker))
-            {
-                var stringWithoutMarker = request[OrderCatMarker.Length..];
-                var command = Globals.Self.GetSlashCommandName("ordercat");
-                await RespondAsync($"{Context.User.Mention}, your last catalogue order command was:\n`/{command} items:{stringWithoutMarker}`", ephemeral: true);
-            }
-            else
-            {
-                var bytes = File.ReadAllBytes(path);
-                var tempFileName = $"{Context.User.Id}.nhi";
-                var tempFilePath = Path.Combine(Path.GetTempPath(), tempFileName);
-                File.WriteAllBytes(tempFilePath, bytes);
-
-                try
-                {
-                    await RespondWithFileAsync(
-                        tempFilePath,
-                        tempFileName,
-                        $"{Context.User.Mention}, here's your last ordered NHI file!",
-                        ephemeral: true).ConfigureAwait(false);
-                }
-                finally
-                {
-                    try
-                    {
-                        File.Delete(tempFilePath);
-                    }
-                    catch (Exception e)
-                    {
-                        LogUtil.LogError($"Failed to delete temp NHI file {tempFilePath}: {e.Message}", nameof(OrderInteractionModule));
-                    }
-                }
-            }
-        }
-
+        public Task RequestLastOrderAsync() => new OrderExperience(Context).Handle("again", "home", "0");
         [SlashCommand("checkitems", "Check the item ids to find item id's that will not let order happen.")]
         [RequireQueueRoleInteraction(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task CheckItemAsync(string items)
@@ -304,48 +95,10 @@ namespace SysBot.ACNHOrders
                 await RespondAsync($"The following items are not safe to order:\n`{BadItemsList}`", ephemeral: true);
         }
 
-        [SlashCommand("preset", "Requests the bot an order of a preset created by the bot host.")]
+        [SlashCommand("preset", "Import a host preset into an order preview.")]
         [RequireQueueRoleInteraction(nameof(Globals.Bot.Config.RoleUseBot))]
-        public async Task RequestPresetOrderAsync(string name, string? villager = null)
-        {
-            await DeferAsync(ephemeral: true).ConfigureAwait(false);
-            var cfg = Globals.Bot.Config;
-            VillagerRequest? vr = null;
-
-            if (!string.IsNullOrWhiteSpace(villager))
-            {
-                if (!cfg.AllowVillagerInjection)
-                {
-                    await SetDeferredResponseAsync("Villager injection is currently disabled.").ConfigureAwait(false);
-                    return;
-                }
-
-                var internalName = villager.Trim();
-                if (!VillagerResources.IsVillagerDataKnown(internalName))
-                    internalName = GameInfo.Strings.VillagerMap.FirstOrDefault(z => string.Equals(z.Value, internalName, StringComparison.InvariantCultureIgnoreCase)).Key;
-
-                if (internalName == default)
-                {
-                    await SetDeferredResponseAsync($"{villager} is not a valid internal villager name.").ConfigureAwait(false);
-                    return;
-                }
-
-                var replace = VillagerResources.GetVillager(internalName);
-                vr = new VillagerRequest(Context.User.Username, replace, 0, GameInfo.Strings.GetVillager(internalName));
-            }
-
-            var presetName = name.Trim();
-            var preset = PresetLoader.GetPreset(cfg.OrderConfig, presetName);
-            if (preset == null)
-            {
-                await SetDeferredResponseAsync($"{presetName} is not a valid preset.").ConfigureAwait(false);
-                return;
-            }
-
-            var result = await AttemptToQueueRequest(preset, Context.User, Context.Channel, vr, true).ConfigureAwait(false);
-            await SetDeferredResponseAsync(result.Message).ConfigureAwait(false);
-        }
-
+        public Task RequestPresetOrderAsync(string name, string? villager = null) =>
+            new OrderExperience(Context).ImportPreset(name, villager);
         [SlashCommand("listpresets", "Lists all the presets.")]
         public async Task RequestListPresetsAsync()
         {
@@ -381,48 +134,13 @@ namespace SysBot.ACNHOrders
             await SetDeferredResponseAsync("Received attachment!\n\nThe following file has been added to presets folder: " + fileName).ConfigureAwait(false);
         }
 
-        [SlashCommand("queue", "View your position in the queue.")]
-        [RequireQueueRoleInteraction(nameof(Globals.Bot.Config.RoleUseBot))]
-        public async Task ViewQueuePositionAsync()
-        {
-            var cooldown = Globals.Bot.Config.OrderConfig.PositionCommandCooldown;
-            if (!CanCommand(Context.User.Id, cooldown, true))
-            {
-                await RespondAsync($"This command has a {cooldown} second cooldown. Use this bot responsibly.", ephemeral: true);
-                return;
-            }
+        [SlashCommand("queue", "View your order position and live progress.")]
+        [RequireQueueRoleInteraction(nameof(Globals.Bot.Config.RoleUseBot), allowWhilePaused: true)]
+        public Task ViewQueuePositionAsync() => new OrderExperience(Context).MyOrder();
 
-            var position = QueueExtensions.GetPosition(Context.User.Id, out _);
-            if (position < 0)
-            {
-                await RespondAsync("Sorry, you are not in the queue, or your order is happening now.", ephemeral: true);
-                return;
-            }
-
-            var message = $"{Context.User.Mention} - You are in the order queue. Position: {position}.";
-            if (position > 1)
-                message += $" Your predicted ETA is {QueueExtensions.GetETA(position)}.";
-            else
-                message += " Your order will start after the current order is complete!";
-
-            await RespondAsync(message, ephemeral: true);
-        }
-
-        [SlashCommand("remove", "Remove yourself from the queue.")]
-        [RequireQueueRoleInteraction(nameof(Globals.Bot.Config.RoleUseBot))]
-        public async Task RemoveFromQueueAsync()
-        {
-            QueueExtensions.GetPosition(Context.User.Id, out var order);
-            if (order == null)
-            {
-                await RespondAsync("Sorry, you are not in the queue, or your order is happening now.", ephemeral: true);
-                return;
-            }
-
-            Globals.Hub.Orders.RemoveByUserId(Context.User.Id);
-            await RespondAsync("Your order has been removed. You can rejoin the queue at any time.", ephemeral: true);
-        }
-
+        [SlashCommand("remove", "Cancel your waiting order after confirmation.")]
+        [RequireQueueRoleInteraction(nameof(Globals.Bot.Config.RoleUseBot), allowWhilePaused: true)]
+        public Task RemoveFromQueueAsync() => new OrderExperience(Context).RequestCancel();
         [SlashCommand("removeuser", "Remove someone from the queue.")]
         [RequireSudoInteraction]
         public async Task RemoveOtherFromQueueAsync(string id)
@@ -436,7 +154,9 @@ namespace SysBot.ACNHOrders
                     return;
                 }
 
-                Globals.Hub.Orders.RemoveByUserId(res);
+                if (!Globals.Hub.Orders.RemoveByUserId(res, order.OrderID))
+                { await RespondAsync("That order has started and is no longer in the waiting queue.", ephemeral: true); return; }
+                OrderStatusStore.Shared.Set(res, order.OrderID, OrderStage.Cancelled, "The host removed your waiting order.");
                 await RespondAsync($"{id} ({order.VillagerName}) has been removed from the queue.");
             }
             else
@@ -531,15 +251,6 @@ namespace SysBot.ACNHOrders
             }
 
             await RespondAsync($"Last order started at: {bot.LastTimeState}");
-        }
-
-        private async Task<QueueAttemptResult> AttemptToQueueRequest(IReadOnlyCollection<Item> items, SocketUser orderer, ISocketMessageChannel msgChannel, VillagerRequest? vr, bool catalogue = false)
-        {
-            if (!Context.Interaction.HasResponded)
-                await DeferAsync(ephemeral: true).ConfigureAwait(false);
-
-            return await QueueHelper.AttemptToQueueRequestDetailedAsync(
-                items, orderer, msgChannel, vr, catalogue, MaxOrderCount).ConfigureAwait(false);
         }
 
         private Task SetDeferredResponseAsync(string message) =>

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using SysBot.Base;
@@ -11,171 +11,56 @@ namespace SysBot.ACNHOrders
     {
         public static async Task RunFrom(CrossBotConfig config, CancellationToken cancel, TwitchConfig? tConfig = null)
         {
-            // Set up logging for Console Window
+            static void Logger(string msg, string identity) => Console.WriteLine($"> [{DateTime.Now:hh:mm:ss}] - {identity}: {msg}");
             LogUtil.Forwarders.Add(Logger);
-            static void Logger(string msg, string identity) => Console.WriteLine(GetMessage(msg, identity));
-            static string GetMessage(string msg, string identity) => $"> [{DateTime.Now:hh:mm:ss}] - {identity}: {msg}";
-
             var bot = new CrossBot(config);
-
-            var sys = new SysCord(bot);
-
-            Globals.Self = sys;
             Globals.Bot = bot;
             Globals.Hub = QueueHub.CurrentInstance;
             GlobalBan.UpdateConfiguration(config);
+            var control = new ConsoleBotController(!config.SkipConsoleBotCreation, bot.RunAsync,
+                () => bot.Connection.DisconnectIfConnected(), () => config.AcceptingCommands = false,
+                () => OrderStatusStore.Shared.HasActiveOrder,
+                ex => bot.Log($"Console loop failed: {ex.Message}. Check the connection and use Start bot in the control panel."));
+            Globals.ConsoleControl = control;
+            using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(cancel);
 
-            bot.Log("Starting Discord.");
-            var discordCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancel);
-            var discordTask = StartDiscord(sys, config.Token, discordCancellation.Token);
-
-
-            if (tConfig != null && !string.IsNullOrWhiteSpace(tConfig.Token))
-            {
-                bot.Log("Starting Twitch.");
-                var _ = new TwitchCrossBot(tConfig, bot);
-            }
-
-            if (!string.IsNullOrWhiteSpace(config.SignalrConfig.URIEndpoint))
-            {
-                bot.Log("Starting Web.");
-                var _ = new SignalrCrossBot(config.SignalrConfig, bot);
-            }
-
-            if (config.SkipConsoleBotCreation)
-            {
-                try
-                {
-                    await discordTask.WaitAsync(cancel).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException) when (cancel.IsCancellationRequested)
-                {
-                }
-                catch (Exception)
-                {
-                }
-                finally
-                {
-                    discordCancellation.Cancel();
-                    await ObserveTaskAsync(discordTask, bot, "Discord").ConfigureAwait(false);
-                    await sys.Disconnect().ConfigureAwait(false);
-                    discordCancellation.Dispose();
-                }
-                return;
-            }
-
+            var sys = new SysCord(bot);
+            Globals.Self = sys;
+            var consoleTask = control.RunAsync(lifetime.Token);
             try
             {
-                while (!cancel.IsCancellationRequested)
+                if (tConfig != null && !string.IsNullOrWhiteSpace(tConfig.Token))
+                    _ = new TwitchCrossBot(tConfig, bot);
+                if (!string.IsNullOrWhiteSpace(config.SignalrConfig.URIEndpoint))
+                    _ = new SignalrCrossBot(config.SignalrConfig, bot);
+                while (!lifetime.IsCancellationRequested)
                 {
-                    bot.Log("Starting bot loop.");
-                    using var botCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancel);
-                    var botTask = bot.RunAsync(botCancellation.Token);
-                    var completed = await Task.WhenAny(botTask, discordTask).ConfigureAwait(false);
-
-                    if (completed == discordTask)
+                    try
                     {
-                        var discordFailure = await ObserveTaskAsync(discordTask, bot, "Discord").ConfigureAwait(false);
-                        botCancellation.Cancel();
-                        await ObserveTaskAsync(botTask, bot, "Bot").ConfigureAwait(false);
-
-                        if (cancel.IsCancellationRequested)
-                            break;
-
-                        if (discordFailure is InvalidOperationException)
-                        {
-                            bot.Log("Discord configuration is invalid; automatic restart is disabled.");
-                            break;
-                        }
-
-                        if (discordFailure == null)
-                            bot.Log("Discord has terminated unexpectedly.");
-                        else
-                            bot.Log("Discord failed; restarting the Discord and bot sessions.");
-
-                        (bot, sys, discordTask, discordCancellation) = await RestartDiscordAsync(
-                            config, bot, sys, discordCancellation, cancel).ConfigureAwait(false);
-                        continue;
+                        bot.Log("Starting Discord.");
+                        await sys.MainAsync(config.Token, lifetime.Token).ConfigureAwait(false);
                     }
-
-                    var botFailure = await ObserveTaskAsync(botTask, bot, "Bot").ConfigureAwait(false);
-                    discordCancellation.Cancel();
-                    await ObserveTaskAsync(discordTask, bot, "Discord").ConfigureAwait(false);
+                    catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { break; }
+                    catch (InvalidOperationException ex)
+                    {
+                        bot.Log($"Discord configuration is invalid: {ex.Message}. Automatic restart is disabled.");
+                        break;
+                    }
+                    catch (Exception ex) { bot.Log($"Discord failed: {ex.Message}. Attempting to reconnect in 10 seconds."); }
                     await sys.Disconnect().ConfigureAwait(false);
-
-                    if (botFailure != null)
-                    {
-                        bot.Log("Bot has terminated due to an error; automatic reconnect is disabled.");
-                        break;
-                    }
-
-                    bot.Log("Bot has terminated.");
-                    if (cancel.IsCancellationRequested)
-                        break;
-
-                    bot.Log("Please wait... Attempting to reconnect in 10 seconds.");
-                    await Task.Delay(10_000, cancel).ConfigureAwait(false);
-                    (bot, sys, discordTask, discordCancellation) = await RestartDiscordAsync(
-                        config, bot, sys, discordCancellation, cancel).ConfigureAwait(false);
+                    await Task.Delay(10_000, lifetime.Token).ConfigureAwait(false);
+                    sys = new SysCord(bot);
+                    Globals.Self = sys;
                 }
             }
+            catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { }
             finally
             {
-                discordCancellation.Cancel();
-                await ObserveTaskAsync(discordTask, bot, "Discord").ConfigureAwait(false);
+                lifetime.Cancel();
+                await consoleTask.ConfigureAwait(false);
                 await sys.Disconnect().ConfigureAwait(false);
-                discordCancellation.Dispose();
+                LogUtil.Forwarders.Remove(Logger);
             }
-        }
-
-        private static Task StartDiscord(SysCord sys, string token, CancellationToken cancel) =>
-            Task.Run(() => sys.MainAsync(token, cancel), CancellationToken.None);
-
-        private static async Task<Exception?> ObserveTaskAsync(Task task, CrossBot bot, string name)
-        {
-            try
-            {
-                await task.ConfigureAwait(false);
-                return null;
-            }
-            catch (OperationCanceledException)
-            {
-                return null;
-            }
-            catch (Exception ex)
-            {
-                LogDiscordFailure(bot, ex, name);
-                return ex;
-            }
-        }
-
-        private static void LogDiscordFailure(CrossBot bot, Exception ex, string name = "Discord")
-        {
-            bot.Log($"{name} failed: {ex.Message}");
-            if (!string.IsNullOrWhiteSpace(ex.StackTrace))
-                bot.Log(ex.StackTrace);
-        }
-
-        private static async Task<(CrossBot Bot, SysCord Sys, Task DiscordTask, CancellationTokenSource DiscordCancellation)> RestartDiscordAsync(
-            CrossBotConfig config,
-            CrossBot bot,
-            SysCord sys,
-            CancellationTokenSource discordCancellation,
-            CancellationToken cancel)
-        {
-            bot.Log("Bot is attempting a restart...");
-            bot = new CrossBot(config);
-            Globals.Bot = bot;
-
-            await sys.Disconnect().ConfigureAwait(false);
-            discordCancellation.Dispose();
-
-            sys = new SysCord(bot);
-            Globals.Self = sys;
-            discordCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancel);
-            bot.Log("Restarting Discord.");
-            var discordTask = StartDiscord(sys, config.Token, discordCancellation.Token);
-            return (bot, sys, discordTask, discordCancellation);
         }
     }
 }

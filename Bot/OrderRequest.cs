@@ -1,9 +1,9 @@
-﻿using Discord;
+using Discord;
 using Discord.WebSocket;
 using NHSE.Core;
 using SysBot.Base;
 using System;
-using System.Diagnostics;
+using System.Threading.Tasks;
 using System.Linq;
 
 namespace SysBot.ACNHOrders
@@ -34,38 +34,43 @@ namespace SysBot.ACNHOrders
 
         public void OrderCancelled(CrossBot routine, string msg, bool faulted)
         {
+            OrderStatusStore.Shared.Set(UserGuid, OrderID, faulted ? OrderStage.Failed : OrderStage.Cancelled, msg);
             OnFinish?.Invoke(routine);
-            Trader.SendMessageAsync($"Oops! Something has happened with your order: {msg}");
+            _ = NotifyAsync($"Your order could not be completed: {msg}");
             if (!faulted)
-                CommandSentChannel.SendMessageAsync($"{Trader.Mention} - Your order has been cancelled: {msg}");
+                CommandSentChannel.SendMessageAsync($"{Trader.Mention}: your order was cancelled. {msg}");
         }
 
         public void OrderInitializing(CrossBot routine, string msg)
         {
-            Trader.SendMessageAsync($"Your order is starting, please **ensure your inventory is __empty__**, then go talk to Orville and stay on the Dodo code entry screen. I will send you the Dodo code shortly. {msg}");
+            OrderStatusStore.Shared.Set(UserGuid, OrderID, OrderStage.Preparing, msg);
+            _ = NotifyAsync($"Your order is starting. **Empty your inventory**, then talk to Orville and wait at the Dodo code entry screen. I will send your code shortly. {msg}");
         }
 
         public void OrderReady(CrossBot routine, string msg, string dodo)
         {
-            try
-            {
-                Trader.SendMessageAsync($"I'm waiting for you {Trader.Mention}! {msg}. Your Dodo code is **{dodo}**");
-            }
-            catch (Exception e)
-            {
-                LogUtil.LogError("Failed sending dodo code: " + e.Message + "\n" + e.StackTrace, "Discord");
-            }
+            OrderStatusStore.Shared.Set(UserGuid, OrderID, OrderStage.Ready, msg, dodo,
+                DateTimeOffset.UtcNow.AddSeconds(routine.Config.OrderConfig.WaitForArriverTime * 0.9));
+            _ = NotifyAsync($"The island is ready, {Trader.Mention}. Your Dodo code is **{dodo}**. {msg}");
         }
-
         public void OrderFinished(CrossBot routine, string msg)
         {
+            OrderStatusStore.Shared.Set(UserGuid, OrderID, OrderStage.Completed, msg);
             OnFinish?.Invoke(routine);
-            Trader.SendMessageAsync($"Your order is complete, Thanks for your order! {msg}");
+            _ = NotifyAsync($"Your order is complete. Thanks for visiting! {msg}");
         }
 
         public void SendNotification(CrossBot routine, string msg)
         {
-            Trader.SendMessageAsync(msg);
+            _ = NotifyAsync(msg);
+        }
+        private async Task NotifyAsync(string message)
+        {
+            try { await Trader.SendMessageAsync(message).ConfigureAwait(false); }
+            catch (Exception ex)
+            {
+                LogUtil.LogError($"Could not deliver order notification for {UserGuid}: {ex.Message}", nameof(OrderRequest<T>));
+            }
         }
     }
 }

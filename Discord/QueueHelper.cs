@@ -20,25 +20,29 @@ namespace SysBot.ACNHOrders
             ISocketMessageChannel msgChannel,
             VillagerRequest? vr,
             bool catalogue,
-            int maxOrderCount)
+            int maxOrderCount,
+            MultiItem? preparedDelivery = null)
         {
             if (!Globals.Bot.Config.AllowKnownAbusers && LegacyAntiAbuse.CurrentInstance.IsGlobalBanned(orderer.Id))
                 return new("You are not permitted to use this bot.", false);
 
-            if (Globals.Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode || Globals.Bot.Config.SkipConsoleBotCreation)
+            if (!Globals.Bot.Config.AcceptingCommands || Globals.Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode || Globals.Bot.Config.SkipConsoleBotCreation || Globals.ConsoleControl?.CanAcceptOrders == false)
                 return new("Orders are not currently accepted.", false);
 
             if (GlobalBan.IsBanned(orderer.Id.ToString()))
-                return new("You have been banned for abuse. Order has not been accepted.", false);
+                return new("You are banned from using this bot. Your order was not accepted.", false);
+
+            if (Globals.Hub.Orders.GetByUserId(orderer.Id) != null || OrderStatusStore.Shared.IsActive(orderer.Id))
+                return new("You already have an order. Choose My order to check its progress.", false);
 
             if (Globals.Hub.Orders.Count >= maxOrderCount)
-                return new($"The queue limit has been reached, there are currently {Globals.Hub.Orders.Count} players in the queue. Please try again later.", false);
+                return new($"The queue is full, with {Globals.Hub.Orders.Count} players waiting. Please try again later.", false);
 
             if (!InternalItemTool.CurrentInstance.IsSaneAfterCorrection(items, Globals.Bot.Config.DropConfig))
             {
                 var unsafeItems = InternalItemTool.CurrentInstance.GetUnsafeItemNames(items);
                 var unsafeList = string.Join(", ", unsafeItems);
-                return new($"You are attempting to order items that will damage your save. Order not accepted.\r\nThe following item(s) are not safe: {unsafeList}", false);
+                return new($"These items can damage your save and cannot be ordered: {unsafeList}", false);
             }
 
             string? notice = null;
@@ -48,18 +52,20 @@ namespace SysBot.ACNHOrders
                 items = items.Take(MultiItem.MaxOrder).ToArray();
             }
 
-            var multiOrder = new MultiItem(items.ToArray(), catalogue, true, true);
+            var multiOrder = preparedDelivery ?? new MultiItem(items.ToArray(), catalogue, true, true);
+            if (!InternalItemTool.CurrentInstance.IsSaneAfterCorrection(multiOrder.ItemArray.Items.ToArray(), Globals.Bot.Config.DropConfig))
+                return new("This order contains unsafe items. Edit your item list before confirming.", false);
             var requestInfo = new OrderRequest<Item>(multiOrder, multiOrder.ItemArray.Items.ToArray(), orderer.Id, QueueExtensions.GetNextID(), orderer, msgChannel, vr);
 
             IUserMessage test;
             try
             {
-                const string helper = "I've added you to the queue! I'll message you here when your order is ready";
+                const string helper = "Checking that I can send your private order instructions. Your order has not been accepted yet.";
                 test = await orderer.SendMessageAsync(helper).ConfigureAwait(false);
             }
             catch (HttpException ex)
             {
-                return new(JoinMessages(notice, $"{ex.HttpCode}: {ex.Reason}! You must enable private messages in order to be queued!"), false);
+                return new(JoinMessages(notice, $"I could not send you a DM. Allow direct messages from members of this server, then try again. Discord error: {ex.HttpCode}: {ex.Reason}."), false);
             }
             catch (Exception ex)
             {
@@ -79,7 +85,7 @@ namespace SysBot.ACNHOrders
                 LogUtil.LogError($"Could not send queue notification to {orderer.Id}: {ex.Message}", nameof(QueueHelper));
             }
 
-            if (!accepted)
+            // Remove the delivery test on success as well; the final message tells the member whether their order was accepted.
             {
                 try
                 {

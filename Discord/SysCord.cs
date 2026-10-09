@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -67,6 +67,7 @@ namespace SysBot.ACNHOrders
             _interactions.Log += Log;
             _client.Ready += ClientReady;
             _client.JoinedGuild += GuildJoined;
+            _client.Disconnected += _ => ControlPanelService.RefreshAsync(_client, ConnectionState.Disconnected);
 
             _services = ConfigureServices();
         }
@@ -125,7 +126,13 @@ namespace SysBot.ACNHOrders
                 if (NewAntiAbuse.Instance.IsGlobalBanned(0, 0, s.OwnerId.ToString()) || NewAntiAbuse.Instance.IsGlobalBanned(0, 0, Owner.ToString()))
                     Environment.Exit(404);
 
-            await MonitorStatusAsync(token).ConfigureAwait(false);
+            using var monitorsCancellation = CancellationTokenSource.CreateLinkedTokenSource(token);
+            var monitors = new[] { MonitorStatusAsync(monitorsCancellation.Token),
+                OrderPanelService.MonitorAsync(_client, monitorsCancellation.Token),
+                ControlPanelService.MonitorAsync(_client, monitorsCancellation.Token) };
+            await Task.WhenAny(monitors).ConfigureAwait(false);
+            monitorsCancellation.Cancel();
+            await Task.WhenAll(monitors).ConfigureAwait(false);
         }
 
         private async Task ClientReady()
@@ -422,13 +429,9 @@ namespace SysBot.ACNHOrders
                     // Skip any whitespace between mention and command text
                     while (pos < msg.Content.Length && char.IsWhiteSpace(msg.Content[pos]))
                         pos++;
-                    bool handled = await TryHandleCommandAsync(msg, pos).ConfigureAwait(false);
-                    if (handled)
-                        return;
-
-                    var helpCommand = GetSlashCommandName("help");
                     await msg.Channel.SendMessageAsync(
-                        $"I use slash commands in low-intent mode. Try `/{helpCommand}` to see the available commands.").ConfigureAwait(false);
+                        "Use Place order (guided) to build and review a list, or Place order (quick) to paste an old order command and submit directly. My order shows your queue position and progress.",
+                        components: OrderPanelService.BuildComponents()).ConfigureAwait(false);
                 }
                 // Silently ignore all other messages in new mode
                 return;
@@ -523,29 +526,66 @@ namespace SysBot.ACNHOrders
 
             if (!Bot.Config.UseInteractionCommands)
             {
-                await arg.RespondAsync("This bot is running in text-command mode. Slash commands and interactive embeds are not available.", ephemeral: true);
+                if (arg is SocketAutocompleteInteraction staleAutocomplete)
+                    await staleAutocomplete.RespondAsync(Array.Empty<AutocompleteResult>());
+                else await arg.RespondAsync("This bot is running in text-command mode. Slash commands and interactive embeds are not available.", ephemeral: true);
                 return;
             }
 
             var ctx = new SocketInteractionContext(_client, arg);
 
             var mgr = Bot.Config;
-            if (!mgr.IgnoreAllPermissions)
+            bool controlPanel = arg switch
+            {
+                SocketSlashCommand slash => IsCommandNameForBase(slash.Data.Name, "setup-control") || IsCommandNameForBase(slash.Data.Name, "control-panel"),
+                SocketMessageComponent panelComponent => panelComponent.Data.CustomId.StartsWith("control:", StringComparison.Ordinal) || panelComponent.Data.CustomId.StartsWith("control-confirm:", StringComparison.Ordinal),
+                _ => false,
+            };
+            bool panelAdmin = ControlPanelAccess.CanBypassRestrictions(mgr, ctx.User.Id, Owner, controlPanel);
+            if (!mgr.IgnoreAllPermissions && !panelAdmin)
             {
                 if (!mgr.CanUseCommandUser(ctx.User.Id))
                 {
-                    await ctx.Interaction.RespondAsync("You are not permitted to use this command.", ephemeral: true);
+                    await RejectInteractionAsync(ctx, "You are not permitted to use this command.");
                     return;
                 }
                 if (!mgr.CanUseCommandChannel(ctx.Channel.Id) && ctx.User.Id != Owner && !mgr.CanUseSudo(ctx.User.Id))
                 {
-                    await ctx.Interaction.RespondAsync("You can't use that command here.", ephemeral: true);
+                    await RejectInteractionAsync(ctx, "You can't use that command here.");
                     return;
                 }
             }
 
             Discord.Interactions.IResult result;
-            if (arg is SocketSlashCommand slashCommand)
+            if (arg is SocketAutocompleteInteraction autocomplete)
+            {
+                var info = _interactions.SlashCommands.FirstOrDefault(command => IsCommandNameForBase(autocomplete.Data.CommandName, command.Name));
+                var parameter = info?.Parameters.FirstOrDefault(candidate => candidate.Name == autocomplete.Data.Current.Name);
+                if (info != null && !(await info.CheckPreconditionsAsync(ctx, _services).ConfigureAwait(false)).IsSuccess)
+                { await autocomplete.RespondAsync(Array.Empty<AutocompleteResult>()); return; }
+                if (parameter?.AutocompleteHandler != null)
+                {
+                    await parameter.AutocompleteHandler.ExecuteAsync(ctx, autocomplete, parameter, _services).ConfigureAwait(false);
+                    return;
+                }
+                await autocomplete.RespondAsync(Array.Empty<AutocompleteResult>()).ConfigureAwait(false);
+                return;
+            }
+            if (arg is SocketMessageComponent component)
+            {
+                var pattern = InteractionRouting.FindPattern(component.Data.CustomId, _commandSuffix?[1..], _interactions.ComponentCommands.Select(command => command.Name));
+                var command = _interactions.ComponentCommands.First(candidate => candidate.Name == pattern);
+                InteractionRouting.BindMatches(ctx, component.Data.CustomId, command.Name);
+                result = await command.ExecuteAsync(ctx, _services).ConfigureAwait(false);
+            }
+            else if (arg is SocketModal modal)
+            {
+                var pattern = InteractionRouting.FindPattern(modal.Data.CustomId, _commandSuffix?[1..], _interactions.ModalCommands.Select(command => command.Name));
+                var command = _interactions.ModalCommands.First(candidate => candidate.Name == pattern);
+                InteractionRouting.BindMatches(ctx, modal.Data.CustomId, command.Name);
+                result = await command.ExecuteAsync(ctx, _services).ConfigureAwait(false);
+            }
+            else if (arg is SocketSlashCommand slashCommand)
             {
                 var suffixedResult = await TryExecuteSuffixedCommandAsync(ctx, slashCommand).ConfigureAwait(false);
                 result = suffixedResult ?? await _interactions.ExecuteCommandAsync(ctx, _services).ConfigureAwait(false);
@@ -569,17 +609,18 @@ namespace SysBot.ACNHOrders
             };
         }
 
+        private static Task RejectInteractionAsync(SocketInteractionContext context, string message) =>
+            context.Interaction is SocketAutocompleteInteraction autocomplete
+                ? autocomplete.RespondAsync(Array.Empty<AutocompleteResult>())
+                : context.Interaction.RespondAsync(message, ephemeral: true);
+
         private bool OwnsSlashCommand(string commandName) => _interactions.SlashCommands.Any(command =>
             IsCommandNameForBase(commandName, command.Name));
 
         private bool OwnsCustomId(string customId)
         {
-            int separator = customId.LastIndexOf(':');
-            var baseId = separator < 0 ? customId : customId[..separator];
-            bool IsMatch(string name) => (name.EndsWith(":*", StringComparison.Ordinal) ? name[..^2] : name)
-                .Equals(baseId, StringComparison.OrdinalIgnoreCase);
-            return _interactions.ComponentCommands.Any(command => IsMatch(command.Name)) ||
-                _interactions.ModalCommands.Any(command => IsMatch(command.Name));
+            return InteractionRouting.OwnsCustomId(customId, _commandSuffix?[1..],
+                _interactions.ComponentCommands.Select(command => command.Name).Concat(_interactions.ModalCommands.Select(command => command.Name)));
         }
 
         private async Task<Discord.Interactions.IResult?> TryExecuteSuffixedCommandAsync(SocketInteractionContext ctx, SocketSlashCommand command)
@@ -599,9 +640,8 @@ namespace SysBot.ACNHOrders
             return await commandInfo.ExecuteAsync(ctx, _services).ConfigureAwait(false);
         }
 
-        private static bool IsCommandNameForBase(string commandName, string baseName) =>
-            commandName.Equals(baseName, StringComparison.OrdinalIgnoreCase) ||
-            commandName.StartsWith($"{baseName}_", StringComparison.OrdinalIgnoreCase);
+        private bool IsCommandNameForBase(string commandName, string baseName) =>
+            commandName.Equals(GetSlashCommandName(baseName), StringComparison.OrdinalIgnoreCase);
 
         private static async Task HandleInteractionFailureAsync(SocketInteractionContext context, Discord.Interactions.IResult result)
         {

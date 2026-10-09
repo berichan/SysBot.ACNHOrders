@@ -1,4 +1,4 @@
-﻿using SysBot.Base;
+using SysBot.Base;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +11,12 @@ namespace SysBot.ACNHOrders
     public static class ConnectionHelper
     {
         public const int MapChunkCount = 64;
+
+        // RoutineExecutor also disconnects after its main loop returns.
+        public static void DisconnectIfConnected(this IConsoleConnection connection)
+        {
+            if (connection.Connected) connection.Disconnect();
+        }
 
         public static async Task<string> GetVersionAsync(this ISwitchConnectionAsync connection, CancellationToken token)
         {

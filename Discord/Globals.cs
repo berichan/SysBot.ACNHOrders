@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
@@ -12,6 +12,7 @@ namespace SysBot.ACNHOrders
         public static SysCord Self { get; set; } = default!;
         public static CrossBot Bot { get; set; } = default!;
         public static QueueHub Hub { get; set; } = default!;
+        public static ConsoleBotController ConsoleControl { get; set; } = default!;
     }
 
     public sealed class RequireQueueRoleAttribute : PreconditionAttribute
@@ -47,7 +48,9 @@ namespace SysBot.ACNHOrders
     {
         private readonly string _name;
 
-        public RequireQueueRoleInteractionAttribute(string name) => _name = name;
+        private readonly bool _allowWhilePaused;
+        public RequireQueueRoleInteractionAttribute(string name, bool allowWhilePaused = false)
+        { _name = name; _allowWhilePaused = allowWhilePaused; }
 
         public override Task<Discord.Interactions.PreconditionResult> CheckRequirementsAsync(Discord.IInteractionContext context, Discord.Interactions.ICommandInfo command, IServiceProvider services)
         {
@@ -58,7 +61,7 @@ namespace SysBot.ACNHOrders
             if (context.User is not SocketGuildUser gUser)
                 return Task.FromResult(Discord.Interactions.PreconditionResult.FromError("You must be in a guild to run this command."));
 
-            if (!mgr.AcceptingCommands)
+            if (!mgr.AcceptingCommands && !_allowWhilePaused)
                 return Task.FromResult(Discord.Interactions.PreconditionResult.FromError("Sorry, I am not currently accepting commands!"));
 
             bool hasRole = mgr.GetHasRole(_name, gUser.Roles.Select(z => z.Name));

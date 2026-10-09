@@ -9,73 +9,15 @@ namespace SysBot.ACNHOrders
 {
     public class ItemInteractionModule : InteractionModuleBase<SocketInteractionContext>
     {
-        [SlashCommand("lookup", "Gets a list of items that contain the request string.")]
+        [SlashCommand("lookup", "Find items and add them directly to your order.")]
         [RequireQueueRoleInteraction(nameof(Globals.Bot.Config.RoleUseBot))]
-        public async Task SearchItemsAsync(string name)
-        {
-            if (!Globals.Bot.Config.AllowLookup)
-            {
-                await RespondAsync("Lookup commands are not accepted.", ephemeral: true);
-                return;
-            }
-            var strings = GameInfo.Strings.ItemDataSource;
-            await PrintItemsAsync(name, strings).ConfigureAwait(false);
-        }
+        public Task SearchItemsAsync([Autocomplete(typeof(ItemLookupAutocomplete))] string name) =>
+            new OrderExperience(Context).Search(name);
 
-        [SlashCommand("lookup-lang", "Gets a list of items that contain the request string in a specific language.")]
+        [SlashCommand("lookup-lang", "Find items in a language and add them to your order.")]
         [RequireQueueRoleInteraction(nameof(Globals.Bot.Config.RoleUseBot))]
-        public async Task SearchItemsLangAsync(string language, string name)
-        {
-            if (!Globals.Bot.Config.AllowLookup)
-            {
-                await RespondAsync("Lookup commands are not accepted.", ephemeral: true);
-                return;
-            }
-            var strings = GameInfo.GetStrings(language).ItemDataSource;
-            await PrintItemsAsync(name, strings).ConfigureAwait(false);
-        }
-
-        private async Task PrintItemsAsync(string itemName, System.Collections.Generic.IReadOnlyList<ComboItem> strings)
-        {
-            const int minLength = 2;
-            if (itemName.Length <= minLength)
-            {
-                await RespondAsync($"Please enter a search term longer than {minLength} characters.", ephemeral: true);
-                return;
-            }
-
-            var exact = ItemParser.GetItem(itemName, strings);
-            if (!exact.IsNone)
-            {
-                var msg = $"{exact.ItemId:X4} {itemName}";
-                if (msg == "02F8 vine")
-                    msg = "3107 vine";
-                if (msg == "02F7 glowing moss")
-                    msg = "3106 glowing moss";
-                await RespondAsync(Format.Code(msg), ephemeral: true);
-                return;
-            }
-
-            var matches = ItemParser.GetItemsMatching(itemName, strings).ToArray();
-            var result = string.Join(Environment.NewLine, matches.Select(z => $"{z.Value:X4} {z.Text}"));
-
-            if (result.Length == 0)
-            {
-                await RespondAsync("No matches found.", ephemeral: true);
-                return;
-            }
-
-            const int maxLength = 500;
-            if (result.Length > maxLength)
-            {
-                var ordered = matches.OrderBy(z => LevenshteinDistance.Compute(z.Text, itemName));
-                result = string.Join(Environment.NewLine, ordered.Select(z => $"{z.Value:X4} {z.Text}"));
-                result = result.Substring(0, maxLength) + "...[truncated]";
-            }
-
-            await RespondAsync(Format.Code(result), ephemeral: true);
-        }
-
+        public Task SearchItemsLangAsync(string language, [Autocomplete(typeof(ItemLookupAutocomplete))] string name) =>
+            new OrderExperience(Context).Search(name, language);
         [SlashCommand("item", "Gets the info for an item.")]
         [RequireQueueRoleInteraction(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task GetItemInfoAsync(string hex)

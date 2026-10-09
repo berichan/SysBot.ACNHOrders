@@ -356,3 +356,7 @@ MigrationBackup/
 
 # MacOS Build & Run local development scripts
 br.bash
+
+# Private order drafts, saved panel IDs, and user order history
+OrderData/
+UserOrder/

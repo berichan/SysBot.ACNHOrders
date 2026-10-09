@@ -49,8 +49,18 @@ namespace SysBot.ACNHOrders.Tests
             service.SlashCommands.Should().NotBeEmpty();
             service.SlashCommands.Count.Should().BeLessOrEqualTo(100);
             service.ComponentCommands.Should().NotBeEmpty();
-            service.ModalCommands.Should().HaveCount(6);
+            service.ModalCommands.Should().Contain(command => command.Name.StartsWith("shop-search:"));
+            service.ModalCommands.Should().Contain(command => command.Name.StartsWith("shop-paste:"));
+            service.ModalCommands.Should().Contain(command => command.Name == "shop-quick:*:*");
+            service.ModalCommands.Should().Contain(command => command.Name == "shop-quick:*:*:*");
+            service.ModalCommands.Should().Contain(command => command.Name.StartsWith("shop-options:"));
+            service.ModalCommands.Should().Contain(command => command.Name == "shop-quantity:*:*");
+            service.ModalCommands.Should().Contain(command => command.Name == "shop-quantity:*:*:*");
+            service.SlashCommands.Should().Contain(command => command.Name == "setup-control");
+            service.ComponentCommands.Should().Contain(command => command.Name == "control:*");
             service.ModalCommands.Select(command => command.Modal).Should().OnlyContain(modal => modal != null);
+            foreach (var command in service.ComponentCommands.Where(command => command.Name.StartsWith("shop-select:")))
+                command.Parameters.Last().ParameterType.Should().Be(typeof(string[]));
 
             var buildCommand = typeof(SysCord).GetMethod("BuildCommand", BindingFlags.NonPublic | BindingFlags.Static);
             buildCommand.Should().NotBeNull();
