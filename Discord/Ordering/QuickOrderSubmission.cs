@@ -13,7 +13,7 @@ namespace SysBot.ACNHOrders
             draft.Items = OrderPreparation.FullStacks(parsed.Items);
             draft.Errors = parsed.Errors;
             draft.Language = OrderPreparation.Languages.Contains(parsed.Language) ? parsed.Language : "en";
-            draft.Villager = parsed.Villager;
+            draft.Villager = VillagerSearchService.CanonicalSelection(parsed.Villager, draft.Language);
             draft.Mode = parsed.Mode ?? OrderFillMode.Standard;
             draft.PendingItem = null;
             draft.Preview = null;
@@ -25,7 +25,7 @@ namespace SysBot.ACNHOrders
         {
             if (draft.Errors.Length > 0)
                 return new(string.Join("\n", draft.Errors), false);
-            if (!OrderPreparation.TryPrepare(draft.Items, draft.Mode, config, username, draft.Villager, out var prepared, out var error))
+            if (!OrderPreparation.TryPrepare(draft.Items, draft.Mode, config, username, draft.Villager, out var prepared, out var error, draft.Language))
                 return new(error, false);
             return await enqueue(prepared!).ConfigureAwait(false);
         }

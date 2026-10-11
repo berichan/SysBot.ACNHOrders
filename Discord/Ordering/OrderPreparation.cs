@@ -19,6 +19,8 @@ namespace SysBot.ACNHOrders
         public static readonly string[] Languages = { "en", "jp", "fr", "de", "es", "it", "ko", "chs", "cht" };
         public const int MaxVillagerLength = 100;
         public static string VillagerLengthError => $"Villager names or IDs must be {MaxVillagerLength} characters or fewer. Shorten the value in Paste / edit list or Options.";
+        public static GameStrings GetStrings(string language) => GameInfo.GetStrings(language switch
+        { "chs" => "zhs", "cht" => "zht", _ => language });
 
         public static string FormatInput(IEnumerable<Item> items) => string.Join("\n", items.Select(item => $"0x{item.RawValue:X16}"));
 
@@ -35,7 +37,9 @@ namespace SysBot.ACNHOrders
             return true;
         }
 
-        public static string FillInstructions(PreparedOrder order) => (order.Mode switch
+        public static string FillInstructions(PreparedOrder order) => order.VisibleItems.Length == 0 && order.Villager != null
+            ? "Villager only: there are no items to collect. You need an empty housing plot to adopt the villager."
+            : (order.Mode switch
         {
             OrderFillMode.Exact => "Exact: keeps your selected items and variants. Other pickup slots stay empty.",
             OrderFillMode.Catalogue when !order.Delivery.ItemArray.Items.Any(item => item.IsNone) =>
@@ -74,19 +78,29 @@ namespace SysBot.ACNHOrders
             }
             if (text.StartsWith("items:", StringComparison.OrdinalIgnoreCase)) text = text[6..].TrimStart();
             string? villager = null;
-            text = Regex.Replace(text, @"\s+(villager|language):\s*(.*?)(?=\s+(?:villager|language):|$)", match =>
+            var errors = new List<string>();
+            var options = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            // Legacy commands allow Villager: at the start or directly after an item or comma.
+            // Values can span lines, and each option ends at the next option or end of input.
+            text = Regex.Replace(text, @"(villager|(?<![^\s,])language):\s*(.*?)(?=(?:villager|(?<![^\s,])language):|$)", match =>
             {
-                if (match.Groups[1].Value.Equals("villager", StringComparison.OrdinalIgnoreCase)) villager = match.Groups[2].Value.Trim();
-                else language = match.Groups[2].Value.Trim().ToLowerInvariant();
+                var option = match.Groups[1].Value;
+                var value = match.Groups[2].Value.Trim().Trim(',').Trim();
+                if (!options.Add(option)) errors.Add($"Use only one {option.ToLowerInvariant()}: option per order.");
+                if (option.Equals("villager", StringComparison.OrdinalIgnoreCase))
+                {
+                    villager = value;
+                    if (value.Length == 0) errors.Add("Enter a villager name or ID after villager:.");
+                }
+                else language = value.ToLowerInvariant();
                 return "";
-            }, RegexOptions.IgnoreCase);
+            }, RegexOptions.IgnoreCase | RegexOptions.Singleline);
             var segments = text.Split(new[] { ',', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
             if (segments.Count > 1 && Languages.Contains(segments[0].ToLowerInvariant()))
             {
                 language = segments[0].ToLowerInvariant();
                 segments.RemoveAt(0);
             }
-            var errors = new List<string>();
             if (!TryValidateVillager(villager, out villager, out var villagerError)) errors.Add(villagerError);
             var items = new List<Item>();
             if (!Languages.Contains(language))
@@ -94,7 +108,7 @@ namespace SysBot.ACNHOrders
                 errors.Add($"Choose a supported language: {string.Join(", ", Languages)}.");
                 return new(Array.Empty<Item>(), errors.ToArray(), villager, language, mode);
             }
-            var strings = GameInfo.GetStrings(language).ItemDataSource;
+            var strings = GetStrings(language).ItemDataSource;
             foreach (var segment in segments)
             {
                 // Names such as "bed" must be resolved before trying hexadecimal input.
@@ -118,7 +132,7 @@ namespace SysBot.ACNHOrders
                 }
                 else errors.Add($"Could not find \"{segment}\". Use Find items, or separate full item names with commas.");
             }
-            if (items.Count == 0 && errors.Count == 0) errors.Add("Add at least one item.");
+            if (items.Count == 0 && villager == null && errors.Count == 0) errors.Add("Add at least one item or choose a villager.");
             if (items.Count > MultiItem.MaxOrder) errors.Add($"You entered {items.Count} items. The limit is {MultiItem.MaxOrder}. Remove some before confirming.");
             return new(items.ToArray(), errors.ToArray(), villager, language, mode);
         }
@@ -126,13 +140,14 @@ namespace SysBot.ACNHOrders
         public static bool IsKnown(Item item) => GameInfo.Strings.ItemDataSource.Any(entry => entry.Value == item.ItemId);
 
         public static bool TryPrepare(IEnumerable<Item> source, OrderFillMode mode, CrossBotConfig config,
-            string username, string? villagerName, out PreparedOrder? prepared, out string error)
+            string username, string? villagerName, out PreparedOrder? prepared, out string error, string language = "en")
         {
             prepared = null;
             error = string.Empty;
             if (!TryValidateVillager(villagerName, out villagerName, out error)) return false;
             var items = Clone(source);
-            if (items.Length == 0 || items.All(item => item.IsNone)) { error = "Add at least one item before confirming."; return false; }
+            var hasItems = items.Any(item => !item.IsNone);
+            if (!hasItems && villagerName == null) { error = "Add at least one item or choose a villager before confirming."; return false; }
             if (items.Length > MultiItem.MaxOrder) { error = $"The limit is {MultiItem.MaxOrder} items. Remove some before confirming."; return false; }
             if (!InternalItemTool.CurrentInstance.IsSaneAfterCorrection(items, config.DropConfig))
             { error = "Remove these unsafe items: " + string.Join(", ", InternalItemTool.CurrentInstance.GetUnsafeItemNames(items)); return false; }
@@ -143,17 +158,19 @@ namespace SysBot.ACNHOrders
             if (!string.IsNullOrWhiteSpace(villagerName))
             {
                 if (!config.AllowVillagerInjection) { error = "Villager orders are disabled by the host."; return false; }
-                var internalName = villagerName.Trim();
-                if (!VillagerResources.IsVillagerDataKnown(internalName))
-                    internalName = GameInfo.Strings.VillagerMap.FirstOrDefault(entry => entry.Value.Equals(internalName, StringComparison.OrdinalIgnoreCase)).Key;
-                if (internalName == null || !VillagerResources.IsVillagerDataKnown(internalName)) { error = "That villager was not found. Enter their name or internal ID."; return false; }
-                if (VillagerOrderParser.IsUnadoptable(internalName)) { error = "That villager cannot be adopted."; return false; }
-                villager = new VillagerRequest(username, VillagerResources.GetVillager(internalName), 0, GameInfo.Strings.GetVillager(internalName));
+                if (!VillagerSearchService.TryResolve(villagerName, language, out var internalName, out error)) return false;
+                villager = new VillagerRequest(username, VillagerResources.GetVillager(internalName!), 0, VillagerSearchService.Name(internalName!, language));
             }
 
             MultiItem delivery;
             Item[] visible;
-            if (mode == OrderFillMode.Exact)
+            if (!hasItems)
+            {
+                // MultiItem's fill modes require a source item. Use empty pickup slots for villager-only visits.
+                delivery = new MultiItem(Enumerable.Range(0, MultiItem.MaxOrder).Select(_ => new Item(Item.NONE)).ToArray(), true, false, true);
+                visible = Array.Empty<Item>();
+            }
+            else if (mode == OrderFillMode.Exact)
             {
                 var padded = Clone(items).Concat(Enumerable.Range(items.Length, MultiItem.MaxOrder - items.Length).Select(_ => new Item(Item.NONE))).ToArray();
                 delivery = new MultiItem(padded, true, false, true);

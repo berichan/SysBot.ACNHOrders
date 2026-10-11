@@ -181,6 +181,90 @@ namespace SysBot.ACNHOrders.Tests
             }
         }
 
+        [Theory]
+        [InlineData("$order villager:ost10", OrderFillMode.Standard)]
+        [InlineData("$ordercat villager:ost10", OrderFillMode.Catalogue)]
+        [InlineData("/order_island villager:ost10 language:jp", OrderFillMode.Standard)]
+        [InlineData("villager:ost10", OrderFillMode.Standard)]
+        public async Task VillagerOnlyQuickOrdersReachTheQueueWithoutAddingPickupItems(string input, OrderFillMode mode)
+        {
+            var config = new CrossBotConfig { AllowVillagerInjection = true };
+            var draft = new OrderDraft();
+            QuickOrderSubmission.ApplyInput(draft, input, config);
+            Assert.Empty(draft.Errors);
+            Assert.Empty(draft.Items);
+            Assert.Equal("ost10", draft.Villager);
+            var result = await QuickOrderSubmission.SubmitAsync(draft, config, "tester", prepared =>
+            {
+                Assert.Equal(mode, prepared.Mode);
+                Assert.Empty(prepared.VisibleItems);
+                Assert.NotNull(prepared.Villager);
+                Assert.Equal(VillagerSearchService.Name("ost10", draft.Language), prepared.Villager.GameName);
+                Assert.Equal(40, prepared.Delivery.ItemArray.Items.Count);
+                Assert.All(prepared.Delivery.ItemArray.Items, item => Assert.True(item.IsNone));
+                return Task.FromResult(new QueueAttemptResult("Accepted", true));
+            });
+            Assert.True(result.Accepted);
+        }
+
+        [Theory]
+        [InlineData("$order villager:unknown-villager", true)]
+        [InlineData("$order villager:shp14", true)]
+        [InlineData("$order villager:ost10", false)]
+        [InlineData("$order unknown-item villager:ost10", true)]
+        public async Task InvalidOrDisabledVillagerOnlyRequestsNeverQueue(string input, bool enabled)
+        {
+            var config = new CrossBotConfig { AllowVillagerInjection = enabled };
+            var draft = new OrderDraft();
+            QuickOrderSubmission.ApplyInput(draft, input, config);
+            var result = await QuickOrderSubmission.SubmitAsync(draft, config, "tester", _ => throw new Exception("Invalid request must not enter the queue"));
+            Assert.False(result.Accepted);
+            Assert.NotEmpty(result.Message);
+        }
+
+        [Theory]
+        [InlineData("$order 0083,villager:cat23", OrderFillMode.Standard)]
+        [InlineData("$order 0083villager:cat23", OrderFillMode.Standard)]
+        [InlineData("$ordercat lucky cat,VILLAGER:CAT23", OrderFillMode.Catalogue)]
+        [InlineData("$ordercat 0083\nvillager:\ncat23\nlanguage:en", OrderFillMode.Catalogue)]
+        [InlineData("$order 0083,villager:cat23,language:en", OrderFillMode.Standard)]
+        public async Task LegacyVillagerCommandsReachQuickQueueWithTheRequestedVillager(string input, OrderFillMode mode)
+        {
+            var config = new CrossBotConfig { AllowVillagerInjection = true };
+            var draft = new OrderDraft();
+            QuickOrderSubmission.ApplyInput(draft, input, config);
+            Assert.Empty(draft.Errors);
+            Assert.Equal("cat23", draft.Villager);
+            var calls = 0;
+            var result = await QuickOrderSubmission.SubmitAsync(draft, config, "tester", prepared =>
+            {
+                calls++;
+                Assert.Equal(mode, prepared.Mode);
+                Assert.Single(prepared.RequestedItems);
+                Assert.NotNull(prepared.Villager);
+                Assert.Equal("Raymond", prepared.Villager.GameName);
+                return Task.FromResult(new QueueAttemptResult("Accepted", true));
+            });
+            Assert.True(result.Accepted);
+            Assert.Equal(1, calls);
+        }
+
+        [Theory]
+        [InlineData("$order 0083 villager:")]
+        [InlineData("$ordercat 0083,villager:")]
+        [InlineData("$order 0083 villager: language:en")]
+        [InlineData("$order 0083 villager:cat23 villager:cat00")]
+        public async Task MissingOrRepeatedVillagerOptionsNeverQueueAnOrder(string input)
+        {
+            var draft = new OrderDraft();
+            var config = new CrossBotConfig { AllowVillagerInjection = true };
+            QuickOrderSubmission.ApplyInput(draft, input, config);
+            var result = await QuickOrderSubmission.SubmitAsync(draft, config, "tester", _ => throw new Exception("Invalid villager option must not enter the queue"));
+            Assert.False(result.Accepted);
+            Assert.Contains("villager", result.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(input, draft.Input);
+        }
+
         [Fact]
         public async Task QuickUnsafeItemsAreRejectedBeforeQueueSubmission()
         {

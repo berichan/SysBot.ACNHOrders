@@ -12,7 +12,7 @@ namespace SysBot.ACNHOrders
         {
             query = query.Trim();
             if (query.Length < 2 || !OrderPreparation.Languages.Contains(language)) return Array.Empty<ComboItem>();
-            return GameInfo.GetStrings(language).ItemDataSource
+            return OrderPreparation.GetStrings(language).ItemDataSource
                 .Where(item => item.Value != Item.NONE && item.Text.Contains(query, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(item => item.Text.Equals(query, StringComparison.OrdinalIgnoreCase) ? 0 : item.Text.StartsWith(query, StringComparison.OrdinalIgnoreCase) ? 1 : 2)
                 .ThenBy(item => LevenshteinDistance.Compute(item.Text, query))

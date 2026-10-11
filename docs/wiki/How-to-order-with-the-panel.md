@@ -22,6 +22,8 @@ $ordercat lucky cat, nook miles ticket villager:cat23
 
 Plain item lists use Standard. The form also accepts your host's command prefix and copied slash commands such as `/ordercat_berry items:0083 3107`. All stackable items use full stacks.
 
+You can order a villager without items, for example `$order villager:ost10`. Add `villager:` followed by the villager's ID or full name. The host must allow villager orders, and you need an empty housing plot to adopt them. The acceptance reply shows the selected villager.
+
 Quick skips the review and Confirm order steps. If the list is invalid, orders are paused, the queue is full, or DMs fail, no new order is queued. The bot keeps the pasted command so you can press **Retry quick order**, edit it, and submit again. Your guided item list stays saved separately.
 
 ## Find items
@@ -33,6 +35,20 @@ Quick skips the review and Confirm order steps. If the list is invalid, orders a
 5. Find more items, or press **Review order**.
 
 Only you can see your item list, and the bot saves it as you edit. Adding items does not join the queue.
+
+## Find a villager
+
+1. Open **Place order (guided)** and press **Find villager**.
+2. Search by name, or leave the name blank and submit to browse all orderable villagers.
+3. Choose your language from the results screen. Names use that language, including Japanese, Korean, and both Chinese versions. Changing languages keeps your current villager and opens the full list in the new language.
+4. Choose a villager from the results, using **Next** and **Previous** if needed.
+5. Read the selection screen and press **Add to order**.
+
+Only villagers the bot can deliver and you can adopt appear in the results. The host must enable villager orders and lookups. Single-character searches work; Latin accents and capitalization do not need to match exactly.
+
+You can request one villager per order. **Change villager** replaces that selection, and **Remove villager** removes it. Both keep your items and their quantities. Your selected villager appears by name in the item list and review, and is saved through restarts and **Order again**.
+
+You need an **empty housing plot** to adopt a villager. Items are optional. Review and press **Confirm order** as usual. Choosing or adding a villager does not join the queue.
 
 ## Use a list, preset, or file
 
@@ -68,7 +84,7 @@ The review screen shows what you will receive. All stackable items use full stac
 
 Choosing a variant or quantity selects Exact, which keeps the chosen variants and number of copies. Files and presets also start in Exact. You can change the mode on the review screen. The quantity controls how many order slots to add; stackable items always use full stacks.
 
-Press **Keep editing** to change your list. **Options** lets you choose the language for item names or request a villager by name or ID. The host must allow villager orders, and the villager must be adoptable. You need an empty housing plot to adopt one.
+Press **Keep editing** to change your list. **Options** lets you choose the language for item and villager names or enter an orderable villager by name or ID. **Find villager** lets you choose directly from search results. The host must allow villager orders, and you need an empty housing plot to adopt one.
 
 Allow direct messages from members of this Discord server. You can press **Test DMs** to check that the bot can message you.
 

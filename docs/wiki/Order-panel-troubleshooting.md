@@ -36,6 +36,14 @@ Separate full names with commas or newlines. Separate hex codes with spaces or n
 
 The bot keeps your list and shows errors to fix before confirming. **Paste / edit list** reopens it. **Clear list** removes the list and its errors so you can start again.
 
+## Find villager is disabled or finds nothing
+
+The host needs both `AllowLookup` and `AllowVillagerInjection` enabled. Open **Place order (guided)** to find the villager search button. If either setting is disabled, the button is unavailable; an existing selection can still be removed.
+
+Use the language menu on the results screen, then search again using the villager's name in that language. Single-character queries work, or submit a blank search to browse all orderable villagers. Special NPCs and restricted villagers do not appear because they cannot be delivered for adoption.
+
+Use **Add to order** on the selection screen, then review and confirm your order. Items are optional, and you need an empty housing plot to adopt the villager. Changing the villager or language keeps the item list.
+
 ## The review shows more items than I chose
 
 Standard fills 40 slots with available variants. Choose **Exact** to keep your chosen items and variants, then review again. All stackable items use full stacks in every mode.
@@ -72,7 +80,13 @@ The Dodo code appears only in the ordering member's private reply and DM while t
 
 ## The panel count is out of date
 
-The panel updates about every 30 seconds when the count or order availability changes. Check that the bot can read the panel message and edit its own messages. Run setup again if the panel was deleted. Saved panel IDs are in `OrderData/panels.json`.
+The panel normally updates within 30 seconds when the waiting count, current order, or order availability changes. Messages posted underneath it do not affect updates: the bot edits the exact message ID saved in `OrderData/panels.json`.
+
+The waiting count excludes the order already being processed. **Current order** shows Preparing island, Waiting for arrival, or Visitor on island separately. If **My order** shows a waiting queue position but the public panel still says zero after 30 seconds, the panel is stale.
+
+Keep `OrderData/panels.json` when updating, and start the bot from the same working folder. A restart reloads the saved channel and message IDs. If the file is missing, restore it from the previous bot folder and restart, or run `/setup-embed` in the order channel to register a panel again. Use your island suffix if configured.
+
+Check the bot's logs for `OrderPanelService`. Missing saved files are reported with their full path. Missing channels, unreadable or deleted panel messages, and failed edits are reported with the saved IDs. The bot retries failed refreshes, including channels missing from Discord's local cache. Give it View Channel and Read Message History permission, and check that the panel belongs to this bot application. Run setup again if the panel was deleted.
 
 **My order** checks the current status as soon as you press it, without waiting for the panel update.
 

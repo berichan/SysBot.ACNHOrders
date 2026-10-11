@@ -90,7 +90,7 @@ The panel has **Find items**, **Place order (guided)**, **Place order (quick)**,
 
 For operator controls, run `/setup-control` in a staff channel. This channel does not need to be in `Channels`. See [Control panel](Control-panel) for Sudo permissions, connection status, and start/stop controls.
 
-Running setup again updates that channel's saved panel. You can add panels in several allowed channels. The panel's order availability and waiting count update about every 30 seconds. Run setup again if you delete a panel.
+Running setup again updates that channel's saved panel. You can add panels in several allowed channels. The panel's order availability, waiting count, and current order update about every 30 seconds. The current order is separate from the waiting queue. Posts underneath the panel do not affect updates. Keep `OrderData/panels.json` and the same working folder across restarts so the bot can find its saved message. Run setup again if you delete a panel.
 
 After changing the command suffix, restart the bot and run setup again. Members should reopen the panel because their old private buttons use the previous suffix.
 
@@ -109,6 +109,16 @@ After changing the command suffix, restart the bot and run setup again. Members 
 All stackable items use full stacks in every mode. This also applies to files, presets, item codes, and saved orders. During lookup, members can press **Quantity** before **Add to order** to add several copies of the selected item. Each copy uses one order slot. Choosing a quantity selects Exact mode and cannot exceed the space left in the 40-slot list.
 
 Members must correct unknown items and remove unsafe items before confirming. Lists over 40 items must be shortened. The bot keeps the list so members can edit it.
+
+## Villager lookup
+
+Set both `AllowLookup` and `AllowVillagerInjection` to `true` to enable **Find villager** inside guided orders. The same control appears on the review screen. Members can search by name or submit a blank search to browse all orderable villagers, ten per page.
+
+The language menu uses the same saved language as item lookup. Villager names support English, Japanese, French, German, Spanish, Italian, Korean, Simplified Chinese, and Traditional Chinese. Members can change languages without changing the selected villager. Name entry in Options and pasted commands also uses the chosen language; English names from older orders remain accepted.
+
+Results exclude special NPCs, restricted villagers, and villagers without available delivery data. The bot checks eligibility and host settings again when adding the villager and confirming the order. Disabling either lookup or villager orders disables the search button. Members can still remove an existing villager selection.
+
+Only one villager can be selected per order. Adding, replacing, or removing it preserves the item list. The selected ID and language are saved in the existing draft and last-order files; no new configuration or Discord intents are required. Villager orders can be placed with or without items. Members need an empty housing plot to adopt the villager.
 
 ## Presets and inventory files
 
@@ -162,5 +172,7 @@ Test Quick with `order` and `ordercat`, check the reported mode and queue positi
 6. Check My order while waiting, preparing, ready, and visiting. Check that only the ordering member can see the Dodo code.
 7. Cancel a waiting order, place another, and check that the old Cancel button cannot remove it.
 8. With no orders waiting, run setup again and restart the bot. Check that the panel and saved item lists are still available.
+
+Also test **Find villager** with a blank search and a localized name. Change the language, add a villager, replace and remove it, and confirm that items stay saved. Check that the villager and language survive a restart and that turning off villager orders prevents confirmation.
 
 Automated tests cover item parsing, order contents, saved lists, button handling, and queue status. These checks also test your Discord permissions, DMs, and Switch setup.

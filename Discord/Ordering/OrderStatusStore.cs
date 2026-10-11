@@ -16,6 +16,10 @@ namespace SysBot.ACNHOrders
 
         public bool IsActive(ulong user) { lock (_sync) return _activeUser == user; }
         public bool HasActiveOrder { get { lock (_sync) return _activeUser.HasValue; } }
+        public OrderStage? ActiveStage
+        {
+            get { lock (_sync) return _activeUser.HasValue && _statuses.TryGetValue(_activeUser.Value, out var status) ? status.Stage : null; }
+        }
 
         public void Set(ulong user, ulong order, OrderStage stage, string message = "", string? dodo = null, DateTimeOffset? deadline = null)
         {

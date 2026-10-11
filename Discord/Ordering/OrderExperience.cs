@@ -57,7 +57,7 @@ namespace SysBot.ACNHOrders
                     if (villager != null)
                     {
                         if (!OrderPreparation.TryValidateVillager(villager, out var validated, out var error)) draft.Errors = draft.Errors.Append(error).ToArray();
-                        draft.Villager = validated;
+                        draft.Villager = VillagerSearchService.CanonicalSelection(validated, draft.Language);
                     }
                     if (mode.HasValue) draft.Mode = mode.Value;
                     Changed(draft);
@@ -79,7 +79,7 @@ namespace SysBot.ACNHOrders
             draft.Items = OrderPreparation.FullStacks(parsed.Items);
             draft.Errors = parsed.Errors;
             draft.Language = OrderPreparation.Languages.Contains(parsed.Language) ? parsed.Language : "en";
-            if (parsed.Villager != null) draft.Villager = parsed.Villager;
+            if (parsed.Villager != null) draft.Villager = VillagerSearchService.CanonicalSelection(parsed.Villager, draft.Language);
             if (parsed.Mode.HasValue) draft.Mode = parsed.Mode.Value;
         }
 
@@ -114,7 +114,7 @@ namespace SysBot.ACNHOrders
                 draft.Input = OrderPreparation.FormatInput(draft.Items);
                 draft.Errors = Array.Empty<string>();
                 draft.Mode = mode;
-                draft.Villager = villager;
+                if (villager != null) draft.Villager = VillagerSearchService.CanonicalSelection(villager, draft.Language);
                 Changed(draft);
                 await Review(draft).ConfigureAwait(false);
             }
@@ -153,7 +153,7 @@ namespace SysBot.ACNHOrders
             }
             if (action == "file") { await Reply($"Use `/{Globals.Self.GetSlashCommandName("order-nhi")}` and choose your .nhi file in the **file** option. You can review the items before confirming."); return; }
 
-            bool opensModal = action is "search" or "paste" or "options" or "quantity";
+            bool opensModal = action is "search" or "paste" or "options" or "quantity" or "villager-search";
             if (!opensModal) await Defer().ConfigureAwait(false);
             var draft = Draft;
             if (!await OrderInteractionGate.EnterAsync(draft.Gate, opensModal, Defer,
@@ -178,12 +178,33 @@ namespace SysBot.ACNHOrders
                     case "order": await ShowDraft(draft, page); break;
                     case "search": await OpenSearch(draft); break;
                     case "results": await Results(draft, page); break;
+                    case "villager-search": await OpenVillagerSearch(draft); break;
+                    case "villager-results": draft.PendingVillager = null; await VillagerResults(draft, page); break;
+                    case "villager-pick":
+                        if (VillagerOrderSelection.TryPick(draft, selections?.FirstOrDefault() ?? "", _config, out var pickError))
+                        { Changed(draft); await VillagerSelection(draft); }
+                        else await ShowDraft(draft, notice: pickError);
+                        break;
+                    case "villager-add":
+                        if (VillagerOrderSelection.TryAdd(draft, _config, out var villagerAddError))
+                        { Changed(draft); await ShowDraft(draft, notice: "Villager added. Review your order when ready. You need an empty housing plot to adopt them."); }
+                        else await ShowDraft(draft, notice: villagerAddError);
+                        break;
+                    case "villager-remove":
+                        VillagerOrderSelection.Set(draft, null); Changed(draft); await ShowDraft(draft, notice: "Villager removed. Your items are still saved."); break;
+                    case "villager-language":
+                        if (!VillagerOrderSelection.TryChangeLanguage(draft, selections?.FirstOrDefault() ?? "", _config, out var languageError))
+                        { await ShowDraft(draft, notice: languageError); break; }
+                        Changed(draft);
+                        if (draft.PendingVillager != null) await VillagerSelection(draft);
+                        else await VillagerResults(draft, 0);
+                        break;
                     case "paste": await OpenPaste(draft); break;
                     case "options": await OpenOptions(draft); break;
                     case "review": await Review(draft, page); break;
                     case "confirm": await Confirm(draft); break;
                     case "clear":
-                        draft.Items = Array.Empty<Item>(); draft.Input = ""; draft.Errors = Array.Empty<string>(); draft.Villager = null;
+                        draft.Items = Array.Empty<Item>(); draft.Input = ""; draft.Errors = Array.Empty<string>(); draft.Villager = null; draft.PendingVillager = null;
                         Changed(draft); await ShowDraft(draft); break;
                     case "mode":
                         if (Enum.TryParse<OrderFillMode>(selections?.FirstOrDefault(), out var mode) && Enum.IsDefined(mode))
@@ -251,17 +272,21 @@ namespace SysBot.ACNHOrders
             if (draft.Errors.Length > 0) description += "\n\n**Please check these items:**\n" + Short(string.Join("\n", draft.Errors), 1200);
             if (notice != null) description = notice + "\n\n" + description;
             var embed = Embed($"Your items: {draft.Items.Length}/40", Short(description, 3800))
-                .WithFooter(Short($"Mode: {draft.Mode}, Language: {draft.Language}, Villager: {draft.Villager ?? "none"}", 2048));
+                .WithFooter(Short($"Mode: {draft.Mode}, Language: {draft.Language}", 2048))
+                .AddField("Villager", VillagerSearchService.DisplaySelection(draft));
             var components = new ComponentBuilder()
                 .WithButton("Find items", Id("search", draft), ButtonStyle.Primary, disabled: !_config.AllowLookup)
                 .WithButton("Paste / edit list", Id("paste", draft))
                 .WithButton("Review order", Id("review", draft), ButtonStyle.Success, disabled: draft.Items.Length == 0)
                 .WithButton("Options", Id("options", draft))
-                .WithButton("Clear list", Id("clear", draft), ButtonStyle.Danger, disabled: draft.Items.Length == 0 && draft.Errors.Length == 0);
+                .WithButton("Clear list", Id("clear", draft), ButtonStyle.Danger, disabled: draft.Items.Length == 0 && draft.Errors.Length == 0 && draft.Villager == null);
             components.WithButton("Presets", Id("presets", draft), row: 1)
                 .WithButton("Order again", Id("again", draft), row: 1)
                 .WithButton("Upload .nhi file", Id("file"), row: 1)
-                .WithButton("My order", Id("my"), row: 1);
+                .WithButton("My order", Id("my"), row: 1)
+                .WithButton(draft.Villager == null ? "Find villager" : "Change villager", Id("villager-search", draft), row: 1,
+                    disabled: !_config.AllowLookup || !_config.AllowVillagerInjection);
+            if (draft.Villager != null) components.WithButton("Remove villager", Id("villager-remove", draft), row: 3);
             if (draft.Items.Length > 0)
             {
                 var remove = new SelectMenuBuilder().WithCustomId(SelectId("remove", draft, page)).WithPlaceholder("Remove an item from your list");
@@ -331,13 +356,14 @@ namespace SysBot.ACNHOrders
                         _context.User, _context.Channel, prepared.Villager, prepared.Mode == OrderFillMode.Catalogue,
                         _config.OrderConfig.MaxQueueCount, prepared.Delivery)).ConfigureAwait(false);
                 if (!result.Accepted) { await QuickFailure(result.Message); return; }
+                var villagerNotice = draft.Villager == null ? "" : $"\nVillager: {VillagerSearchService.DisplaySelection(draft)}. You need an empty housing plot to adopt them.";
                 try { OrderHistory.Save(Guild, User, draft); }
                 catch (Exception ex) { SysBot.Base.LogUtil.LogError($"Could not save accepted quick order history for {User}: {ex.Message}", nameof(OrderExperience)); }
                 draft.Items = Array.Empty<Item>(); draft.Input = ""; draft.Errors = Array.Empty<string>(); draft.Villager = null;
                 try { OrderDraftStore.Quick.Changed(Guild, User, draft); }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                 { SysBot.Base.LogUtil.LogError($"Could not clear saved quick order for {User}: {ex.Message}", nameof(OrderExperience)); }
-                await MyOrder(result.Message + $"\nMode: {draft.Mode}. All stackable items use full stacks.").ConfigureAwait(false);
+                await MyOrder(result.Message + $"\nMode: {draft.Mode}. All stackable items use full stacks." + villagerNotice).ConfigureAwait(false);
             }
             finally { draft.Gate.Release(); }
         }
@@ -352,7 +378,8 @@ namespace SysBot.ACNHOrders
         {
             var modal = new ModalBuilder().WithTitle("Order options").WithCustomId(Globals.Self.GetInteractionCustomId($"shop-options:{draft.Token}:{draft.Revision}"))
                 .AddTextInput("Language code", "language", placeholder: string.Join(", ", OrderPreparation.Languages), maxLength: 10, value: Short(draft.Language, 10))
-                .AddTextInput("Villager name or ID (optional)", "villager", required: false, maxLength: OrderPreparation.MaxVillagerLength, value: Short(draft.Villager ?? "", OrderPreparation.MaxVillagerLength));
+                .AddTextInput("Villager name or ID (optional)", "villager", required: false, maxLength: OrderPreparation.MaxVillagerLength,
+                    value: draft.Villager == null ? null : Short(VillagerSearchService.DisplaySelection(draft), OrderPreparation.MaxVillagerLength));
             return _context.Interaction.RespondWithModalAsync(modal.Build());
         }
 
@@ -369,15 +396,20 @@ namespace SysBot.ACNHOrders
                     case "search":
                         if (!_config.AllowLookup) { await Reply("Item search is disabled by the host."); break; }
                         draft.Search = text.Trim(); Changed(draft); await Results(draft, 0); break;
+                    case "villager-search":
+                        if (!VillagerOrderSelection.CanSearch(_config, out var villagerSearchError)) { await ShowDraft(draft, notice: villagerSearchError); break; }
+                        draft.VillagerSearch = text.Trim(); draft.PendingVillager = null; Changed(draft); await VillagerResults(draft, 0); break;
                     case "paste": ApplyInput(draft, text); Changed(draft); await Review(draft); break;
                     case "options":
                         var language = text.Trim().ToLowerInvariant();
                         if (!OrderPreparation.Languages.Contains(language)) { await ShowDraft(draft, notice: "That language is not available. Open Options and choose: " + string.Join(", ", OrderPreparation.Languages)); break; }
-                        if (!OrderPreparation.TryValidateVillager(other, out var villager, out var villagerError)) { await ShowDraft(draft, notice: villagerError); break; }
+                        if (!VillagerOrderSelection.TryResolveOption(draft, other, language, out var villager, out var villagerError)) { await ShowDraft(draft, notice: villagerError); break; }
+                        if (villager != null && !_config.AllowVillagerInjection)
+                        { await ShowDraft(draft, notice: "Villager orders are disabled by the host. Remove the villager to continue."); break; }
                         if (draft.Errors.Length > 0) ApplyInput(draft, draft.Input, language);
                         draft.Errors = draft.Errors.Where(error => error != OrderPreparation.VillagerLengthError).ToArray();
                         if (draft.Errors.Length == 0) draft.Input = OrderPreparation.FormatInput(draft.Items);
-                        draft.Language = language; draft.Villager = villager; Changed(draft); await ShowDraft(draft); break;
+                        draft.Language = language; VillagerOrderSelection.Set(draft, villager); Changed(draft); await ShowDraft(draft); break;
                     case "amount":
                         // Old quantity forms remain routable, but cannot override the full-stack policy.
                         if (draft.PendingItem != null)
@@ -392,6 +424,28 @@ namespace SysBot.ACNHOrders
                 }
             }
             finally { draft.Gate.Release(); }
+        }
+
+        private Task OpenVillagerSearch(OrderDraft draft)
+        {
+            if (!VillagerOrderSelection.CanSearch(_config, out var error)) return ShowDraft(draft, notice: error);
+            var modal = VillagerLookupView.BuildSearchModal(Globals.Self.GetInteractionCustomId($"shop-villager:{draft.Token}:{draft.Revision}"), draft.VillagerSearch);
+            return _context.Interaction.RespondWithModalAsync(modal);
+        }
+
+        private async Task VillagerResults(OrderDraft draft, int page)
+        {
+            if (!VillagerOrderSelection.CanSearch(_config, out var error)) { await ShowDraft(draft, notice: error); return; }
+            var view = VillagerLookupView.Results(draft, page, (action, index) => Id(action, draft, index), (action, index) => SelectId(action, draft, index));
+            await Reply(embed: view.Embed, components: view.Components);
+        }
+
+        private async Task VillagerSelection(OrderDraft draft)
+        {
+            if (!VillagerOrderSelection.CanSearch(_config, out var error)) { await ShowDraft(draft, notice: error); return; }
+            if (draft.PendingVillager == null || !VillagerSearchService.IsOrderable(draft.PendingVillager)) { await VillagerResults(draft, 0); return; }
+            var view = VillagerLookupView.Selection(draft, (action, index) => Id(action, draft, index), (action, index) => SelectId(action, draft, index));
+            await Reply(embed: view.Embed, components: view.Components);
         }
 
         private async Task Results(OrderDraft draft, int page)
@@ -447,7 +501,7 @@ namespace SysBot.ACNHOrders
         private async Task Review(OrderDraft draft, int page = 0)
         {
             if (draft.Errors.Length > 0) { await ShowDraft(draft, notice: "Check the items below before confirming your order."); return; }
-            if (!OrderPreparation.TryPrepare(draft.Items, draft.Mode, _config, _context.User.Username, draft.Villager, out var prepared, out var error))
+            if (!OrderPreparation.TryPrepare(draft.Items, draft.Mode, _config, _context.User.Username, draft.Villager, out var prepared, out var error, draft.Language))
             { await ShowDraft(draft, notice: error); return; }
             draft.Preview = prepared;
             draft.PreviewRevision = draft.Revision;
@@ -455,7 +509,8 @@ namespace SysBot.ACNHOrders
             page = Math.Clamp(page, 0, Math.Max(0, (groups.Length - 1) / 10));
             var behavior = OrderPreparation.FillInstructions(prepared);
             var embed = Embed("Review your order", behavior + "\n\n" + string.Join("\n", groups.Skip(page * 10).Take(10)))
-                .WithFooter(Short($"{prepared.VisibleItems.Length} pickup slots, page {page + 1}/{(groups.Length + 9) / 10}, Villager: {draft.Villager ?? "none"}", 2048));
+                .WithFooter(Short($"{prepared.VisibleItems.Length} pickup slots, page {page + 1}/{Math.Max(1, (groups.Length + 9) / 10)}", 2048))
+                .AddField("Villager", VillagerSearchService.DisplaySelection(draft) + (draft.Villager == null ? "" : "\nYou need an empty housing plot to adopt them."));
             var mode = new SelectMenuBuilder().WithCustomId(SelectId("mode", draft)).WithPlaceholder("Choose how your order is filled")
                 .AddOption("Standard: fill 40 slots and include variants", nameof(OrderFillMode.Standard), isDefault: draft.Mode == OrderFillMode.Standard)
                 .AddOption("Exact: keep selected items and variants", nameof(OrderFillMode.Exact), isDefault: draft.Mode == OrderFillMode.Exact)
@@ -463,7 +518,10 @@ namespace SysBot.ACNHOrders
             var components = new ComponentBuilder().WithSelectMenu(mode, 0)
                 .WithButton("Confirm order", Id("confirm", draft), ButtonStyle.Success, row: 1)
                 .WithButton("Keep editing", Id("order", draft), row: 1)
-                .WithButton("Test DMs", Id("dm"), row: 1);
+                .WithButton("Test DMs", Id("dm"), row: 1)
+                .WithButton(draft.Villager == null ? "Find villager" : "Change villager", Id("villager-search", draft), row: 1,
+                    disabled: !_config.AllowLookup || !_config.AllowVillagerInjection);
+            if (draft.Villager != null) components.WithButton("Remove villager", Id("villager-remove", draft), row: 1);
             if (page > 0) components.WithButton("Previous", Id("review", draft, page - 1), row: 2);
             if ((page + 1) * 10 < groups.Length) components.WithButton("Next", Id("review", draft, page + 1), row: 2);
             await Reply(embed: embed.Build(), components: components.Build());
@@ -475,7 +533,7 @@ namespace SysBot.ACNHOrders
             { await Review(draft); return; }
             await Defer().ConfigureAwait(false);
             // Recheck policy at confirmation, but submit the exact array shown in the preview.
-            if (!OrderPreparation.TryPrepare(draft.Items, draft.Mode, _config, _context.User.Username, draft.Villager, out _, out var error))
+            if (!OrderPreparation.TryPrepare(draft.Items, draft.Mode, _config, _context.User.Username, draft.Villager, out _, out var error, draft.Language))
             { await ShowDraft(draft, notice: error); return; }
             var result = await QueueHelper.AttemptToQueueRequestDetailedAsync(draft.Preview.RequestedItems,
                 _context.User, _context.Channel, draft.Preview.Villager, draft.Mode == OrderFillMode.Catalogue,
@@ -513,7 +571,7 @@ namespace SysBot.ACNHOrders
             if (saved != null)
             {
                 draft.Items = Item.GetArray(saved.Items); draft.Input = OrderPreparation.FormatInput(draft.Items); draft.Errors = Array.Empty<string>();
-                draft.Language = saved.Language; draft.Villager = saved.Villager; draft.Mode = saved.Mode;
+                draft.Language = saved.Language; draft.Villager = VillagerSearchService.CanonicalSelection(saved.Villager, saved.Language); draft.Mode = saved.Mode;
             }
             else if (legacyItems != null)
             { draft.Items = legacyItems; draft.Input = OrderPreparation.FormatInput(legacyItems); draft.Errors = Array.Empty<string>(); draft.Mode = OrderFillMode.Exact; draft.Villager = null; }
@@ -589,7 +647,7 @@ namespace SysBot.ACNHOrders
             else await MyOrder("Your order has started. It can no longer be cancelled from the waiting queue.");
         }
 
-        public Task Help() => Reply(embed: Embed("Ordering guide", "**Place order (guided):** find items or paste a list, review what you will receive, then press Confirm order to join the queue. Choose Standard, Exact, or Catalogue on the review screen.\n\n**Place order (quick):** paste an order or ordercat command and press Submit to join the queue directly. order selects Standard, ordercat selects Catalogue. A plain item list uses Standard. Invalid lists are saved for you to edit and retry.\n\nAll stackable items use full stacks. Enable DMs from this server before submitting. **My order** shows your position and progress. Check DMs when your order starts.\n\nEmpty your inventory, arrive promptly using the private Dodo code, collect your items, and leave through the airport.\n\nYour lists are saved if the bot restarts. Waiting orders are cleared, so you may need to join the queue again.").Build(),
+        public Task Help() => Reply(embed: Embed("Ordering guide", "**Place order (guided):** find items or paste a list, review what you will receive, then press Confirm order to join the queue. Choose Standard, Exact, or Catalogue on the review screen. **Find villager** lets you search or browse orderable villagers, choose a language, and add one to your order. You need an empty housing plot to adopt them. Items are optional for villager orders.\n\n**Place order (quick):** paste an order or ordercat command and press Submit to join the queue directly. order selects Standard, ordercat selects Catalogue. A plain item list uses Standard. Invalid lists are saved for you to edit and retry.\n\nAll stackable items use full stacks. Enable DMs from this server before submitting. **My order** shows your position and progress. Check DMs when your order starts.\n\nEmpty your inventory, arrive promptly using the private Dodo code, collect your items, and leave through the airport.\n\nYour lists are saved if the bot restarts. Waiting orders are cleared, so you may need to join the queue again.").Build(),
             components: new ComponentBuilder().WithButton("Place order (guided)", Id("order"), ButtonStyle.Primary)
                 .WithButton("Place order (quick)", Id("quick"), ButtonStyle.Primary).WithButton("My order", Id("my")).Build());
     }

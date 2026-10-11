@@ -19,6 +19,8 @@ namespace SysBot.ACNHOrders
         public string? Villager { get; set; }
         public OrderFillMode Mode { get; set; } = OrderFillMode.Standard;
         public string Search { get; set; } = string.Empty;
+        public string VillagerSearch { get; set; } = string.Empty;
+        public string? PendingVillager { get; set; }
         public Item? PendingItem { get; set; }
         public int PendingQuantity { get; set; } = 1;
         public PreparedOrder? Preview { get; set; }
