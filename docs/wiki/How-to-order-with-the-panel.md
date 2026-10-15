@@ -36,6 +36,21 @@ Quick skips the review and Confirm order steps. If the list is invalid, orders a
 
 Only you can see your item list, and the bot saves it as you edit. Adding items does not join the queue.
 
+## Find recipes
+
+1. Open **Place order (guided)** and press **Find recipes**. You can also press **Recipes** on an item search results screen.
+2. Enter part of the recipe's item name, such as `wooden chair`, or leave the search blank to browse all recipes. The list includes DIY and cooking recipes.
+3. Choose your language on the results screen. Search uses names in that language. Changing the language opens the full list in the new language and keeps the items already in your order.
+4. Choose a **recipe card** from the results. Use **Next** and **Previous** to browse pages.
+5. Press **Quantity** to choose how many cards to add. Each card uses one order slot. This selects **Exact** so you receive the requested number of copies.
+6. Press **Add to order**, then **Review order** and **Confirm order** when ready.
+
+**Items** searches finished objects, while **Recipes** searches the cards that teach you how to make them. Cards have no stack, body, or fabric options. Your order list and review show each recipe by name with **recipe card** beside it.
+
+You can mix recipe cards with other items and a villager. Exact keeps your selected copies. Standard fills 40 pickup slots and can add duplicates. Catalogue uses the usual separator layout. Check the review before confirming.
+
+Recipe cards are saved with your item list and **Order again**. You do not need to look up or copy recipe codes to use guided orders. Existing recipe order codes still work in pasted lists and Quick orders.
+
 ## Find a villager
 
 1. Open **Place order (guided)** and press **Find villager**.

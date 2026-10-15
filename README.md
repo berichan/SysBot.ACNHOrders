@@ -52,6 +52,8 @@ Guided orders let members find items, choose how many copies to add, paste lists
 
 **My order** shows queue position and order status, including when the island is ready to visit. Item lists and panel IDs are saved in `OrderData`, so keep that folder when updating. Waiting orders and current status are cleared when the bot restarts.
 
+Guided orders include **Find recipes** when `AllowLookup` is enabled. Members can search DIY and cooking recipe cards by name in all nine supported languages, or leave the search blank to browse. Item results also offer an **Items / Recipes** switch. Quantity chooses the number of separate cards and selects Exact mode. Recipe cards have no stack or variant controls, and their recipe IDs stay intact through order preparation and saved orders.
+
 Guided orders include **Find villager** when `AllowLookup` and `AllowVillagerInjection` are enabled. Members can search or browse only orderable villagers in any of the nine supported languages, then add one to their order. Changing or removing the villager keeps the items. The selected villager and language are saved through restarts and Order again. Villager orders can be placed with or without items. Members need an empty housing plot for adoption.
 
 Read the [setup guide](docs/wiki/Order-panel-setup.md), [ordering guide](docs/wiki/How-to-order-with-the-panel.md), and [troubleshooting guide](docs/wiki/Order-panel-troubleshooting.md). The [wiki guide](docs/wiki/README.md) explains how to publish these pages.

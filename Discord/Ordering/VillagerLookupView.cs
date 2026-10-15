@@ -20,7 +20,7 @@ namespace SysBot.ACNHOrders
             .WithCustomId(customId).AddTextInput("Name (leave blank to browse all)", "query", required: false, maxLength: 100,
                 value: string.IsNullOrEmpty(query) ? null : Short(query, 100)).Build();
 
-        private static SelectMenuBuilder LanguageMenu(OrderDraft draft, string customId)
+        internal static SelectMenuBuilder LanguageMenu(OrderDraft draft, string customId)
         {
             var menu = new SelectMenuBuilder().WithCustomId(customId).WithPlaceholder("Choose a language");
             foreach (var language in Languages) menu.AddOption(language.Value, language.Key, isDefault: draft.Language == language.Key);

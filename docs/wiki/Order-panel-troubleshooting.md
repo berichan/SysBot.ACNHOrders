@@ -4,6 +4,20 @@
 
 Read the private reply for the reason. Invalid items, unsafe items, closed DMs, a paused or full queue, and an existing order prevent submission. Press **Retry quick order** to reopen the saved command, make any corrections, and submit again. An outdated form cannot submit the same order twice, reopen Quick order to use the latest form.
 
+## I found the finished item instead of its recipe
+
+Open **Place order (guided) → Find recipes**, or press **Recipes** on the search results screen. Search for the item's name and choose its recipe card. **Items** finds finished objects. **Recipes** finds cards, including cooking recipes.
+
+Choose the language used by the recipe's name. Leave the search blank to browse all recipes. The host must enable `AllowLookup` for item and recipe search.
+
+## I received several copies of a recipe card
+
+Standard fills 40 pickup slots and can add duplicates. For a specific number of cards, press **Quantity** before **Add to order**, or choose **Exact** in review. Quantity chooses the number of separate cards, and each uses one order slot. Recipe cards have no stack or variant settings.
+
+## An imported recipe card is rejected
+
+The bot checks the recipe stored in the card. An unknown recipe cannot be submitted. Remove that card and use **Find recipes** to add it again. This also applies to pasted codes, inventory files, and saved orders. Valid recipe order codes still work.
+
 ## A button says the previous action is still finishing
 
 Wait a moment, then press it again. The bot keeps edits for one member in order, and opening a form cannot interrupt an action that is still finishing.

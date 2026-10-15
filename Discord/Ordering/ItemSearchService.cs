@@ -13,7 +13,7 @@ namespace SysBot.ACNHOrders
             query = query.Trim();
             if (query.Length < 2 || !OrderPreparation.Languages.Contains(language)) return Array.Empty<ComboItem>();
             return OrderPreparation.GetStrings(language).ItemDataSource
-                .Where(item => item.Value != Item.NONE && item.Text.Contains(query, StringComparison.OrdinalIgnoreCase))
+                .Where(item => item.Value != Item.NONE && item.Value != Item.DIYRecipe && item.Text.Contains(query, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(item => item.Text.Equals(query, StringComparison.OrdinalIgnoreCase) ? 0 : item.Text.StartsWith(query, StringComparison.OrdinalIgnoreCase) ? 1 : 2)
                 .ThenBy(item => LevenshteinDistance.Compute(item.Text, query))
                 .ThenBy(item => item.Text, StringComparer.OrdinalIgnoreCase)
@@ -22,6 +22,7 @@ namespace SysBot.ACNHOrders
 
         public static IReadOnlyList<(int Value, string Name)> BodyVariants(Item item)
         {
+            if (item.ItemId == Item.DIYRecipe) return Array.Empty<(int, string)>();
             var index = ItemRemakeUtil.GetRemakeIndex(item.ItemId);
             if (index < 0) return Array.Empty<(int, string)>();
             var info = ItemRemakeInfoData.List[index];
@@ -41,6 +42,7 @@ namespace SysBot.ACNHOrders
 
         public static IReadOnlyList<(int Value, string Name)> FabricVariants(Item item)
         {
+            if (item.ItemId == Item.DIYRecipe) return Array.Empty<(int, string)>();
             var index = ItemRemakeUtil.GetRemakeIndex(item.ItemId);
             if (index < 0) return Array.Empty<(int, string)>();
             var info = ItemRemakeInfoData.List[index];

@@ -14,6 +14,11 @@ namespace SysBot.ACNHOrders
         public string Title => "Paste or edit your order";
         [ModalTextInput("items", Discord.TextInputStyle.Paragraph)] public string Items { get; set; } = string.Empty;
     }
+    public sealed class OrderRecipeSearchModal : IModal
+    {
+        public string Title => "Find recipes";
+        [ModalTextInput("query")][RequiredInput(false)] public string Query { get; set; } = string.Empty;
+    }
     public sealed class OrderVillagerSearchModal : IModal
     {
         public string Title => "Find villager";
@@ -60,6 +65,10 @@ namespace SysBot.ACNHOrders
         public Task Search(string token, int revision, OrderSearchModal modal) => new OrderExperience(Context).Modal("search", token, revision, modal.Query);
         [ModalInteraction("shop-search:*:*:*")]
         public Task SuffixedSearch(string token, int revision, string _, OrderSearchModal modal) => Search(token, revision, modal);
+        [ModalInteraction("shop-recipe:*:*")]
+        public Task RecipeSearch(string token, int revision, OrderRecipeSearchModal modal) => new OrderExperience(Context).Modal("recipe-search", token, revision, modal.Query ?? string.Empty);
+        [ModalInteraction("shop-recipe:*:*:*")]
+        public Task SuffixedRecipeSearch(string token, int revision, string _, OrderRecipeSearchModal modal) => RecipeSearch(token, revision, modal);
         [ModalInteraction("shop-villager:*:*")]
         public Task VillagerSearch(string token, int revision, OrderVillagerSearchModal modal) => new OrderExperience(Context).Modal("villager-search", token, revision, modal.Query ?? string.Empty);
         [ModalInteraction("shop-villager:*:*:*")]

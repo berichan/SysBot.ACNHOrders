@@ -134,7 +134,7 @@ namespace SysBot.ACNHOrders
             if (!OrderPreparation.Languages.Contains(language)) { await Reply("Choose a supported language: " + string.Join(", ", OrderPreparation.Languages)); return; }
             var draft = Draft;
             await draft.Gate.WaitAsync().ConfigureAwait(false);
-            try { draft.Search = query.Trim(); draft.Language = language; Changed(draft); await Results(draft, 0).ConfigureAwait(false); }
+            try { draft.Search = query.Trim(); draft.SearchRecipes = false; draft.SearchPage = 0; draft.PendingItem = null; draft.Language = language; Changed(draft); await Results(draft, 0).ConfigureAwait(false); }
             finally { draft.Gate.Release(); }
         }
 
@@ -153,7 +153,7 @@ namespace SysBot.ACNHOrders
             }
             if (action == "file") { await Reply($"Use `/{Globals.Self.GetSlashCommandName("order-nhi")}` and choose your .nhi file in the **file** option. You can review the items before confirming."); return; }
 
-            bool opensModal = action is "search" or "paste" or "options" or "quantity" or "villager-search";
+            bool opensModal = action is "search" or "recipe-search" or "paste" or "options" or "quantity" or "villager-search";
             if (!opensModal) await Defer().ConfigureAwait(false);
             var draft = Draft;
             if (!await OrderInteractionGate.EnterAsync(draft.Gate, opensModal, Defer,
@@ -177,7 +177,17 @@ namespace SysBot.ACNHOrders
                 {
                     case "order": await ShowDraft(draft, page); break;
                     case "search": await OpenSearch(draft); break;
-                    case "results": await Results(draft, page); break;
+                    case "recipe-search": await OpenSearch(draft, recipes: true); break;
+                    case "filter-items":
+                    case "filter-recipes":
+                        if (!_config.AllowLookup) { await Reply("Item and recipe search is disabled by the host."); break; }
+                        draft.SearchRecipes = action == "filter-recipes"; draft.PendingItem = null; Changed(draft); await Results(draft, 0); break;
+                    case "lookup-language":
+                        if (!_config.AllowLookup) { await Reply("Item and recipe search is disabled by the host."); break; }
+                        var lookupLanguage = selections?.FirstOrDefault() ?? "";
+                        if (!OrderPreparation.Languages.Contains(lookupLanguage)) { await Results(draft, page); break; }
+                        draft.Language = lookupLanguage; draft.Search = ""; draft.PendingItem = null; Changed(draft); await Results(draft, 0); break;
+                    case "results": draft.PendingItem = null; Changed(draft); await Results(draft, page); break;
                     case "villager-search": await OpenVillagerSearch(draft); break;
                     case "villager-results": draft.PendingVillager = null; await VillagerResults(draft, page); break;
                     case "villager-pick":
@@ -211,13 +221,19 @@ namespace SysBot.ACNHOrders
                         { draft.Mode = mode; Changed(draft); }
                         await Review(draft); break;
                     case "pick":
-                        if (ushort.TryParse(selections?.FirstOrDefault(), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var id))
-                        { draft.PendingItem = OrderPreparation.FullStacks(new[] { new Item(id) })[0]; draft.PendingQuantity = 1; Changed(draft); await Pick(draft); }
+                        if (LookupOrderSelection.TryPickItem(draft, selections?.FirstOrDefault() ?? "", page, _config))
+                        { Changed(draft); await Pick(draft); }
                         else await Results(draft, page);
                         break;
+                    case "recipe-pick":
+                        if (RecipeSearchService.TryPick(draft, selections?.FirstOrDefault() ?? "", page, _config, out var recipeError))
+                        { Changed(draft); await Pick(draft); }
+                        else await Results(draft, page, recipeError);
+                        break;
                     case "variant":
-                        if (draft.PendingItem != null && int.TryParse(selections?.FirstOrDefault(), out var body) && ItemSearchService.BodyVariants(draft.PendingItem).Any(variant => variant.Value == body))
-                        { draft.PendingItem.BodyType = body; draft.Mode = OrderFillMode.Exact; Changed(draft); await Pick(draft); }
+                        if (int.TryParse(selections?.FirstOrDefault(), out var body) && LookupOrderSelection.TrySetBody(draft, body))
+                        { Changed(draft); await Pick(draft); }
+                        else if (draft.PendingItem != null) await Pick(draft, "Variant options are not available for this selection.");
                         else await Results(draft, 0);
                         break;
                     case "amount": await Pick(draft); break;
@@ -228,8 +244,9 @@ namespace SysBot.ACNHOrders
                             Globals.Self.GetInteractionCustomId($"shop-quantity:{draft.Token}:{draft.Revision}"), draft));
                         break;
                     case "fabric":
-                        if (draft.PendingItem != null && int.TryParse(selections?.FirstOrDefault(), out var fabric) && ItemSearchService.FabricVariants(draft.PendingItem).Any(variant => variant.Value == fabric))
-                        { draft.PendingItem.PatternChoice = fabric; draft.Mode = OrderFillMode.Exact; Changed(draft); await Pick(draft); }
+                        if (int.TryParse(selections?.FirstOrDefault(), out var fabric) && LookupOrderSelection.TrySetFabric(draft, fabric))
+                        { Changed(draft); await Pick(draft); }
+                        else if (draft.PendingItem != null) await Pick(draft, "Fabric options are not available for this selection.");
                         else await Results(draft, 0);
                         break;
                     case "add":
@@ -267,8 +284,8 @@ namespace SysBot.ACNHOrders
         {
             page = Math.Clamp(page, 0, Math.Max(0, (draft.Items.Length - 1) / ItemSearchService.PageSize));
             var lines = draft.Items.Skip(page * ItemSearchService.PageSize).Take(ItemSearchService.PageSize)
-                .Select((item, index) => $"{page * ItemSearchService.PageSize + index + 1}. {OrderPreparation.Describe(item)}");
-            var description = draft.Items.Length == 0 ? "Find items by name, paste a list, or choose a host preset. Your item list is saved. Review it when you are ready to order." : string.Join("\n", lines);
+                .Select((item, index) => $"{page * ItemSearchService.PageSize + index + 1}. {OrderPreparation.Describe(item, draft.Language)}");
+            var description = draft.Items.Length == 0 ? "Find items or recipe cards by name, paste a list, or choose a host preset. Your item list is saved. Review it when you are ready to order." : string.Join("\n", lines);
             if (draft.Errors.Length > 0) description += "\n\n**Please check these items:**\n" + Short(string.Join("\n", draft.Errors), 1200);
             if (notice != null) description = notice + "\n\n" + description;
             var embed = Embed($"Your items: {draft.Items.Length}/40", Short(description, 3800))
@@ -276,10 +293,11 @@ namespace SysBot.ACNHOrders
                 .AddField("Villager", VillagerSearchService.DisplaySelection(draft));
             var components = new ComponentBuilder()
                 .WithButton("Find items", Id("search", draft), ButtonStyle.Primary, disabled: !_config.AllowLookup)
+                .WithButton("Find recipes", Id("recipe-search", draft), ButtonStyle.Primary, disabled: !_config.AllowLookup)
                 .WithButton("Paste / edit list", Id("paste", draft))
-                .WithButton("Review order", Id("review", draft), ButtonStyle.Success, disabled: draft.Items.Length == 0)
-                .WithButton("Options", Id("options", draft))
-                .WithButton("Clear list", Id("clear", draft), ButtonStyle.Danger, disabled: draft.Items.Length == 0 && draft.Errors.Length == 0 && draft.Villager == null);
+                .WithButton("Review order", Id("review", draft), ButtonStyle.Success, disabled: draft.Items.Length == 0 && draft.Villager == null)
+                .WithButton("Options", Id("options", draft));
+            components.WithButton("Clear list", Id("clear", draft), ButtonStyle.Danger, row: 3, disabled: draft.Items.Length == 0 && draft.Errors.Length == 0 && draft.Villager == null);
             components.WithButton("Presets", Id("presets", draft), row: 1)
                 .WithButton("Order again", Id("again", draft), row: 1)
                 .WithButton("Upload .nhi file", Id("file"), row: 1)
@@ -290,7 +308,7 @@ namespace SysBot.ACNHOrders
             if (draft.Items.Length > 0)
             {
                 var remove = new SelectMenuBuilder().WithCustomId(SelectId("remove", draft, page)).WithPlaceholder("Remove an item from your list");
-                for (int i = page * 10; i < Math.Min(draft.Items.Length, page * 10 + 10); i++) remove.AddOption(Short($"{i + 1}. {OrderPreparation.Describe(draft.Items[i])}"), i.ToString());
+                for (int i = page * 10; i < Math.Min(draft.Items.Length, page * 10 + 10); i++) remove.AddOption(Short($"{i + 1}. {OrderPreparation.Describe(draft.Items[i], draft.Language)}"), i.ToString());
                 components.WithSelectMenu(remove, 2);
             }
             if (page > 0) components.WithButton("Previous items", Id("order", draft, page - 1), row: 3);
@@ -298,9 +316,12 @@ namespace SysBot.ACNHOrders
             await Reply(embed: embed.Build(), components: components.Build());
         }
 
-        private Task OpenSearch(OrderDraft draft)
+        private Task OpenSearch(OrderDraft draft, bool recipes = false)
         {
             if (!_config.AllowLookup) return Reply("Item search is disabled by the host.");
+            draft.SearchRecipes = recipes; draft.PendingItem = null; Changed(draft);
+            if (recipes) return _context.Interaction.RespondWithModalAsync(ItemLookupView.RecipeModal(
+                Globals.Self.GetInteractionCustomId($"shop-recipe:{draft.Token}:{draft.Revision}"), draft.Search));
             var modal = new ModalBuilder().WithTitle("Find items").WithCustomId(Globals.Self.GetInteractionCustomId($"shop-search:{draft.Token}:{draft.Revision}"))
                 .AddTextInput("Item name", "query", placeholder: "e.g. lucky cat, nook miles ticket", minLength: 2, maxLength: 100);
             return _context.Interaction.RespondWithModalAsync(modal.Build());
@@ -394,8 +415,9 @@ namespace SysBot.ACNHOrders
                 switch (kind)
                 {
                     case "search":
+                    case "recipe-search":
                         if (!_config.AllowLookup) { await Reply("Item search is disabled by the host."); break; }
-                        draft.Search = text.Trim(); Changed(draft); await Results(draft, 0); break;
+                        draft.Search = text.Trim(); draft.SearchRecipes = kind == "recipe-search"; draft.PendingItem = null; Changed(draft); await Results(draft, 0); break;
                     case "villager-search":
                         if (!VillagerOrderSelection.CanSearch(_config, out var villagerSearchError)) { await ShowDraft(draft, notice: villagerSearchError); break; }
                         draft.VillagerSearch = text.Trim(); draft.PendingVillager = null; Changed(draft); await VillagerResults(draft, 0); break;
@@ -412,6 +434,8 @@ namespace SysBot.ACNHOrders
                         draft.Language = language; VillagerOrderSelection.Set(draft, villager); Changed(draft); await ShowDraft(draft); break;
                     case "amount":
                         // Old quantity forms remain routable, but cannot override the full-stack policy.
+                        if (draft.PendingItem?.ItemId == Item.DIYRecipe)
+                        { await Pick(draft, "Recipe cards have no stack options. Use Quantity to choose the number of cards."); break; }
                         if (draft.PendingItem != null)
                         { draft.PendingItem = OrderPreparation.FullStacks(new[] { draft.PendingItem })[0]; Changed(draft); await Pick(draft); }
                         else await Reply("All orders use full stacks. Use Find items to choose an item again.");
@@ -448,54 +472,19 @@ namespace SysBot.ACNHOrders
             await Reply(embed: view.Embed, components: view.Components);
         }
 
-        private async Task Results(OrderDraft draft, int page)
+        private async Task Results(OrderDraft draft, int page, string? notice = null)
         {
-            if (!_config.AllowLookup) { await Reply("Item search is disabled by the host."); return; }
-            var matches = ItemSearchService.Search(draft.Search, draft.Language);
-            page = Math.Clamp(page, 0, Math.Max(0, (matches.Length - 1) / 10));
-            var embed = Embed($"Find items: {Short(draft.Search, 80)}", matches.Length == 0
-                ? "No matching items. Try a shorter name (at least two characters)." : $"{matches.Length} matches, page {page + 1}/{(matches.Length + 9) / 10}\nChoose an item below to add it to your order.");
-            var components = new ComponentBuilder();
-            if (matches.Length > 0)
-            {
-                var menu = new SelectMenuBuilder().WithCustomId(SelectId("pick", draft, page)).WithPlaceholder("Choose an item");
-                foreach (var item in matches.Skip(page * 10).Take(10)) menu.AddOption(Short(item.Text), item.Value.ToString("X4"));
-                components.WithSelectMenu(menu, 0);
-            }
-            components.WithButton("Search again", Id("search", draft), ButtonStyle.Primary, row: 1)
-                .WithButton("Your items", Id("order", draft), row: 1);
-            if (page > 0) components.WithButton("Previous", Id("results", draft, page - 1), row: 1);
-            if ((page + 1) * 10 < matches.Length) components.WithButton("Next", Id("results", draft, page + 1), row: 1);
-            await Reply(embed: embed.Build(), components: components.Build());
+            if (!_config.AllowLookup) { await Reply("Item and recipe search is disabled by the host."); return; }
+            var view = ItemLookupView.Results(draft, page, (action, p) => Id(action, draft, p), (action, p) => SelectId(action, draft, p));
+            draft.SearchPage = view.Page;
+            await Reply(notice ?? "", embed: view.Embed, components: view.Components);
         }
 
         private async Task Pick(OrderDraft draft, string? notice = null)
         {
-            if (draft.PendingItem == null) { await Results(draft, 0); return; }
-            var item = OrderPreparation.FullStacks(new[] { draft.PendingItem })[0];
-            var components = new ComponentBuilder();
-            var variants = ItemSearchService.BodyVariants(item);
-            if (variants.Count > 1)
-            {
-                var menu = new SelectMenuBuilder().WithCustomId(SelectId("variant", draft)).WithPlaceholder("Choose a variant");
-                foreach (var variant in variants) menu.AddOption(Short(variant.Name), variant.Value.ToString(), isDefault: item.BodyType == variant.Value);
-                components.WithSelectMenu(menu, 0);
-            }
-            var fabrics = ItemSearchService.FabricVariants(item);
-            if (fabrics.Count > 1)
-            {
-                var menu = new SelectMenuBuilder().WithCustomId(SelectId("fabric", draft)).WithPlaceholder("Choose a fabric variant");
-                foreach (var fabric in fabrics) menu.AddOption(Short(fabric.Name), fabric.Value.ToString(), isDefault: item.PatternChoice == fabric.Value);
-                components.WithSelectMenu(menu, 1);
-            }
-            bool full = draft.Items.Length >= MultiItem.MaxOrder;
-            components.WithButton($"Quantity: {draft.PendingQuantity}", Id("quantity", draft), row: 2, disabled: full)
-                .WithButton("Add to order", Id("add", draft), ButtonStyle.Success, row: 2, disabled: full)
-                .WithButton("Back to results", Id("results", draft), row: 2);
-            var description = $"Quantity: **{draft.PendingQuantity}**. Each copy uses one order slot. **{Math.Max(0, MultiItem.MaxOrder - draft.Items.Length)} slots available.**\nChoose a quantity and any variants, then press **Add to order**. All stackable items use full stacks.\nChoosing a quantity selects **Exact** to keep the requested number of items. **Standard** fills 40 slots. Review your order before confirming.";
-            if (notice != null) description = notice + "\n\n" + description;
-            if (full) description = "Your order already has 40 items. Remove an item from Your items before adding more.\n\n" + description;
-            await Reply(embed: Embed(OrderPreparation.Describe(item), description).Build(), components: components.Build());
+            if (draft.PendingItem == null) { await Results(draft, draft.SearchPage); return; }
+            var view = ItemLookupView.Selection(draft, (action, p) => Id(action, draft, p), (action, p) => SelectId(action, draft, p), notice);
+            await Reply(embed: view.Embed, components: view.Components);
         }
 
         private async Task Review(OrderDraft draft, int page = 0)
@@ -505,7 +494,7 @@ namespace SysBot.ACNHOrders
             { await ShowDraft(draft, notice: error); return; }
             draft.Preview = prepared;
             draft.PreviewRevision = draft.Revision;
-            var groups = prepared!.VisibleItems.GroupBy(ItemParser.GetItemText).Select(group => $"{group.Count()} {(group.Count() == 1 ? "slot" : "slots")}: {OrderPreparation.Describe(group.First())}").ToArray();
+            var groups = prepared!.VisibleItems.GroupBy(ItemParser.GetItemText).Select(group => $"{group.Count()} {(group.Count() == 1 ? "slot" : "slots")}: {OrderPreparation.Describe(group.First(), draft.Language)}").ToArray();
             page = Math.Clamp(page, 0, Math.Max(0, (groups.Length - 1) / 10));
             var behavior = OrderPreparation.FillInstructions(prepared);
             var embed = Embed("Review your order", behavior + "\n\n" + string.Join("\n", groups.Skip(page * 10).Take(10)))
@@ -647,7 +636,7 @@ namespace SysBot.ACNHOrders
             else await MyOrder("Your order has started. It can no longer be cancelled from the waiting queue.");
         }
 
-        public Task Help() => Reply(embed: Embed("Ordering guide", "**Place order (guided):** find items or paste a list, review what you will receive, then press Confirm order to join the queue. Choose Standard, Exact, or Catalogue on the review screen. **Find villager** lets you search or browse orderable villagers, choose a language, and add one to your order. You need an empty housing plot to adopt them. Items are optional for villager orders.\n\n**Place order (quick):** paste an order or ordercat command and press Submit to join the queue directly. order selects Standard, ordercat selects Catalogue. A plain item list uses Standard. Invalid lists are saved for you to edit and retry.\n\nAll stackable items use full stacks. Enable DMs from this server before submitting. **My order** shows your position and progress. Check DMs when your order starts.\n\nEmpty your inventory, arrive promptly using the private Dodo code, collect your items, and leave through the airport.\n\nYour lists are saved if the bot restarts. Waiting orders are cleared, so you may need to join the queue again.").Build(),
+        public Task Help() => Reply(embed: Embed("Ordering guide", "**Place order (guided):** find items or recipes, or paste a list, review what you will receive, then press Confirm order to join the queue. Choose Standard, Exact, or Catalogue on the review screen. **Find recipes** searches DIY and cooking recipe cards by name in your chosen language. Leave the search blank to browse. Choose a recipe, press Quantity for the number of cards, then Add to order. Exact keeps the requested copies; Standard can add duplicates. **Find villager** lets you search or browse orderable villagers, choose a language, and add one to your order. You need an empty housing plot to adopt them. Items are optional for villager orders.\n\n**Place order (quick):** paste an order or ordercat command and press Submit to join the queue directly. order selects Standard, ordercat selects Catalogue. A plain item list uses Standard. Invalid lists are saved for you to edit and retry.\n\nAll stackable items use full stacks. Enable DMs from this server before submitting. **My order** shows your position and progress. Check DMs when your order starts.\n\nEmpty your inventory, arrive promptly using the private Dodo code, collect your items, and leave through the airport.\n\nYour lists are saved if the bot restarts. Waiting orders are cleared, so you may need to join the queue again.").Build(),
             components: new ComponentBuilder().WithButton("Place order (guided)", Id("order"), ButtonStyle.Primary)
                 .WithButton("Place order (quick)", Id("quick"), ButtonStyle.Primary).WithButton("My order", Id("my")).Build());
     }

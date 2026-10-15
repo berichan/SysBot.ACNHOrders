@@ -110,6 +110,16 @@ All stackable items use full stacks in every mode. This also applies to files, p
 
 Members must correct unknown items and remove unsafe items before confirming. Lists over 40 items must be shortened. The bot keeps the list so members can edit it.
 
+## Recipe lookup
+
+Set `AllowLookup` to `true` to enable **Find recipes** in guided orders. Item search results also have **Items** and **Recipes** buttons. Items finds finished objects; Recipes finds the cards that teach their recipes. No new configuration or Discord intents are required.
+
+Members search by the recipe's item name, or submit a blank search to browse all known DIY and cooking recipes, ten per page. The language menu supports English, Japanese, French, German, Spanish, Italian, Korean, Simplified Chinese, and Traditional Chinese. Changing languages keeps the order list and opens all recipes in the chosen language.
+
+Selecting a recipe opens its card details. **Quantity** chooses the number of cards, each using one order slot, and selects Exact mode. Recipe cards have no stack or variant controls. Exact keeps the requested copies, Standard fills 40 slots and can add duplicates, and Catalogue keeps the existing separator behavior. Members can mix cards, finished items, and a villager in one order.
+
+The selected recipe is stored inside each card and preserved through full-stack handling, order modes, pasted lists, saved drafts, and Order again. Unknown recipe IDs are rejected before submission. Members must review and confirm to enter the queue.
+
 ## Villager lookup
 
 Set both `AllowLookup` and `AllowVillagerInjection` to `true` to enable **Find villager** inside guided orders. The same control appears on the review screen. Members can search by name or submit a blank search to browse all orderable villagers, ten per page.
@@ -174,5 +184,7 @@ Test Quick with `order` and `ordercat`, check the reported mode and queue positi
 8. With no orders waiting, run setup again and restart the bot. Check that the panel and saved item lists are still available.
 
 Also test **Find villager** with a blank search and a localized name. Change the language, add a villager, replace and remove it, and confirm that items stay saved. Check that the villager and language survive a restart and that turning off villager orders prevents confirmation.
+
+Test **Find recipes** with a localized name and a blank search, then switch between **Items** and **Recipes**. Add one card and several copies, mix them with other items, and check all three modes in review. Verify that cards have no variant controls and keep their recipe names after editing the list, restarting the bot, and using Order again. Disabling lookup should disable recipe search as well.
 
 Automated tests cover item parsing, order contents, saved lists, button handling, and queue status. These checks also test your Discord permissions, DMs, and Switch setup.

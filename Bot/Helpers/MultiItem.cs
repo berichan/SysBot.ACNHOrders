@@ -1,4 +1,4 @@
-﻿using NHSE.Core;
+using NHSE.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,6 +30,12 @@ namespace SysBot.ACNHOrders
                     // duplicate those without variations
                     // attempt get body variations
                     var currentItem = items[i];
+                    if (currentItem.ItemId == Item.DIYRecipe)
+                    {
+                        // Count is the recipe ID, not a stack size or a customization choice.
+                        newItems.AddRange(DeepDuplicateItem(currentItem, Math.Max(0, itemMultiplier - 1)));
+                        continue;
+                    }
                     var remake = ItemRemakeUtil.GetRemakeIndex(currentItem.ItemId);
                     var associated = GameInfo.Strings.GetAssociatedItems(currentItem.ItemId, out _);
                     getMaxStack(currentItem, out var stackedMax);
@@ -106,9 +112,8 @@ namespace SysBot.ACNHOrders
         public static void StackToMax(Item[] itemSet)
         {
             foreach (var it in itemSet)
-                if (getMaxStack(it, out int max))
-                    if (max != 1)
-                        it.Count = (ushort)(max - 1);
+                if (it.ItemId != Item.DIYRecipe && getMaxStack(it, out int max) && max != 1)
+                    it.Count = (ushort)(max - 1);
         }
 
         public static void StackToMax(IReadOnlyCollection<Item> itemSet) => StackToMax(itemSet.ToArray());

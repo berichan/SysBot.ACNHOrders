@@ -137,7 +137,7 @@ namespace SysBot.ACNHOrders
             return new(items.ToArray(), errors.ToArray(), villager, language, mode);
         }
 
-        public static bool IsKnown(Item item) => GameInfo.Strings.ItemDataSource.Any(entry => entry.Value == item.ItemId);
+        public static bool IsKnown(Item item) => RecipeSearchService.IsKnown(item) && GameInfo.Strings.ItemDataSource.Any(entry => entry.Value == item.ItemId);
 
         public static bool TryPrepare(IEnumerable<Item> source, OrderFillMode mode, CrossBotConfig config,
             string username, string? villagerName, out PreparedOrder? prepared, out string error, string language = "en")
@@ -149,6 +149,8 @@ namespace SysBot.ACNHOrders
             var hasItems = items.Any(item => !item.IsNone);
             if (!hasItems && villagerName == null) { error = "Add at least one item or choose a villager before confirming."; return false; }
             if (items.Length > MultiItem.MaxOrder) { error = $"The limit is {MultiItem.MaxOrder} items. Remove some before confirming."; return false; }
+            if (items.Any(item => !RecipeSearchService.IsKnown(item)))
+            { error = "This order contains an unknown recipe card. Use Find recipes to replace it before confirming."; return false; }
             if (!InternalItemTool.CurrentInstance.IsSaneAfterCorrection(items, config.DropConfig))
             { error = "Remove these unsafe items: " + string.Join(", ", InternalItemTool.CurrentInstance.GetUnsafeItemNames(items)); return false; }
             if (items.Any(item => !item.IsNone && !IsKnown(item)))
@@ -185,6 +187,8 @@ namespace SysBot.ACNHOrders
             }
             if (!InternalItemTool.CurrentInstance.IsSaneAfterCorrection(delivery.ItemArray.Items.ToArray(), config.DropConfig))
             { error = "This mode added an unsafe item. Choose Exact or edit the list before confirming."; return false; }
+            if (delivery.ItemArray.Items.Any(item => !RecipeSearchService.IsKnown(item)))
+            { error = "This order contains an unknown recipe card. Use Find recipes to replace it before confirming."; return false; }
             // Corrections must be reflected in both preview and delivery.
             visible = mode == OrderFillMode.Catalogue ? Clone(delivery.ItemArray.Items.TakeWhile(item => !item.IsNone))
                 : Clone(delivery.ItemArray.Items.Where(item => !item.IsNone));
@@ -192,8 +196,9 @@ namespace SysBot.ACNHOrders
             return true;
         }
 
-        public static string Describe(Item item)
+        public static string Describe(Item item, string language = "en")
         {
+            if (item.ItemId == Item.DIYRecipe) return RecipeSearchService.Name(item.Count, language) + " (recipe card)";
             var name = GameInfo.Strings.GetItemName(item);
             var remake = ItemRemakeUtil.GetRemakeIndex(item.ItemId);
             if (remake >= 0)
