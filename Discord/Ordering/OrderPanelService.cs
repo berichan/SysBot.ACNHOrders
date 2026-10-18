@@ -42,7 +42,7 @@ namespace SysBot.ACNHOrders
                 _ => "Finishing order"
             };
             return new EmbedBuilder().WithTitle($"Order from {status.Town}")
-                .WithDescription($"**{state}: {status.Waiting} people waiting**\nCurrent order: **{current}**\n\n**Place order (guided):** choose items and review before confirming.\n**Place order (quick):** paste an order or ordercat command and submit directly to the queue.\nOnly you can see your order replies. **My order** shows your position and progress.\nYou will receive arrival instructions by DM.")
+                .WithDescription($"**{state}: {status.Waiting} people waiting**\nCurrent order: **{current}**\n\n**Place order (guided):** choose items and review before confirming.\n**Place order (quick):** paste an order or ordercat command and submit directly to the queue.\n**Order from .nhi file:** choose an inventory file, then review and confirm.\nOnly you can see your order replies. **My order** shows your position and progress.\nYou will receive arrival instructions by DM.")
                 .WithColor(status.Available ? Color.Green : Color.Orange)
                 .WithFooter("All stackable items use full stacks. Quick orders skip the review step.").Build();
         }
@@ -54,7 +54,8 @@ namespace SysBot.ACNHOrders
             .WithButton("Place order (guided)", id("shop:order:home:0"), ButtonStyle.Success)
             .WithButton("Place order (quick)", id("shop:quick:home:0"), ButtonStyle.Primary)
             .WithButton("My order", id("shop:my:home:0"))
-            .WithButton("Help", id("shop:help:home:0")).Build();
+            .WithButton("Help", id("shop:help:home:0"))
+            .WithButton("Order from .nhi file", id("shop:file:home:0"), ButtonStyle.Primary, row: 1).Build();
 
         private static List<OrderPanelLocation> Locations()
         {

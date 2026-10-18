@@ -215,12 +215,12 @@ namespace SysBot.ACNHOrders.Tests
             Assert.Equal(1, draft.PendingItem.BodyType);
             Assert.Equal(OrderFillMode.Exact, draft.Mode);
             var view = ItemLookupView.Selection(draft, Id, SelectId);
-            Assert.Contains(view.Components.Components.SelectMany(row => row.Components).OfType<SelectMenuComponent>(), menu => menu.CustomId == SelectId("variant", 0));
+            Assert.Contains(view.Components.Components.SelectMany(row => row.Children()).OfType<SelectMenuComponent>(), menu => menu.CustomId == SelectId("variant", 0));
             var card = RecipeSearchService.Create(15);
             draft.PendingItem = card;
             var modal = LookupOrderSelection.BuildQuantityModal("shop-quantity:token:3", draft);
-            var input = Assert.IsType<TextInputComponent>(Assert.Single(Assert.Single(modal.Component.Components).Components));
-            Assert.StartsWith("Number of slots", input.Label);
+            var input = Assert.IsType<TextInputComponent>(Assert.Single(Assert.Single(modal.Component.Components).Children()));
+            Assert.StartsWith("Number of slots", Assert.IsType<LabelComponent>(Assert.Single(modal.Component.Components)).Label);
             Assert.Equal("1", input.Value);
             Assert.Equal((ushort)15, card.Count);
         }
@@ -252,7 +252,7 @@ namespace SysBot.ACNHOrders.Tests
         public void RecipeModalAllowsBlankBrowseAndOneCharacterNativeSearch(string query)
         {
             var modal = ItemLookupView.RecipeModal("shop-recipe:token:3:island", query);
-            var input = Assert.IsType<TextInputComponent>(Assert.Single(Assert.Single(modal.Component.Components).Components));
+            var input = Assert.IsType<TextInputComponent>(Assert.Single(Assert.Single(modal.Component.Components).Children()));
             Assert.False(input.Required);
             Assert.Equal(query.Length == 0 ? null : query, input.Value);
             Assert.Equal(100, input.MaxLength);
@@ -263,20 +263,20 @@ namespace SysBot.ACNHOrders.Tests
         {
             var draft = new OrderDraft { SearchRecipes = true, Language = "jp" };
             var first = ItemLookupView.Results(draft, 0, Id, SelectId);
-            var menus = first.Components.Components.SelectMany(row => row.Components).OfType<SelectMenuComponent>().ToArray();
+            var menus = first.Components.Components.SelectMany(row => row.Children()).OfType<SelectMenuComponent>().ToArray();
             Assert.Equal(10, menus[0].Options.Count);
             Assert.All(menus[0].Options, option => Assert.Equal("Recipe card", option.Description));
             Assert.Equal(9, menus[1].Options.Count);
             Assert.Single(menus[1].Options.Where(option => option.IsDefault == true));
             var last = ItemLookupView.Results(draft, int.MaxValue, Id, SelectId);
-            Assert.DoesNotContain(last.Components.Components.SelectMany(row => row.Components).OfType<ButtonComponent>(), button => button.Label == "Next");
+            Assert.DoesNotContain(last.Components.Components.SelectMany(row => row.Children()).OfType<ButtonComponent>(), button => button.Label == "Next");
             draft.PendingItem = RecipeSearchService.Create(15); draft.SearchPage = 2;
             var selection = ItemLookupView.Selection(draft, Id, SelectId);
             Assert.Equal("もくせいチェア (recipe card)", selection.Embed.Title);
-            Assert.DoesNotContain(selection.Components.Components.SelectMany(row => row.Components), component => component is SelectMenuComponent);
+            Assert.DoesNotContain(selection.Components.Components.SelectMany(row => row.Children()), component => component is SelectMenuComponent);
             Assert.Contains("no stack or variant options", selection.Embed.Description);
-            Assert.Contains(selection.Components.Components.SelectMany(row => row.Components).OfType<ButtonComponent>(), button => button.Label == "Back to results" && button.CustomId == Id("results", 2));
-            Assert.All(first.Components.Components.Concat(selection.Components.Components), row => Assert.InRange(row.Components.Count, 1, 5));
+            Assert.Contains(selection.Components.Components.SelectMany(row => row.Children()).OfType<ButtonComponent>(), button => button.Label == "Back to results" && button.CustomId == Id("results", 2));
+            Assert.All(first.Components.Components.Concat(selection.Components.Components), row => Assert.InRange(row.Children().Count, 1, 5));
             draft.Search = "no-matching-name";
             Assert.Contains("No matching recipes", ItemLookupView.Results(draft, 0, Id, SelectId).Embed.Description);
         }

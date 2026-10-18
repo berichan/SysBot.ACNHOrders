@@ -1,6 +1,6 @@
 # Order panel setup
 
-Members use the Discord order panel to choose Guided or Quick ordering and check their queue position. The panel works in low-intent mode, without the Message Content or Server Members privileged intents.
+Members use the Discord order panel to choose Guided, Quick, or file ordering and check their queue position. The panel works in low-intent mode, without the Message Content or Server Members privileged intents.
 
 For a first installation, follow the existing [Discord bot setup](https://github.com/berichan/SysBot.ACNHOrders/wiki/Discord-bot-setup) instructions for the console connection, map position, and five anchors. Then use this guide to set up the Discord panel.
 
@@ -86,7 +86,7 @@ Order mode requires `LimitedDodoRestoreOnlyMode` and `SkipConsoleBotCreation` to
 3. If you set a suffix, use the matching command, such as `/setup-embed_berry`.
 4. Pin the panel and link to it in your server's order instructions.
 
-The panel has **Find items**, **Place order (guided)**, **Place order (quick)**, **My order**, and **Help** buttons. Only the member who clicks a button can see the bot's reply.
+The panel has **Find items**, **Place order (guided)**, **Place order (quick)**, **Order from .nhi file**, **My order**, and **Help** buttons. Only the member who clicks a button can see the bot's reply.
 
 For operator controls, run `/setup-control` in a staff channel. This channel does not need to be in `Channels`. See [Control panel](Control-panel) for Sudo permissions, connection status, and start/stop controls.
 
@@ -134,7 +134,11 @@ Only one villager can be selected per order. Adding, replacing, or removing it p
 
 Put valid `.nhi` files in `OrderConfig.NHIPresetsDirectory`, or use the Sudo-only `/uploadpreset` command. Members choose them under **Place order (guided) → Presets**. Selecting a preset replaces the current item list and opens the review screen.
 
-To upload an inventory file, members use `/order-nhi` and select the file in its `file` option. It must be a valid `.nhi` file with up to 40 items. The bot does not need permission to read ordinary chat attachments.
+**Order from .nhi file** on the public panel and **Upload .nhi file** inside guided orders open a native file upload form. Members choose one `.nhi` inventory file and submit it to open private review, then press **Confirm order** to join the queue. No slash command or chat attachment is needed. The `/order-nhi` command remains available as another way to import a file.
+
+Files must contain 1 to 40 item slots, with at least one item. Importing replaces the guided item list, selects Exact, and keeps the selected language and villager. Invalid or unreadable files leave the current list saved. If the member edits the list while the upload form is open or the file is downloading, the upload cannot overwrite those edits. Open the form again to replace the updated list.
+
+Native file uploads require the included Discord.Net 3.20.1 libraries. When updating the server, copy the full release package, including its Discord.Net DLLs. Keep your configuration and OrderData folder. Existing panel buttons use the same route and need no new configuration or intents.
 
 ## DMs and queue status
 

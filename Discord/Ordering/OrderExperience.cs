@@ -51,21 +51,24 @@ namespace SysBot.ACNHOrders
             await draft.Gate.WaitAsync().ConfigureAwait(false);
             try
             {
+                var previousLanguage = draft.Language;
+                var previousVillager = draft.Villager;
+                if (!OrderStartOptions.TryApply(draft, villager, language, out var optionError))
+                { await ShowDraft(draft, notice: optionError); return; }
                 if (!string.IsNullOrWhiteSpace(input))
                 {
-                    ApplyInput(draft, input, language);
+                    ApplyInput(draft, input);
                     if (villager != null)
-                    {
-                        if (!OrderPreparation.TryValidateVillager(villager, out var validated, out var error)) draft.Errors = draft.Errors.Append(error).ToArray();
-                        draft.Villager = VillagerSearchService.CanonicalSelection(validated, draft.Language);
-                    }
+                        draft.Villager = VillagerSearchService.CanonicalSelection(villager, draft.Language);
                     if (mode.HasValue) draft.Mode = mode.Value;
                     Changed(draft);
                     await Review(draft).ConfigureAwait(false);
                 }
                 else
                 {
-                    if (mode.HasValue && draft.Mode != mode.Value) { draft.Mode = mode.Value; Changed(draft); }
+                    var changed = draft.Language != previousLanguage || draft.Villager != previousVillager;
+                    if (mode.HasValue && draft.Mode != mode.Value) { draft.Mode = mode.Value; changed = true; }
+                    if (changed) Changed(draft);
                     await ShowDraft(draft).ConfigureAwait(false);
                 }
             }
@@ -83,14 +86,31 @@ namespace SysBot.ACNHOrders
             if (parsed.Mode.HasValue) draft.Mode = parsed.Mode.Value;
         }
 
-        public async Task ImportFile(IAttachment file)
+        public async Task ImportFile(IAttachment? file, string? token = null, int? revision = null)
         {
             await Defer().ConfigureAwait(false);
-            if (!file.Filename.EndsWith(".nhi", StringComparison.OrdinalIgnoreCase) || file.Size % Item.SIZE != 0)
-            { await Reply("Choose a valid .nhi inventory file with up to 40 items."); return; }
-            var result = await NetUtil.DownloadNHIAsync(file).ConfigureAwait(false);
-            if (!result.Success || result.Data == null) { await Reply("That file could not be read. Choose a valid .nhi inventory file."); return; }
-            await SetItems(result.Data, OrderFillMode.Exact).ConfigureAwait(false);
+            var draft = Draft;
+            await draft.Gate.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                token ??= draft.Token; revision ??= draft.Revision;
+                if (!NhiOrderImport.Matches(draft, token, revision.Value))
+                { await ShowDraft(draft, notice: "Your item list changed while the upload form was open. Upload the file again to replace the current list."); return; }
+            }
+            finally { draft.Gate.Release(); }
+            var result = await NhiOrderImport.ReadAsync(file).ConfigureAwait(false);
+            await draft.Gate.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                if (!NhiOrderImport.Matches(draft, token, revision.Value))
+                { await ShowDraft(draft, notice: "Your item list changed during the upload. Your edits were kept. Upload the file again to replace them."); return; }
+                if (result.Items == null) { await ShowDraft(draft, notice: result.Error); return; }
+                if (!NhiOrderImport.TryApply(draft, token, revision.Value, result.Items, _config, out var error))
+                { await ShowDraft(draft, notice: error + " Your previous item list was kept."); return; }
+                Changed(draft);
+                await Review(draft).ConfigureAwait(false);
+            }
+            finally { draft.Gate.Release(); }
         }
 
         public async Task ImportPreset(string name, string? villager = null)
@@ -151,9 +171,7 @@ namespace SysBot.ACNHOrders
                 catch (Exception ex) { SysBot.Base.LogUtil.LogError($"DM test failed for {User}: {ex.Message}", nameof(OrderExperience)); await Reply("I could not send a DM. Enable direct messages from members of this server, then try Test DMs again. Your item list was saved."); }
                 return;
             }
-            if (action == "file") { await Reply($"Use `/{Globals.Self.GetSlashCommandName("order-nhi")}` and choose your .nhi file in the **file** option. You can review the items before confirming."); return; }
-
-            bool opensModal = action is "search" or "recipe-search" or "paste" or "options" or "quantity" or "villager-search";
+            bool opensModal = action is "file" or "search" or "recipe-search" or "paste" or "options" or "quantity" or "villager-search";
             if (!opensModal) await Defer().ConfigureAwait(false);
             var draft = Draft;
             if (!await OrderInteractionGate.EnterAsync(draft.Gate, opensModal, Defer,
@@ -176,6 +194,9 @@ namespace SysBot.ACNHOrders
                 switch (action)
                 {
                     case "order": await ShowDraft(draft, page); break;
+                    case "file":
+                        await _context.Interaction.RespondWithModalAsync(NhiOrderImport.BuildModal(
+                            Globals.Self.GetInteractionCustomId($"shop-nhi:{draft.Token}:{draft.Revision}"))); break;
                     case "search": await OpenSearch(draft); break;
                     case "recipe-search": await OpenSearch(draft, recipes: true); break;
                     case "filter-items":
@@ -329,12 +350,15 @@ namespace SysBot.ACNHOrders
 
         private Task OpenPaste(OrderDraft draft)
         {
-            var modal = new ModalBuilder().WithTitle("Paste or edit your order").WithCustomId(Globals.Self.GetInteractionCustomId($"shop-paste:{draft.Token}:{draft.Revision}"))
-                .AddTextInput("Items, or your old order command", "items", TextInputStyle.Paragraph,
-                    placeholder: "lucky cat, nook miles ticket OR $order 0083 16A2", maxLength: 4000,
-                    value: Short(draft.EditableInput, 4000));
-            return _context.Interaction.RespondWithModalAsync(modal.Build());
+            return _context.Interaction.RespondWithModalAsync(BuildPasteModal(
+                Globals.Self.GetInteractionCustomId($"shop-paste:{draft.Token}:{draft.Revision}"), draft.EditableInput));
         }
+
+        internal static Modal BuildPasteModal(string customId, string input) => new ModalBuilder()
+            .WithTitle("Paste or edit your order").WithCustomId(customId)
+            .AddTextInput("Items, or your old order command", "items", TextInputStyle.Paragraph,
+                placeholder: "lucky cat, nook miles ticket OR $order 0083 16A2", minLength: 1, maxLength: 4000,
+                value: input.Length == 0 ? null : Short(input, 4000)).Build();
 
         private async Task OpenQuick()
         {
@@ -636,7 +660,7 @@ namespace SysBot.ACNHOrders
             else await MyOrder("Your order has started. It can no longer be cancelled from the waiting queue.");
         }
 
-        public Task Help() => Reply(embed: Embed("Ordering guide", "**Place order (guided):** find items or recipes, or paste a list, review what you will receive, then press Confirm order to join the queue. Choose Standard, Exact, or Catalogue on the review screen. **Find recipes** searches DIY and cooking recipe cards by name in your chosen language. Leave the search blank to browse. Choose a recipe, press Quantity for the number of cards, then Add to order. Exact keeps the requested copies; Standard can add duplicates. **Find villager** lets you search or browse orderable villagers, choose a language, and add one to your order. You need an empty housing plot to adopt them. Items are optional for villager orders.\n\n**Place order (quick):** paste an order or ordercat command and press Submit to join the queue directly. order selects Standard, ordercat selects Catalogue. A plain item list uses Standard. Invalid lists are saved for you to edit and retry.\n\nAll stackable items use full stacks. Enable DMs from this server before submitting. **My order** shows your position and progress. Check DMs when your order starts.\n\nEmpty your inventory, arrive promptly using the private Dodo code, collect your items, and leave through the airport.\n\nYour lists are saved if the bot restarts. Waiting orders are cleared, so you may need to join the queue again.").Build(),
+        public Task Help() => Reply(embed: Embed("Ordering guide", "**Place order (guided):** find items or recipes, or paste a list, review what you will receive, then press Confirm order to join the queue. Choose Standard, Exact, or Catalogue on the review screen. **Find recipes** searches DIY and cooking recipe cards by name in your chosen language. Leave the search blank to browse. Choose a recipe, press Quantity for the number of cards, then Add to order. Exact keeps the requested copies; Standard can add duplicates. **Find villager** lets you search or browse orderable villagers, choose a language, and add one to your order. You need an empty housing plot to adopt them. Items are optional for villager orders.\n\n**Place order (quick):** paste an order or ordercat command and press Submit to join the queue directly. order selects Standard, ordercat selects Catalogue. A plain item list uses Standard. Invalid lists are saved for you to edit and retry.\n\n**Order from .nhi file:** press the panel button or Upload .nhi file inside guided orders, choose one file, and submit it. This replaces your item list and opens review in Exact mode. Confirm order joins the queue.\n\nAll stackable items use full stacks. Enable DMs from this server before submitting. **My order** shows your position and progress. Check DMs when your order starts.\n\nEmpty your inventory, arrive promptly using the private Dodo code, collect your items, and leave through the airport.\n\nYour lists are saved if the bot restarts. Waiting orders are cleared, so you may need to join the queue again.").Build(),
             components: new ComponentBuilder().WithButton("Place order (guided)", Id("order"), ButtonStyle.Primary)
                 .WithButton("Place order (quick)", Id("quick"), ButtonStyle.Primary).WithButton("My order", Id("my")).Build());
     }

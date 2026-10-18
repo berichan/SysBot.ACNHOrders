@@ -29,7 +29,7 @@ namespace SysBot.ACNHOrders.Tests
         {
             var modal = OrderExperience.BuildQuickModal("shop-quick:private-token:0", new OrderDraft().Input);
             Assert.Equal("shop-quick:private-token:0", modal.CustomId);
-            var input = Assert.IsType<TextInputComponent>(Assert.Single(Assert.Single(modal.Component.Components).Components));
+            var input = Assert.IsType<TextInputComponent>(Assert.Single(Assert.Single(modal.Component.Components).Children()));
             Assert.Null(input.Value);
             Assert.True(string.IsNullOrEmpty(input.Placeholder));
             Assert.Equal(1, input.MinLength);
@@ -43,7 +43,7 @@ namespace SysBot.ACNHOrders.Tests
         public void QuickModalKeepsTheSavedCommandForRetry(string command)
         {
             var modal = OrderExperience.BuildQuickModal("shop-quick:private-token:1:island", command);
-            var input = Assert.IsType<TextInputComponent>(Assert.Single(Assert.Single(modal.Component.Components).Components));
+            var input = Assert.IsType<TextInputComponent>(Assert.Single(Assert.Single(modal.Component.Components).Children()));
             Assert.Equal(command, input.Value);
             Assert.Equal("shop-quick:private-token:1:island", modal.CustomId);
         }
@@ -52,7 +52,7 @@ namespace SysBot.ACNHOrders.Tests
         public void QuickModalLimitsPrefilledCommandsToDiscordsMaximumLength()
         {
             var modal = OrderExperience.BuildQuickModal("shop-quick:private-token:1", new string('x', 4001));
-            var input = Assert.IsType<TextInputComponent>(Assert.Single(Assert.Single(modal.Component.Components).Components));
+            var input = Assert.IsType<TextInputComponent>(Assert.Single(Assert.Single(modal.Component.Components).Children()));
             Assert.Equal(4000, input.Value.Length);
         }
 
@@ -316,17 +316,25 @@ namespace SysBot.ACNHOrders.Tests
             }
         }
 
-        [Fact]
-        public void SharedPanelOffersBothModesAndKeepsQuickAvailableWhenLookupIsDisabled()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void SharedPanelOffersBothModesAndNhiUploadsRegardlessOfLookupSetting(bool allowLookup)
         {
-            var buttons = OrderPanelService.BuildComponents(false, id => id).Components.OfType<ActionRowComponent>()
-                .SelectMany(row => row.Components).OfType<ButtonComponent>().ToArray();
-            Assert.Equal(5, buttons.Length);
-            Assert.True(buttons.Single(button => button.Label == "Find items").IsDisabled);
+            var components = OrderPanelService.BuildComponents(allowLookup, id => id);
+            var buttons = components.Components.OfType<ActionRowComponent>()
+                .SelectMany(row => row.Children()).OfType<ButtonComponent>().ToArray();
+            Assert.Equal(6, buttons.Length);
+            Assert.Equal(2, components.Components.Count);
+            Assert.All(components.Components, row => Assert.InRange(row.Children().Count, 1, 5));
+            Assert.Equal(!allowLookup, buttons.Single(button => button.Label == "Find items").IsDisabled);
             Assert.Equal("shop:order:home:0", buttons.Single(button => button.Label == "Place order (guided)").CustomId);
             var quick = buttons.Single(button => button.Label == "Place order (quick)");
             Assert.False(quick.IsDisabled);
             Assert.Equal("shop:quick:home:0", quick.CustomId);
+            var file = buttons.Single(button => button.Label == "Order from .nhi file");
+            Assert.False(file.IsDisabled);
+            Assert.Equal("shop:file:home:0", file.CustomId);
         }
 
         [Theory]

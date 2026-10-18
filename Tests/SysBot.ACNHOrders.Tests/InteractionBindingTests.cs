@@ -11,6 +11,16 @@ using Xunit;
 
 namespace SysBot.ACNHOrders.Tests
 {
+    internal static class TestComponents
+    {
+        internal static IReadOnlyCollection<IMessageComponent> Children(this IMessageComponent component) => component switch
+        {
+            ActionRowComponent row => row.Components,
+            LabelComponent label => new[] { label.Component },
+            _ => Array.Empty<IMessageComponent>()
+        };
+    }
+
     public sealed class BindingCapture
     {
         public string[] Route { get; set; } = Array.Empty<string>();

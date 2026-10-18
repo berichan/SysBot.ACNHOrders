@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 
@@ -8,6 +9,13 @@ namespace SysBot.ACNHOrders
     {
         public string Title => "Find items";
         [ModalTextInput("query")] public string Query { get; set; } = string.Empty;
+    }
+    public sealed class OrderNhiModal : IModal
+    {
+        public string Title => "Upload .nhi order";
+        [ModalFileUpload("file", minValues: 1, maxValues: 1)]
+        [InputLabel("NHI inventory file", "Choose one .nhi file. This replaces your item list. Review and confirm before joining the queue.")]
+        public IAttachment File { get; set; } = null!;
     }
     public sealed class OrderPasteModal : IModal
     {
@@ -65,6 +73,10 @@ namespace SysBot.ACNHOrders
         public Task Search(string token, int revision, OrderSearchModal modal) => new OrderExperience(Context).Modal("search", token, revision, modal.Query);
         [ModalInteraction("shop-search:*:*:*")]
         public Task SuffixedSearch(string token, int revision, string _, OrderSearchModal modal) => Search(token, revision, modal);
+        [ModalInteraction("shop-nhi:*:*")]
+        public Task Nhi(string token, int revision, OrderNhiModal modal) => new OrderExperience(Context).ImportFile(modal.File, token, revision);
+        [ModalInteraction("shop-nhi:*:*:*")]
+        public Task SuffixedNhi(string token, int revision, string _, OrderNhiModal modal) => Nhi(token, revision, modal);
         [ModalInteraction("shop-recipe:*:*")]
         public Task RecipeSearch(string token, int revision, OrderRecipeSearchModal modal) => new OrderExperience(Context).Modal("recipe-search", token, revision, modal.Query ?? string.Empty);
         [ModalInteraction("shop-recipe:*:*:*")]

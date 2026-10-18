@@ -373,7 +373,7 @@ namespace SysBot.ACNHOrders.Tests
         public void SearchModalAllowsEmptyBrowseAndSingleCharacterQueries(string query)
         {
             var modal = VillagerLookupView.BuildSearchModal("shop-villager:token:2:island", query);
-            var input = Assert.IsType<TextInputComponent>(Assert.Single(Assert.Single(modal.Component.Components).Components));
+            var input = Assert.IsType<TextInputComponent>(Assert.Single(Assert.Single(modal.Component.Components).Children()));
             Assert.False(input.Required);
             Assert.Equal(100, input.MaxLength);
             Assert.Equal(query.Length == 0 ? null : query, input.Value);
@@ -386,19 +386,19 @@ namespace SysBot.ACNHOrders.Tests
             var first = VillagerLookupView.Results(draft, -1, Id, SelectId);
             Assert.Equal(0, first.Page);
             Assert.Contains("ジャック", first.Embed.Description);
-            var menus = first.Components.Components.SelectMany(row => row.Components).OfType<SelectMenuComponent>().ToArray();
+            var menus = first.Components.Components.SelectMany(row => row.Children()).OfType<SelectMenuComponent>().ToArray();
             Assert.Equal(10, menus[0].Options.Count);
             Assert.All(menus[0].Options, option => Assert.True(VillagerSearchService.IsOrderable(option.Value)));
             Assert.Equal(9, menus[1].Options.Count);
             Assert.Single(menus[1].Options.Where(option => option.IsDefault == true));
-            Assert.All(first.Components.Components, row => Assert.InRange(row.Components.Count, 1, 5));
+            Assert.All(first.Components.Components, row => Assert.InRange(row.Children().Count, 1, 5));
             var last = VillagerLookupView.Results(draft, int.MaxValue, Id, SelectId);
-            Assert.DoesNotContain(last.Components.Components.SelectMany(row => row.Components).OfType<ButtonComponent>(), button => button.Label == "Next");
+            Assert.DoesNotContain(last.Components.Components.SelectMany(row => row.Children()).OfType<ButtonComponent>(), button => button.Label == "Next");
             var candidate = VillagerLookupView.Selection(draft, Id, SelectId);
             Assert.Contains("empty housing plot", candidate.Embed.Description);
             Assert.Contains("ジャック", candidate.Embed.Description);
             Assert.Equal(VillagerSearchService.Name("cat00", "jp"), candidate.Embed.Title);
-            Assert.Contains(candidate.Components.Components.SelectMany(row => row.Components).OfType<ButtonComponent>(), button => button.CustomId == Id("villager-add", 0));
+            Assert.Contains(candidate.Components.Components.SelectMany(row => row.Children()).OfType<ButtonComponent>(), button => button.CustomId == Id("villager-add", 0));
             draft.VillagerSearch = "does-not-exist";
             Assert.Contains("No orderable", VillagerLookupView.Results(draft, 0, Id, SelectId).Embed.Description);
         }

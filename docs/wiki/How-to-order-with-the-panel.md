@@ -24,6 +24,8 @@ Plain item lists use Standard. The form also accepts your host's command prefix 
 
 You can order a villager without items, for example `$order villager:ost10`. Add `villager:` followed by the villager's ID or full name. The host must allow villager orders, and you need an empty housing plot to adopt them. The acceptance reply shows the selected villager.
 
+The `/order` slash command also accepts `villager` and `language` without an `items` value. It keeps the items already in your guided list. If the list is empty, you can review and confirm the villager on its own.
+
 Quick skips the review and Confirm order steps. If the list is invalid, orders are paused, the queue is full, or DMs fail, no new order is queued. The bot keeps the pasted command so you can press **Retry quick order**, edit it, and submit again. Your guided item list stays saved separately.
 
 ## Find items
@@ -87,7 +89,11 @@ When you edit items selected through search, a preset, or a file, the form shows
 
 Choose a host preset under **Place order (guided) → Presets**. It replaces your current item list and opens the review screen.
 
-For an `.nhi` inventory file, use `/order-nhi` and choose the file in its `file` option. If your server uses an island suffix, use the matching command, such as `/order-nhi_berry`. You can review the items before confirming.
+Press **Order from .nhi file** on the public panel, or **Place order (guided) → Upload .nhi file**. In the upload form, choose one `.nhi` inventory file with 1 to 40 item slots, then press **Submit**. The bot opens your private order review. Press **Confirm order** when ready to join the queue. You do not need a slash command.
+
+Importing replaces your guided item list, selects Exact, and keeps your language and villager selection. Cancelling the upload form or submitting an invalid file keeps your existing list. If you edit your list while the form is open or uploading, the bot keeps those edits and asks you to upload again.
+
+The `/order-nhi` command is still available if you prefer it. Select the file in its `file` option, using your island's command suffix if one is configured.
 
 ## Review and confirm
 

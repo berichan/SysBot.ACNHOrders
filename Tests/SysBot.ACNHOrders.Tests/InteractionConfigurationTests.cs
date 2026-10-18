@@ -60,6 +60,8 @@ namespace SysBot.ACNHOrders.Tests
             service.ModalCommands.Should().Contain(command => command.Name == "shop-villager:*:*:*");
             service.ModalCommands.Should().Contain(command => command.Name == "shop-recipe:*:*");
             service.ModalCommands.Should().Contain(command => command.Name == "shop-recipe:*:*:*");
+            service.ModalCommands.Should().Contain(command => command.Name == "shop-nhi:*:*");
+            service.ModalCommands.Should().Contain(command => command.Name == "shop-nhi:*:*:*");
             service.SlashCommands.Should().Contain(command => command.Name == "setup-control");
             service.ComponentCommands.Should().Contain(command => command.Name == "control:*");
             service.ModalCommands.Select(command => command.Modal).Should().OnlyContain(modal => modal != null);

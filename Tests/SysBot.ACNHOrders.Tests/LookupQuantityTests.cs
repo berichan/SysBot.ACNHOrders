@@ -126,9 +126,9 @@ namespace SysBot.ACNHOrders.Tests
         {
             var draft = new OrderDraft { Items = new[] { new Item(131) }, PendingQuantity = 12 };
             var modal = LookupOrderSelection.BuildQuantityModal("shop-quantity:token:2:island", draft);
-            var input = Assert.IsType<TextInputComponent>(Assert.Single(Assert.Single(modal.Component.Components).Components));
+            var input = Assert.IsType<TextInputComponent>(Assert.Single(Assert.Single(modal.Component.Components).Children()));
             Assert.Equal("shop-quantity:token:2:island", modal.CustomId);
-            Assert.Equal("Number of slots (1 to 39)", input.Label);
+            Assert.Equal("Number of slots (1 to 39)", Assert.IsType<LabelComponent>(Assert.Single(modal.Component.Components)).Label);
             Assert.Equal("quantity", input.CustomId);
             Assert.Equal("12", input.Value);
             Assert.True(input.Required);

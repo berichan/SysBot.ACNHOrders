@@ -155,6 +155,8 @@ namespace SysBot.ACNHOrders
             { error = "Remove these unsafe items: " + string.Join(", ", InternalItemTool.CurrentInstance.GetUnsafeItemNames(items)); return false; }
             if (items.Any(item => !item.IsNone && !IsKnown(item)))
             { error = "This order contains an unknown item ID. Edit the list or import a valid inventory file."; return false; }
+            // Internal-item correction can change the stack limit. Keep the saved request and delivery in sync.
+            MultiItem.StackToMax(items);
 
             VillagerRequest? villager = null;
             if (!string.IsNullOrWhiteSpace(villagerName))

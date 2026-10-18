@@ -114,7 +114,11 @@ Keep `OrderData`, `UserOrder`, configuration, presets, and anchors when updating
 
 Use a valid `.nhi` inventory file containing up to 40 items. Each item uses 8 bytes, so the file must be a positive multiple of 8 bytes and no larger than 320 bytes. Renaming another file to `.nhi` will not work.
 
-Upload files through `/order-nhi`'s `file` option. Put host presets in `OrderConfig.NHIPresetsDirectory` and choose them from **Presets**. The host must fix any invalid preset files.
+Press **Order from .nhi file** on the public panel or **Upload .nhi file** inside guided orders. Choose one `.nhi` file in the upload form and submit it to open private review. Press **Confirm order** to join the queue. The file must contain 1 to 40 item slots. Failed uploads keep your existing list; reopen the form to try again. The `/order-nhi` command remains available as another way to import a file.
+
+If the bot says the list changed during upload, your newer edits were kept. Reopen the upload form if you want to replace that list. If the button still shows command instructions, the host needs to update to the current release, including all Discord.Net DLLs.
+
+Put host presets in `OrderConfig.NHIPresetsDirectory` and choose them from **Presets**. The host must fix any invalid preset files.
 
 ## Console connection, anchors, or crashes
 
